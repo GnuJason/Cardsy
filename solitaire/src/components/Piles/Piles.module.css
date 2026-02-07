@@ -1,0 +1,40 @@
+.stockPile {
+  cursor: pointer;
+}
+
+.wastePile {
+  position: relative;
+}
+
+.foundationPile {
+  position: relative;
+}
+
+.tableauPile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.tableauCard {
+  position: relative;
+}
+
+/* ── Stock refresh icon ── */
+.refreshIcon {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: var(--card-radius);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  background: var(--color-empty-pile);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.refreshIcon:hover {
+  color: rgba(255, 255, 255, 0.8);
+}

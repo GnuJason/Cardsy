@@ -1,0 +1,124 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-modal-overlay);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: var(--color-modal-bg);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+  color: #333;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.options {
+  display: flex;
+  gap: 8px;
+}
+
+.optionBtn {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  color: #333;
+  font-weight: 500;
+  border: 2px solid transparent;
+  min-height: 44px;
+}
+
+.optionBtn:hover {
+  background: #e4e4e4;
+}
+
+.optionBtnActive {
+  composes: optionBtn;
+  border-color: var(--color-button-bg);
+  background: #e8f5e9;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.toggleLabel {
+  font-size: 15px;
+  color: #333;
+}
+
+.toggleSwitch {
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: #ccc;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  padding: 0;
+}
+
+.toggleSwitchOn {
+  composes: toggleSwitch;
+  background: var(--color-button-bg);
+}
+
+.toggleKnob {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggleKnobOn {
+  composes: toggleKnob;
+  transform: translateX(20px);
+}
+
+.closeBtn {
+  display: block;
+  margin: 24px auto 0;
+  padding: 12px 32px;
+  font-size: 16px;
+  border-radius: 50px;
+}

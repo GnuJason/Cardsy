@@ -1,0 +1,65 @@
+:root {
+  /* ── Colors ── */
+  --color-felt: #1a6b3c;
+  --color-felt-dark: #145530;
+  --color-card-bg: #ffffff;
+  --color-card-border: #cccccc;
+  --color-card-red: #cc0000;
+  --color-card-black: #1a1a1a;
+  --color-card-back: #2255aa;
+  --color-hud-bg: rgba(0, 0, 0, 0.6);
+  --color-hud-text: #ffffff;
+  --color-button-bg: #2c7a4b;
+  --color-button-hover: #35915a;
+  --color-button-text: #ffffff;
+  --color-modal-overlay: rgba(0, 0, 0, 0.7);
+  --color-modal-bg: #ffffff;
+  --color-gold: #ffd700;
+  --color-empty-pile: rgba(255, 255, 255, 0.15);
+
+  /* ── Card Dimensions ── */
+  --card-width: 80px;
+  --card-height: 112px;
+  --card-radius: 8px;
+  --card-font-size: 18px;
+  --card-pip-size: 24px;
+
+  /* ── Spacing ── */
+  --gap-sm: 4px;
+  --gap-md: 8px;
+  --gap-lg: 16px;
+  --gap-xl: 24px;
+
+  /* ── Tableau fan offset ── */
+  --fan-offset-down: 22px;
+  --fan-offset-up: 16px;
+
+  /* ── Animation ── */
+  --anim-duration: 0.25s;
+  --anim-easing: ease-out;
+
+  /* ── Z-index layers ── */
+  --z-card: 1;
+  --z-dragging: 100;
+  --z-hud: 200;
+  --z-modal: 500;
+  --z-splash: 1000;
+}
+
+/* ── Large card size override ── */
+.card-size-large {
+  --card-width: 100px;
+  --card-height: 140px;
+  --card-font-size: 22px;
+  --card-pip-size: 30px;
+  --fan-offset-down: 28px;
+}
+
+/* ── Small card size override ── */
+.card-size-small {
+  --card-width: 64px;
+  --card-height: 90px;
+  --card-font-size: 14px;
+  --card-pip-size: 18px;
+  --fan-offset-down: 18px;
+}
