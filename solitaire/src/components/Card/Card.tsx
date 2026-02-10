@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Card as CardType } from '../../logic/types';
 import { suitColor, SUIT_SYMBOLS, RANK_LABELS } from '../../logic/types';
+import { getCardBackImage } from '../../config/cardArt';
 import styles from './Card.module.css';
 
 interface CardProps {
@@ -13,6 +14,9 @@ interface CardProps {
 export const Card: React.FC<CardProps> = React.memo(
   ({ card, onClick, style, cardBackImage }) => {
     if (!card.faceUp) {
+      // Per-card unique back image, with global setting as override
+      const backImage = cardBackImage ?? getCardBackImage(card.id);
+
       return (
         <div
           className={styles.card}
@@ -24,9 +28,9 @@ export const Card: React.FC<CardProps> = React.memo(
           onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
         >
           <div className={styles.back}>
-            {cardBackImage ? (
+            {backImage ? (
               <img
-                src={cardBackImage}
+                src={backImage}
                 alt=""
                 className={styles.backImage}
                 draggable={false}
