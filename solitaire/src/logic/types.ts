@@ -98,7 +98,7 @@ export interface UserSettings {
 
 // ── Game Modes ──────────────────────────────────────────────
 
-export type GameMode = 'klondike' | 'tripeaks' | 'golf' | 'pyramid';
+export type GameMode = 'klondike' | 'tripeaks' | 'golf' | 'pyramid' | 'freecell';
 
 // ── Per-Mode Statistics ─────────────────────────────────────
 
@@ -116,6 +116,7 @@ export interface AllStats {
   tripeaks: GameModeStats;
   golf: GameModeStats;
   pyramid: GameModeStats;
+  freecell: GameModeStats;
 }
 
 export const DEFAULT_MODE_STATS: GameModeStats = {
@@ -206,6 +207,30 @@ export interface PyramidGameState {
 export interface SavedPyramidGame {
   state: PyramidGameState;
   undoStack: PyramidGameState[];
+  savedAt: number;
+}
+
+// ── FreeCell Types ──────────────────────────────────────────
+
+export type FreeCellSource =
+  | { type: 'column'; colIndex: number; cardIndex: number }
+  | { type: 'freecell'; cellIndex: number };
+
+export type FreeCellStatus = 'playing' | 'won' | 'no-moves';
+
+export interface FreeCellGameState {
+  columns: Card[][];              // 8 columns, all face-up
+  freeCells: (Card | null)[];     // 4 slots
+  foundations: Card[][];           // 4 piles (by suit: ♥♦♣♠)
+  moves: number;
+  elapsedSeconds: number;
+  status: FreeCellStatus;
+  selectedSource: FreeCellSource | null;
+}
+
+export interface SavedFreeCellGame {
+  state: FreeCellGameState;
+  undoStack: FreeCellGameState[];
   savedAt: number;
 }
 

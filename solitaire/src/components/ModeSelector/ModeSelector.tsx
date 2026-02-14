@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame, SavedPyramidGame } from '../../logic/types';
+import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame, SavedPyramidGame, SavedFreeCellGame } from '../../logic/types';
 import styles from './ModeSelector.module.css';
 
 interface ModeSelectorProps {
@@ -8,6 +8,7 @@ interface ModeSelectorProps {
   savedTriPeaks: SavedTriPeaksGame | null;
   savedGolf: SavedGolfGame | null;
   savedPyramid: SavedPyramidGame | null;
+  savedFreeCell: SavedFreeCellGame | null;
   onContinue: (mode: GameMode) => void;
 }
 
@@ -17,6 +18,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   savedTriPeaks,
   savedGolf,
   savedPyramid,
+  savedFreeCell,
   onContinue,
 }) => {
   return (
@@ -78,6 +80,20 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               {savedPyramid
                 ? `Continue — ${savedPyramid.state.cardsRemaining} cards left`
                 : 'Match & Clear'}
+            </span>
+          </button>
+          <button
+            className={styles.modeBtn}
+            onClick={() =>
+              savedFreeCell ? onContinue('freecell') : onSelect('freecell')
+            }
+          >
+            <span className={styles.modeIcon}>🏗️</span>
+            <span className={styles.modeName}>FreeCell</span>
+            <span className={styles.modeDesc}>
+              {savedFreeCell
+                ? `Continue — ${savedFreeCell.state.moves} moves`
+                : 'Strategic Stacking'}
             </span>
           </button>
         </div>

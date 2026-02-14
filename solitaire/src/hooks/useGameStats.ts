@@ -36,9 +36,9 @@ export function useGameStats() {
       if (m.currentWinStreak > m.bestWinStreak) {
         m.bestWinStreak = m.currentWinStreak;
       }
-      // Golf/Pyramid: lower score is better (fewest cards remaining)
+      // Golf/Pyramid/FreeCell: lower score is better (fewest cards remaining / moves)
       // All other modes: higher score is better
-      if (mode === 'golf' || mode === 'pyramid') {
+      if (mode === 'golf' || mode === 'pyramid' || mode === 'freecell') {
         if (m.bestScore === null || score < m.bestScore) {
           m.bestScore = score;
         }

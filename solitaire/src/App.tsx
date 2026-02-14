@@ -23,6 +23,7 @@ import {
   getSavedTriPeaksGame,
   getSavedGolfGame,
   getSavedPyramidGame,
+  getSavedFreeCellGame,
 } from './services/storage';
 import { cardBackUrl } from './config/cardArt';
 
@@ -38,6 +39,9 @@ const GolfScreen = lazy(() =>
 );
 const PyramidScreen = lazy(() =>
   import('./screens/PyramidScreen').then((m) => ({ default: m.PyramidScreen })),
+);
+const FreeCellScreen = lazy(() =>
+  import('./screens/FreeCellScreen').then((m) => ({ default: m.FreeCellScreen })),
 );
 
 // Run one-time migration on module load
@@ -63,7 +67,9 @@ export const App: React.FC = () => {
             ? !!getSavedTriPeaksGame()
             : mode === 'golf'
               ? !!getSavedGolfGame()
-              : !!getSavedPyramidGame();
+              : mode === 'pyramid'
+                ? !!getSavedPyramidGame()
+                : !!getSavedFreeCellGame();
       return !hasSaved;
     }
     return false;
@@ -190,6 +196,14 @@ export const App: React.FC = () => {
     [checkOnWin, stats],
   );
 
+  // Achievement check on win — FreeCell
+  const handleFreeCellWin = useCallback(
+    (elapsed: number) => {
+      checkOnWin(stats, 'freecell', elapsed, false, false, false);
+    },
+    [checkOnWin, stats],
+  );
+
   // ── Card size class ───────────────────────────────────────
   const sizeClass =
     settings.cardSize === 'large'
@@ -220,6 +234,7 @@ export const App: React.FC = () => {
           savedTriPeaks={getSavedTriPeaksGame()}
           savedGolf={getSavedGolfGame()}
           savedPyramid={getSavedPyramidGame()}
+          savedFreeCell={getSavedFreeCellGame()}
           onContinue={handleContinue}
         />
       )}
@@ -291,6 +306,21 @@ export const App: React.FC = () => {
               onShowStats={() => setShowStats(true)}
               onShowAchievements={() => setShowAchievements(true)}
               onWin={handlePyramidWin}
+            />
+          )}
+          {selectedMode === 'freecell' && (
+            <FreeCellScreen
+              cardBackImage={cardBackImage}
+              modeStats={stats.freecell}
+              reducedMotion={settings.reducedMotion}
+              onRecordStart={() => handleRecordStart('freecell')}
+              onRecordWin={(score, time) => handleRecordWin('freecell', score, time)}
+              onRecordLoss={() => handleRecordLoss('freecell')}
+              onChangeMode={handleChangeMode}
+              onShowSettings={() => setShowSettings(true)}
+              onShowStats={() => setShowStats(true)}
+              onShowAchievements={() => setShowAchievements(true)}
+              onWin={handleFreeCellWin}
             />
           )}
         </Suspense>

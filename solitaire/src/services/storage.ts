@@ -7,6 +7,7 @@ import type {
   SavedTriPeaksGame,
   SavedGolfGame,
   SavedPyramidGame,
+  SavedFreeCellGame,
   UnlockedAchievement,
 } from '../logic/types';
 import { DEFAULT_MODE_STATS } from '../logic/types';
@@ -22,6 +23,7 @@ const KEYS = {
   savedTripeaks: 'solitaire_saved_tripeaks',
   savedGolf: 'solitaire_saved_golf',
   savedPyramid: 'solitaire_saved_pyramid',
+  savedFreeCell: 'solitaire_saved_freecell',
   achievements: 'solitaire_achievements',
   playDates: 'solitaire_play_dates',
 } as const;
@@ -109,6 +111,7 @@ const DEFAULT_ALL_STATS: AllStats = {
   tripeaks: { ...DEFAULT_MODE_STATS },
   golf: { ...DEFAULT_MODE_STATS },
   pyramid: { ...DEFAULT_MODE_STATS },
+  freecell: { ...DEFAULT_MODE_STATS },
 };
 
 function validateModeStats(raw: unknown): GameModeStats {
@@ -135,7 +138,7 @@ function validateModeStats(raw: unknown): GameModeStats {
 
 export function getStats(): AllStats {
   const raw = safeGet(KEYS.stats);
-  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS } };
+  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS }, freecell: { ...DEFAULT_MODE_STATS } };
   try {
     const parsed = JSON.parse(raw);
     return {
@@ -143,9 +146,10 @@ export function getStats(): AllStats {
       tripeaks: validateModeStats(parsed?.tripeaks),
       golf: validateModeStats(parsed?.golf),
       pyramid: validateModeStats(parsed?.pyramid),
+      freecell: validateModeStats(parsed?.freecell),
     };
   } catch {
-    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS } };
+    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS }, freecell: { ...DEFAULT_MODE_STATS } };
   }
 }
 
@@ -179,7 +183,7 @@ export function migrateFromLegacy(): void {
 
 export function getGameMode(): GameMode {
   const raw = safeGet(KEYS.gameMode);
-  if (raw === 'klondike' || raw === 'tripeaks' || raw === 'golf' || raw === 'pyramid') return raw;
+  if (raw === 'klondike' || raw === 'tripeaks' || raw === 'golf' || raw === 'pyramid' || raw === 'freecell') return raw;
   return 'klondike';
 }
 
@@ -307,6 +311,37 @@ export function setSavedPyramidGame(save: SavedPyramidGame): void {
 
 export function clearSavedPyramidGame(): void {
   safeRemove(KEYS.savedPyramid);
+}
+
+// ── FreeCell Saved Game ─────────────────────────────────────
+
+export function getSavedFreeCellGame(): SavedFreeCellGame | null {
+  const raw = safeGet(KEYS.savedFreeCell);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.state ||
+      typeof parsed.state !== 'object' ||
+      !Array.isArray(parsed.undoStack) ||
+      typeof parsed.savedAt !== 'number'
+    ) {
+      return null;
+    }
+    return parsed as SavedFreeCellGame;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedFreeCellGame(save: SavedFreeCellGame): void {
+  safeSet(KEYS.savedFreeCell, JSON.stringify(save));
+}
+
+export function clearSavedFreeCellGame(): void {
+  safeRemove(KEYS.savedFreeCell);
 }
 
 // ── Achievements ────────────────────────────────────────────

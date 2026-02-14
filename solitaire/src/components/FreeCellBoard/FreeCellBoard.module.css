@@ -1,0 +1,151 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--gap-md) var(--gap-sm);
+}
+
+/* ── Top Row: Free Cells + Foundations ────────────────────── */
+
+.topRow {
+  display: flex;
+  gap: var(--gap-sm);
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: var(--gap-lg);
+  flex-wrap: wrap;
+}
+
+.cellGroup {
+  display: flex;
+  gap: var(--gap-sm);
+}
+
+.spacer {
+  width: var(--gap-xl);
+}
+
+.cellSlot {
+  position: relative;
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px dashed var(--color-border, rgba(255, 255, 255, 0.2));
+  border-radius: var(--card-radius, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--anim-duration) var(--anim-easing);
+}
+
+.cellSlot:hover {
+  border-color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+}
+
+.cellLabel {
+  position: absolute;
+  bottom: -1.4em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--color-text-muted, #aaa);
+  white-space: nowrap;
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.foundSlot {
+  composes: cellSlot;
+}
+
+.foundIcon {
+  font-size: 1.5rem;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* ── Selected highlight ──────────────────────────────────── */
+
+.selected {
+  position: relative;
+  z-index: 3;
+}
+
+.selected::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 3px solid var(--color-accent, #ffd700);
+  border-radius: var(--card-radius, 8px);
+  pointer-events: none;
+  box-shadow: 0 0 8px var(--color-accent, #ffd700);
+}
+
+/* ── Tableau Columns ─────────────────────────────────────── */
+
+.tableau {
+  display: flex;
+  gap: var(--gap-sm);
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  min-height: 200px;
+}
+
+.column {
+  position: relative;
+  width: var(--card-width);
+  min-height: var(--card-height);
+  cursor: pointer;
+}
+
+.columnEmpty {
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px dashed var(--color-border, rgba(255, 255, 255, 0.15));
+  border-radius: var(--card-radius, 8px);
+  cursor: pointer;
+  transition: border-color var(--anim-duration) var(--anim-easing);
+}
+
+.columnEmpty:hover {
+  border-color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
+}
+
+.columnCard {
+  position: absolute;
+  left: 0;
+}
+
+.columnCard.selectedCard {
+  position: relative;
+  z-index: 3;
+}
+
+.columnCard.selectedCard::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 3px solid var(--color-accent, #ffd700);
+  border-radius: var(--card-radius, 8px);
+  pointer-events: none;
+  box-shadow: 0 0 8px var(--color-accent, #ffd700);
+}
+
+/* ── Moves counter ───────────────────────────────────────── */
+
+.movesBadge {
+  text-align: center;
+  margin-bottom: var(--gap-sm);
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #ccc);
+}
+
+.movesCount {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--color-text, #fff);
+}

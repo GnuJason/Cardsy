@@ -1,0 +1,223 @@
+import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { useFreeCellState } from '../hooks/useFreeCellState';
+import { useTimer } from '../hooks/useTimer';
+import { FreeCellBoard } from '../components/FreeCellBoard/FreeCellBoard';
+import { HUD } from '../components/HUD/HUD';
+import { WinCelebration } from '../components/WinCelebration/WinCelebration';
+import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
+import { FreeCellWinModal } from '../components/FreeCellWinModal/FreeCellWinModal';
+import type { GameModeStats } from '../logic/types';
+import { soundManager } from '../services/sound';
+import {
+  getSavedFreeCellGame,
+  setSavedFreeCellGame,
+  clearSavedFreeCellGame,
+} from '../services/storage';
+
+interface FreeCellScreenProps {
+  cardBackImage: string | null;
+  modeStats: GameModeStats;
+  reducedMotion: boolean;
+  onRecordStart: () => void;
+  onRecordWin: (score: number, time: number) => void;
+  onRecordLoss: () => void;
+  onChangeMode: () => void;
+  onShowSettings: () => void;
+  onShowStats: () => void;
+  onShowAchievements: () => void;
+  onWin: (elapsed: number) => void;
+}
+
+export const FreeCellScreen: React.FC<FreeCellScreenProps> = ({
+  cardBackImage,
+  modeStats,
+  reducedMotion,
+  onRecordStart,
+  onRecordWin,
+  onRecordLoss,
+  onChangeMode,
+  onShowSettings,
+  onShowStats,
+  onShowAchievements,
+  onWin,
+}) => {
+  const fc = useFreeCellState();
+  const { game, canUndo, hasMoves, undoStack, actions } = fc;
+
+  const isPlaying = game.status === 'playing';
+  const { elapsed, reset: resetTimer } = useTimer(isPlaying);
+
+  const gameStartedRef = useRef(false);
+  const restoredRef = useRef(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showWinModal, setShowWinModal] = useState(false);
+
+  // Restore saved game on mount
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const saved = getSavedFreeCellGame();
+    if (saved) {
+      actions.restoreGame(saved.state, saved.undoStack);
+    }
+  }, [actions]);
+
+  // Sync elapsed time
+  useEffect(() => {
+    actions.setElapsed(elapsed);
+  }, [elapsed, actions]);
+
+  // Record game start
+  useEffect(() => {
+    if (isPlaying && !gameStartedRef.current) {
+      onRecordStart();
+      gameStartedRef.current = true;
+    }
+  }, [isPlaying, onRecordStart]);
+
+  // Detect no-moves
+  useEffect(() => {
+    if (isPlaying && !hasMoves) {
+      actions.setNoMoves();
+    }
+  }, [isPlaying, hasMoves, actions]);
+
+  // Handle win
+  useEffect(() => {
+    if (game.status === 'won') {
+      // FreeCell score = moves (lower is better)
+      onRecordWin(game.moves, elapsed);
+      onWin(elapsed);
+      clearSavedFreeCellGame();
+      soundManager.play('win');
+      setShowCelebration(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status]);
+
+  // Handle loss
+  useEffect(() => {
+    if (game.status === 'no-moves') {
+      onRecordLoss();
+      clearSavedFreeCellGame();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status]);
+
+  // Auto-save on every state change
+  useEffect(() => {
+    if (game.status === 'playing') {
+      setSavedFreeCellGame({
+        state: game,
+        undoStack,
+        savedAt: Date.now(),
+      });
+    }
+  }, [game, undoStack]);
+
+  // ── Handlers ──────────────────────────────────────────────
+
+  const handleCelebrationComplete = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(true);
+  }, []);
+
+  const handleNewGame = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(false);
+    if (game.status === 'playing' && gameStartedRef.current) {
+      onRecordLoss();
+    }
+
+    actions.newGame();
+    resetTimer();
+    clearSavedFreeCellGame();
+    gameStartedRef.current = false;
+    soundManager.play('shuffle');
+  }, [game.status, actions, resetTimer, onRecordLoss]);
+
+  const handleUndo = useCallback(() => {
+    actions.undo();
+    soundManager.play('cardFlip');
+  }, [actions]);
+
+  const handleTapColumn = useCallback(
+    (colIndex: number, cardIndex: number) => {
+      actions.tapColumn(colIndex, cardIndex);
+      soundManager.play('cardPlace');
+    },
+    [actions],
+  );
+
+  const handleTapFreeCell = useCallback(
+    (cellIndex: number) => {
+      actions.tapFreeCell(cellIndex);
+      soundManager.play('cardPlace');
+    },
+    [actions],
+  );
+
+  const handleTapFoundation = useCallback(
+    (foundIndex: number) => {
+      actions.tapFoundation(foundIndex);
+      soundManager.play('cardPlace');
+    },
+    [actions],
+  );
+
+  // Foundation count for HUD score display
+  const foundationCount = game.foundations.reduce(
+    (sum, pile) => sum + pile.length,
+    0,
+  );
+
+  return (
+    <>
+      <HUD
+        score={foundationCount}
+        moves={game.moves}
+        elapsed={elapsed}
+        canUndo={canUndo}
+        onUndo={handleUndo}
+        onNewGame={handleNewGame}
+        onSettings={onShowSettings}
+        onStats={onShowStats}
+        onChangeMode={onChangeMode}
+        onAchievements={onShowAchievements}
+      />
+
+      <FreeCellBoard
+        game={game}
+        cardBackImage={cardBackImage}
+        onTapColumn={handleTapColumn}
+        onTapFreeCell={handleTapFreeCell}
+        onTapFoundation={handleTapFoundation}
+      />
+
+      {showCelebration && (
+        <WinCelebration
+          onComplete={handleCelebrationComplete}
+          reducedMotion={reducedMotion}
+        />
+      )}
+
+      {showWinModal && (
+        <FreeCellWinModal
+          moves={game.moves}
+          elapsed={elapsed}
+          bestScore={modeStats.bestScore}
+          onNewGame={handleNewGame}
+          modeStats={modeStats}
+        />
+      )}
+
+      {game.status === 'no-moves' && (
+        <NoMovesModal
+          onUndo={handleUndo}
+          onNewGame={handleNewGame}
+          canUndo={canUndo}
+        />
+      )}
+    </>
+  );
+};
