@@ -1,6 +1,6 @@
 import type { Card, PyramidCard, PyramidGameState } from '../types';
 import { createDeck, shuffle } from '../deck';
-import { PYRAMID_SIZE, BOTTOM_ROW } from './layout';
+import { PYRAMID_SIZE } from './layout';
 
 /**
  * Deal a Pyramid game from a shuffled 52-card deck.

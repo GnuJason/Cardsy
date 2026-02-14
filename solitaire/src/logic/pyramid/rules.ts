@@ -1,5 +1,5 @@
 import type { Card, PyramidCard, PyramidGameState } from '../types';
-import { CHILDREN, PYRAMID_ROWS } from './layout';
+import { CHILDREN } from './layout';
 
 /**
  * Check if a pyramid card is uncovered (playable).
