@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame } from '../../logic/types';
+import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame, SavedPyramidGame } from '../../logic/types';
 import styles from './ModeSelector.module.css';
 
 interface ModeSelectorProps {
@@ -7,6 +7,7 @@ interface ModeSelectorProps {
   savedKlondike: SavedKlondikeGame | null;
   savedTriPeaks: SavedTriPeaksGame | null;
   savedGolf: SavedGolfGame | null;
+  savedPyramid: SavedPyramidGame | null;
   onContinue: (mode: GameMode) => void;
 }
 
@@ -15,6 +16,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   savedKlondike,
   savedTriPeaks,
   savedGolf,
+  savedPyramid,
   onContinue,
 }) => {
   return (
@@ -62,6 +64,20 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               {savedGolf
                 ? `Continue — ${savedGolf.state.cardsRemaining} cards left`
                 : 'Clear the Course'}
+            </span>
+          </button>
+          <button
+            className={styles.modeBtn}
+            onClick={() =>
+              savedPyramid ? onContinue('pyramid') : onSelect('pyramid')
+            }
+          >
+            <span className={styles.modeIcon}>🏛️</span>
+            <span className={styles.modeName}>Pyramid</span>
+            <span className={styles.modeDesc}>
+              {savedPyramid
+                ? `Continue — ${savedPyramid.state.cardsRemaining} cards left`
+                : 'Match & Clear'}
             </span>
           </button>
         </div>

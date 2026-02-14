@@ -98,7 +98,7 @@ export interface UserSettings {
 
 // ── Game Modes ──────────────────────────────────────────────
 
-export type GameMode = 'klondike' | 'tripeaks' | 'golf';
+export type GameMode = 'klondike' | 'tripeaks' | 'golf' | 'pyramid';
 
 // ── Per-Mode Statistics ─────────────────────────────────────
 
@@ -115,6 +115,7 @@ export interface AllStats {
   klondike: GameModeStats;
   tripeaks: GameModeStats;
   golf: GameModeStats;
+  pyramid: GameModeStats;
 }
 
 export const DEFAULT_MODE_STATS: GameModeStats = {
@@ -179,6 +180,32 @@ export interface GolfGameState {
 export interface SavedGolfGame {
   state: GolfGameState;
   undoStack: GolfGameState[];
+  savedAt: number;
+}
+
+// ── Pyramid Types ───────────────────────────────────────────
+
+export interface PyramidCard extends Card {
+  pyramidIndex: number;  // 0–27 position in the pyramid
+  removed: boolean;
+}
+
+export type PyramidStatus = 'playing' | 'won' | 'no-moves';
+
+export interface PyramidGameState {
+  pyramid: PyramidCard[];       // 28 cards
+  stock: Card[];                // 24 cards initially, no recycle
+  waste: Card[];                // starts empty
+  cardsRemaining: number;       // 28 → 0 (score; lower is better)
+  moves: number;
+  elapsedSeconds: number;
+  status: PyramidStatus;
+  selectedIndex: number | null; // pyramid index of selected card, or -1 for waste top
+}
+
+export interface SavedPyramidGame {
+  state: PyramidGameState;
+  undoStack: PyramidGameState[];
   savedAt: number;
 }
 

@@ -1,0 +1,212 @@
+import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { usePyramidState } from '../hooks/usePyramidState';
+import { useTimer } from '../hooks/useTimer';
+import { PyramidBoard } from '../components/PyramidBoard/PyramidBoard';
+import { HUD } from '../components/HUD/HUD';
+import { WinCelebration } from '../components/WinCelebration/WinCelebration';
+import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
+import { PyramidWinModal } from '../components/PyramidWinModal/PyramidWinModal';
+import type { GameModeStats } from '../logic/types';
+import { soundManager } from '../services/sound';
+import {
+  getSavedPyramidGame,
+  setSavedPyramidGame,
+  clearSavedPyramidGame,
+} from '../services/storage';
+
+interface PyramidScreenProps {
+  cardBackImage: string | null;
+  modeStats: GameModeStats;
+  reducedMotion: boolean;
+  onRecordStart: () => void;
+  onRecordWin: (score: number, time: number) => void;
+  onRecordLoss: () => void;
+  onChangeMode: () => void;
+  onShowSettings: () => void;
+  onShowStats: () => void;
+  onShowAchievements: () => void;
+  onWin: (elapsed: number) => void;
+}
+
+export const PyramidScreen: React.FC<PyramidScreenProps> = ({
+  cardBackImage,
+  modeStats,
+  reducedMotion,
+  onRecordStart,
+  onRecordWin,
+  onRecordLoss,
+  onChangeMode,
+  onShowSettings,
+  onShowStats,
+  onShowAchievements,
+  onWin,
+}) => {
+  const pyramid = usePyramidState();
+  const { game, canUndo, hasMoves, undoStack, actions } = pyramid;
+
+  const isPlaying = game.status === 'playing';
+  const { elapsed, reset: resetTimer } = useTimer(isPlaying);
+
+  const gameStartedRef = useRef(false);
+  const restoredRef = useRef(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showWinModal, setShowWinModal] = useState(false);
+
+  // Restore saved game on mount
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const saved = getSavedPyramidGame();
+    if (saved) {
+      actions.restoreGame(saved.state, saved.undoStack);
+    }
+  }, [actions]);
+
+  // Sync elapsed time
+  useEffect(() => {
+    actions.setElapsed(elapsed);
+  }, [elapsed, actions]);
+
+  // Record game start
+  useEffect(() => {
+    if (isPlaying && !gameStartedRef.current) {
+      onRecordStart();
+      gameStartedRef.current = true;
+    }
+  }, [isPlaying, onRecordStart]);
+
+  // Detect no-moves
+  useEffect(() => {
+    if (isPlaying && !hasMoves) {
+      actions.setNoMoves();
+    }
+  }, [isPlaying, hasMoves, actions]);
+
+  // Handle win
+  useEffect(() => {
+    if (game.status === 'won') {
+      // Pyramid score = cardsRemaining (0 for a perfect clear)
+      onRecordWin(game.cardsRemaining, elapsed);
+      onWin(elapsed);
+      clearSavedPyramidGame();
+      soundManager.play('win');
+      setShowCelebration(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status]);
+
+  // Handle loss
+  useEffect(() => {
+    if (game.status === 'no-moves') {
+      onRecordLoss();
+      clearSavedPyramidGame();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.status]);
+
+  // Auto-save on every state change
+  useEffect(() => {
+    if (game.status === 'playing') {
+      setSavedPyramidGame({
+        state: game,
+        undoStack,
+        savedAt: Date.now(),
+      });
+    }
+  }, [game, undoStack]);
+
+  // ── Handlers ──────────────────────────────────────────────
+
+  const handleCelebrationComplete = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(true);
+  }, []);
+
+  const handleNewGame = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(false);
+    if (game.status === 'playing' && gameStartedRef.current) {
+      onRecordLoss();
+    }
+
+    actions.newGame();
+    resetTimer();
+    clearSavedPyramidGame();
+    gameStartedRef.current = false;
+    soundManager.play('shuffle');
+  }, [game.status, actions, resetTimer, onRecordLoss]);
+
+  const handleUndo = useCallback(() => {
+    actions.undo();
+    soundManager.play('cardFlip');
+  }, [actions]);
+
+  const handleDraw = useCallback(() => {
+    actions.draw();
+    soundManager.play('draw');
+  }, [actions]);
+
+  const handleTapPyramid = useCallback(
+    (pyramidIndex: number) => {
+      actions.tapPyramid(pyramidIndex);
+      soundManager.play('cardPlace');
+    },
+    [actions],
+  );
+
+  const handleTapWaste = useCallback(() => {
+    actions.tapWaste();
+    soundManager.play('cardPlace');
+  }, [actions]);
+
+  return (
+    <>
+      <HUD
+        score={game.cardsRemaining}
+        moves={game.moves}
+        elapsed={elapsed}
+        canUndo={canUndo}
+        onUndo={handleUndo}
+        onNewGame={handleNewGame}
+        onSettings={onShowSettings}
+        onStats={onShowStats}
+        onChangeMode={onChangeMode}
+        onAchievements={onShowAchievements}
+      />
+
+      <PyramidBoard
+        game={game}
+        cardBackImage={cardBackImage}
+        onTapPyramid={handleTapPyramid}
+        onTapWaste={handleTapWaste}
+        onDraw={handleDraw}
+      />
+
+      {showCelebration && (
+        <WinCelebration
+          onComplete={handleCelebrationComplete}
+          reducedMotion={reducedMotion}
+        />
+      )}
+
+      {showWinModal && (
+        <PyramidWinModal
+          cardsRemaining={game.cardsRemaining}
+          moves={game.moves}
+          elapsed={elapsed}
+          bestScore={modeStats.bestScore}
+          onNewGame={handleNewGame}
+          modeStats={modeStats}
+        />
+      )}
+
+      {game.status === 'no-moves' && (
+        <NoMovesModal
+          onUndo={handleUndo}
+          onNewGame={handleNewGame}
+          canUndo={canUndo}
+        />
+      )}
+    </>
+  );
+};

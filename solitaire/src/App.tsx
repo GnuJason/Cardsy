@@ -22,6 +22,7 @@ import {
   getSavedKlondikeGame,
   getSavedTriPeaksGame,
   getSavedGolfGame,
+  getSavedPyramidGame,
 } from './services/storage';
 import { cardBackUrl } from './config/cardArt';
 
@@ -34,6 +35,9 @@ const TriPeaksScreen = lazy(() =>
 );
 const GolfScreen = lazy(() =>
   import('./screens/GolfScreen').then((m) => ({ default: m.GolfScreen })),
+);
+const PyramidScreen = lazy(() =>
+  import('./screens/PyramidScreen').then((m) => ({ default: m.PyramidScreen })),
 );
 
 // Run one-time migration on module load
@@ -57,7 +61,9 @@ export const App: React.FC = () => {
           ? !!getSavedKlondikeGame()
           : mode === 'tripeaks'
             ? !!getSavedTriPeaksGame()
-            : !!getSavedGolfGame();
+            : mode === 'golf'
+              ? !!getSavedGolfGame()
+              : !!getSavedPyramidGame();
       return !hasSaved;
     }
     return false;
@@ -176,6 +182,14 @@ export const App: React.FC = () => {
     [checkOnWin, stats],
   );
 
+  // Achievement check on win — Pyramid
+  const handlePyramidWin = useCallback(
+    (elapsed: number) => {
+      checkOnWin(stats, 'pyramid', elapsed, false, false, false);
+    },
+    [checkOnWin, stats],
+  );
+
   // ── Card size class ───────────────────────────────────────
   const sizeClass =
     settings.cardSize === 'large'
@@ -205,6 +219,7 @@ export const App: React.FC = () => {
           savedKlondike={getSavedKlondikeGame()}
           savedTriPeaks={getSavedTriPeaksGame()}
           savedGolf={getSavedGolfGame()}
+          savedPyramid={getSavedPyramidGame()}
           onContinue={handleContinue}
         />
       )}
@@ -261,6 +276,21 @@ export const App: React.FC = () => {
               onShowStats={() => setShowStats(true)}
               onShowAchievements={() => setShowAchievements(true)}
               onWin={handleGolfWin}
+            />
+          )}
+          {selectedMode === 'pyramid' && (
+            <PyramidScreen
+              cardBackImage={cardBackImage}
+              modeStats={stats.pyramid}
+              reducedMotion={settings.reducedMotion}
+              onRecordStart={() => handleRecordStart('pyramid')}
+              onRecordWin={(score, time) => handleRecordWin('pyramid', score, time)}
+              onRecordLoss={() => handleRecordLoss('pyramid')}
+              onChangeMode={handleChangeMode}
+              onShowSettings={() => setShowSettings(true)}
+              onShowStats={() => setShowStats(true)}
+              onShowAchievements={() => setShowAchievements(true)}
+              onWin={handlePyramidWin}
             />
           )}
         </Suspense>

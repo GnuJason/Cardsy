@@ -6,6 +6,7 @@ import type {
   SavedKlondikeGame,
   SavedTriPeaksGame,
   SavedGolfGame,
+  SavedPyramidGame,
   UnlockedAchievement,
 } from '../logic/types';
 import { DEFAULT_MODE_STATS } from '../logic/types';
@@ -20,6 +21,7 @@ const KEYS = {
   savedKlondike: 'solitaire_saved_klondike',
   savedTripeaks: 'solitaire_saved_tripeaks',
   savedGolf: 'solitaire_saved_golf',
+  savedPyramid: 'solitaire_saved_pyramid',
   achievements: 'solitaire_achievements',
   playDates: 'solitaire_play_dates',
 } as const;
@@ -106,6 +108,7 @@ const DEFAULT_ALL_STATS: AllStats = {
   klondike: { ...DEFAULT_MODE_STATS },
   tripeaks: { ...DEFAULT_MODE_STATS },
   golf: { ...DEFAULT_MODE_STATS },
+  pyramid: { ...DEFAULT_MODE_STATS },
 };
 
 function validateModeStats(raw: unknown): GameModeStats {
@@ -132,16 +135,17 @@ function validateModeStats(raw: unknown): GameModeStats {
 
 export function getStats(): AllStats {
   const raw = safeGet(KEYS.stats);
-  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS } };
+  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS } };
   try {
     const parsed = JSON.parse(raw);
     return {
       klondike: validateModeStats(parsed?.klondike),
       tripeaks: validateModeStats(parsed?.tripeaks),
       golf: validateModeStats(parsed?.golf),
+      pyramid: validateModeStats(parsed?.pyramid),
     };
   } catch {
-    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS } };
+    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS } };
   }
 }
 
@@ -175,7 +179,7 @@ export function migrateFromLegacy(): void {
 
 export function getGameMode(): GameMode {
   const raw = safeGet(KEYS.gameMode);
-  if (raw === 'klondike' || raw === 'tripeaks' || raw === 'golf') return raw;
+  if (raw === 'klondike' || raw === 'tripeaks' || raw === 'golf' || raw === 'pyramid') return raw;
   return 'klondike';
 }
 
@@ -272,6 +276,37 @@ export function setSavedGolfGame(save: SavedGolfGame): void {
 
 export function clearSavedGolfGame(): void {
   safeRemove(KEYS.savedGolf);
+}
+
+// ── Pyramid Saved Game ──────────────────────────────────────
+
+export function getSavedPyramidGame(): SavedPyramidGame | null {
+  const raw = safeGet(KEYS.savedPyramid);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.state ||
+      typeof parsed.state !== 'object' ||
+      !Array.isArray(parsed.undoStack) ||
+      typeof parsed.savedAt !== 'number'
+    ) {
+      return null;
+    }
+    return parsed as SavedPyramidGame;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedPyramidGame(save: SavedPyramidGame): void {
+  safeSet(KEYS.savedPyramid, JSON.stringify(save));
+}
+
+export function clearSavedPyramidGame(): void {
+  safeRemove(KEYS.savedPyramid);
 }
 
 // ── Achievements ────────────────────────────────────────────
