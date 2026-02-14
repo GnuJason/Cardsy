@@ -13,10 +13,16 @@ export const SUIT_PHOTOS: Record<string, string | null> = {
   spades: null,
 };
 
+const SAFE_FILENAME = /^[a-zA-Z0-9_.-]+\.(png|jpe?g)$/;
+
 /**
  * Returns the card back image URL for the given filename.
+ * Rejects filenames containing path traversal or unexpected characters.
  */
 export function cardBackUrl(filename: string): string {
+  if (!SAFE_FILENAME.test(filename)) {
+    return CARD_BACK_DEFAULT;
+  }
   return `/cards/backs/${filename}`;
 }
 

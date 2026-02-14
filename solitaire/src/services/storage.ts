@@ -185,7 +185,18 @@ export function getSavedKlondikeGame(): SavedKlondikeGame | null {
   const raw = safeGet(KEYS.savedKlondike);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as SavedKlondikeGame;
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.state ||
+      typeof parsed.state !== 'object' ||
+      !Array.isArray(parsed.undoStack) ||
+      typeof parsed.savedAt !== 'number'
+    ) {
+      return null;
+    }
+    return parsed as SavedKlondikeGame;
   } catch {
     return null;
   }
@@ -203,7 +214,18 @@ export function getSavedTriPeaksGame(): SavedTriPeaksGame | null {
   const raw = safeGet(KEYS.savedTripeaks);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as SavedTriPeaksGame;
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.state ||
+      typeof parsed.state !== 'object' ||
+      !Array.isArray(parsed.undoStack) ||
+      typeof parsed.savedAt !== 'number'
+    ) {
+      return null;
+    }
+    return parsed as SavedTriPeaksGame;
   } catch {
     return null;
   }
