@@ -1,5 +1,5 @@
-import type { Card, FreeCellGameState } from '../types';
-import { SUIT_INDEX, SUITS } from '../types';
+import type { FreeCellGameState } from '../types';
+import { SUIT_INDEX } from '../types';
 import {
   canPlaceOnColumn,
   canPlaceOnFoundation,

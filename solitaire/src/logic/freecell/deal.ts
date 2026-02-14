@@ -1,5 +1,4 @@
 import type { Card, FreeCellGameState } from '../types';
-import { SUITS } from '../types';
 import { createDeck, shuffle } from '../deck';
 import { COLUMN_COUNT, FREE_CELL_COUNT, FOUNDATION_COUNT } from './layout';
 

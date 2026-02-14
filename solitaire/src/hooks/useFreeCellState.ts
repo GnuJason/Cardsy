@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from 'react';
-import type { FreeCellGameState, FreeCellSource } from '../logic/types';
+import type { FreeCellGameState } from '../logic/types';
 import { newFreeCellGame } from '../logic/freecell/deal';
 import {
   moveColumnToColumn,
@@ -9,7 +9,6 @@ import {
   moveFreeCellToFoundation,
   autoMoveToFoundations,
   autoFinish,
-  cloneState,
 } from '../logic/freecell/moves';
 import {
   isValidSequence,

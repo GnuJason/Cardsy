@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import type { FreeCellGameState } from '../../logic/types';
 import { SUIT_SYMBOLS, SUITS } from '../../logic/types';
-import { Card, EmptyPile } from '../Card/Card';
+import { Card } from '../Card/Card';
 import styles from './FreeCellBoard.module.css';
 
 interface FreeCellBoardProps {
