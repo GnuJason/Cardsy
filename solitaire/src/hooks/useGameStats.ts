@@ -36,8 +36,16 @@ export function useGameStats() {
       if (m.currentWinStreak > m.bestWinStreak) {
         m.bestWinStreak = m.currentWinStreak;
       }
-      if (m.bestScore === null || score > m.bestScore) {
-        m.bestScore = score;
+      // Golf: lower score is better (fewest cards remaining)
+      // All other modes: higher score is better
+      if (mode === 'golf') {
+        if (m.bestScore === null || score < m.bestScore) {
+          m.bestScore = score;
+        }
+      } else {
+        if (m.bestScore === null || score > m.bestScore) {
+          m.bestScore = score;
+        }
       }
       if (m.bestTime === null || timeSeconds < m.bestTime) {
         m.bestTime = timeSeconds;

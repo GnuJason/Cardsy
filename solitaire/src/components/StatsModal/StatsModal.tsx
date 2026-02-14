@@ -14,6 +14,7 @@ interface StatsModalProps {
 const MODE_LABELS: Record<GameMode, string> = {
   klondike: 'Klondike',
   tripeaks: 'TriPeaks',
+  golf: 'Golf',
 };
 
 function StatRow({ label, value }: { label: string; value: string }) {
@@ -25,15 +26,17 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function renderModeStats(m: GameModeStats) {
+function renderModeStats(m: GameModeStats, mode: GameMode) {
   const winRate =
     m.totalGamesPlayed > 0
       ? `${Math.round((m.totalWins / m.totalGamesPlayed) * 100)}%`
       : '—';
 
+  const scoreLabel = mode === 'golf' ? 'Best (Cards Left)' : 'Best Score';
+
   return (
     <>
-      <StatRow label="Best Score" value={m.bestScore !== null ? String(m.bestScore) : '—'} />
+      <StatRow label={scoreLabel} value={m.bestScore !== null ? String(m.bestScore) : '—'} />
       <StatRow label="Best Time" value={m.bestTime !== null ? formatTime(m.bestTime) : '—'} />
       <StatRow label="Win Streak" value={`${m.currentWinStreak} (best: ${m.bestWinStreak})`} />
       <StatRow label="Total Wins" value={String(m.totalWins)} />
@@ -59,7 +62,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           <h2 className={styles.title}>Statistics</h2>
 
           <div className={styles.tabs}>
-            {(['klondike', 'tripeaks'] as GameMode[]).map((mode) => (
+            {(['klondike', 'tripeaks', 'golf'] as GameMode[]).map((mode) => (
               <button
                 key={mode}
                 className={viewMode === mode ? styles.tabActive : styles.tab}
@@ -71,7 +74,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           </div>
 
           <div className={styles.statsBody}>
-            {renderModeStats(stats[viewMode])}
+            {renderModeStats(stats[viewMode], viewMode)}
           </div>
 
           <div className={styles.actions}>

@@ -1,11 +1,12 @@
 import React from 'react';
-import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame } from '../../logic/types';
+import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame } from '../../logic/types';
 import styles from './ModeSelector.module.css';
 
 interface ModeSelectorProps {
   onSelect: (mode: GameMode) => void;
   savedKlondike: SavedKlondikeGame | null;
   savedTriPeaks: SavedTriPeaksGame | null;
+  savedGolf: SavedGolfGame | null;
   onContinue: (mode: GameMode) => void;
 }
 
@@ -13,6 +14,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   onSelect,
   savedKlondike,
   savedTriPeaks,
+  savedGolf,
   onContinue,
 }) => {
   return (
@@ -46,6 +48,20 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               {savedTriPeaks
                 ? `Continue — ${savedTriPeaks.state.peaksCleared.filter(Boolean).length}/3 peaks cleared`
                 : 'Clear the Peaks'}
+            </span>
+          </button>
+          <button
+            className={styles.modeBtn}
+            onClick={() =>
+              savedGolf ? onContinue('golf') : onSelect('golf')
+            }
+          >
+            <span className={styles.modeIcon}>⛳</span>
+            <span className={styles.modeName}>Golf</span>
+            <span className={styles.modeDesc}>
+              {savedGolf
+                ? `Continue — ${savedGolf.state.cardsRemaining} cards left`
+                : 'Clear the Course'}
             </span>
           </button>
         </div>

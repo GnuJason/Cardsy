@@ -98,7 +98,7 @@ export interface UserSettings {
 
 // ── Game Modes ──────────────────────────────────────────────
 
-export type GameMode = 'klondike' | 'tripeaks';
+export type GameMode = 'klondike' | 'tripeaks' | 'golf';
 
 // ── Per-Mode Statistics ─────────────────────────────────────
 
@@ -114,6 +114,7 @@ export interface GameModeStats {
 export interface AllStats {
   klondike: GameModeStats;
   tripeaks: GameModeStats;
+  golf: GameModeStats;
 }
 
 export const DEFAULT_MODE_STATS: GameModeStats = {
@@ -158,6 +159,26 @@ export interface SavedKlondikeGame {
 export interface SavedTriPeaksGame {
   state: TriPeaksGameState;
   undoStack: TriPeaksGameState[];
+  savedAt: number;
+}
+
+// ── Golf Types ──────────────────────────────────────────────
+
+export type GolfStatus = 'playing' | 'won' | 'no-moves';
+
+export interface GolfGameState {
+  tableau: Card[][];          // 7 columns, up to 5 cards each, all face-up
+  stock: Card[];              // 16 cards initially, no recycle
+  waste: Card[];              // 1 initial card
+  cardsRemaining: number;     // 35 → 0 (this IS the score; lower is better)
+  moves: number;
+  elapsedSeconds: number;
+  status: GolfStatus;
+}
+
+export interface SavedGolfGame {
+  state: GolfGameState;
+  undoStack: GolfGameState[];
   savedAt: number;
 }
 

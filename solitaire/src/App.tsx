@@ -21,6 +21,7 @@ import {
   migrateFromLegacy,
   getSavedKlondikeGame,
   getSavedTriPeaksGame,
+  getSavedGolfGame,
 } from './services/storage';
 import { cardBackUrl } from './config/cardArt';
 
@@ -30,6 +31,9 @@ const KlondikeScreen = lazy(() =>
 );
 const TriPeaksScreen = lazy(() =>
   import('./screens/TriPeaksScreen').then((m) => ({ default: m.TriPeaksScreen })),
+);
+const GolfScreen = lazy(() =>
+  import('./screens/GolfScreen').then((m) => ({ default: m.GolfScreen })),
 );
 
 // Run one-time migration on module load
@@ -51,7 +55,9 @@ export const App: React.FC = () => {
       const hasSaved =
         mode === 'klondike'
           ? !!getSavedKlondikeGame()
-          : !!getSavedTriPeaksGame();
+          : mode === 'tripeaks'
+            ? !!getSavedTriPeaksGame()
+            : !!getSavedGolfGame();
       return !hasSaved;
     }
     return false;
@@ -162,6 +168,14 @@ export const App: React.FC = () => {
     [checkOnWin, stats],
   );
 
+  // Achievement check on win — Golf
+  const handleGolfWin = useCallback(
+    (elapsed: number) => {
+      checkOnWin(stats, 'golf', elapsed, false, false, false);
+    },
+    [checkOnWin, stats],
+  );
+
   // ── Card size class ───────────────────────────────────────
   const sizeClass =
     settings.cardSize === 'large'
@@ -190,6 +204,7 @@ export const App: React.FC = () => {
           onSelect={handleModeSelect}
           savedKlondike={getSavedKlondikeGame()}
           savedTriPeaks={getSavedTriPeaksGame()}
+          savedGolf={getSavedGolfGame()}
           onContinue={handleContinue}
         />
       )}
@@ -231,6 +246,21 @@ export const App: React.FC = () => {
               onShowStats={() => setShowStats(true)}
               onShowAchievements={() => setShowAchievements(true)}
               onWin={handleTriPeaksWin}
+            />
+          )}
+          {selectedMode === 'golf' && (
+            <GolfScreen
+              cardBackImage={cardBackImage}
+              modeStats={stats.golf}
+              reducedMotion={settings.reducedMotion}
+              onRecordStart={() => handleRecordStart('golf')}
+              onRecordWin={(score, time) => handleRecordWin('golf', score, time)}
+              onRecordLoss={() => handleRecordLoss('golf')}
+              onChangeMode={handleChangeMode}
+              onShowSettings={() => setShowSettings(true)}
+              onShowStats={() => setShowStats(true)}
+              onShowAchievements={() => setShowAchievements(true)}
+              onWin={handleGolfWin}
             />
           )}
         </Suspense>
