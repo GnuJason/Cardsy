@@ -9,6 +9,7 @@ import styles from './GameBoard.module.css';
 interface GameBoardProps {
   game: GameState;
   cardBackImage?: string | null;
+  drawCount?: 1 | 3;
   onDraw: () => void;
   onTapWaste: () => void;
   onTapTableau: (pileIndex: number, cardIndex: number) => void;
@@ -18,6 +19,7 @@ interface GameBoardProps {
 export const GameBoard: React.FC<GameBoardProps> = ({
   game,
   cardBackImage,
+  drawCount = 1,
   onDraw,
   onTapWaste,
   onTapTableau,
@@ -33,7 +35,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
             onDraw={onDraw}
             cardBackImage={cardBackImage}
           />
-          <WastePile waste={game.waste} onTap={onTapWaste} />
+          <WastePile waste={game.waste} onTap={onTapWaste} drawCount={drawCount} />
         </div>
 
         <div className={styles.foundations}>

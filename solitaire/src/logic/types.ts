@@ -93,6 +93,7 @@ export interface UserSettings {
   cardBack: string; // filename in public/cards/backs/
   soundEnabled: boolean;
   theme: string; // theme ID from themes config
+  drawCount: 1 | 3; // Klondike draw mode
 }
 
 // ── Game Modes ──────────────────────────────────────────────
@@ -151,6 +152,7 @@ export interface SavedKlondikeGame {
   state: GameState;
   undoStack: GameState[];
   savedAt: number;
+  drawCount: 1 | 3;
 }
 
 export interface SavedTriPeaksGame {

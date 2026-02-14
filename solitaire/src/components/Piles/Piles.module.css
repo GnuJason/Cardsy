@@ -38,3 +38,21 @@
 .refreshIcon:hover {
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* ── Waste pile fan (Draw-3) ── */
+.wasteFan {
+  position: relative;
+  width: calc(var(--card-width) + 50px); /* room for 2 offset cards */
+  height: var(--card-height);
+}
+
+.wasteFanCard {
+  position: absolute;
+  top: 0;
+  left: calc(var(--fan-index, 0) * 25px);
+  pointer-events: none;
+}
+
+.wasteFanCard:last-child {
+  pointer-events: auto;
+}

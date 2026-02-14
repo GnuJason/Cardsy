@@ -34,13 +34,16 @@ function checkWin(state: GameState): GameState {
 
 // ── Draw from stock ─────────────────────────────────────────
 
-export function drawFromStock(state: GameState): GameState {
+export function drawFromStock(state: GameState, count: 1 | 3 = 1): GameState {
   if (state.stock.length === 0) return state;
 
   const next = cloneState(state);
-  const card = next.stock.pop()!;
-  card.faceUp = true;
-  next.waste.push(card);
+  const toDraw = Math.min(count, next.stock.length);
+  for (let i = 0; i < toDraw; i++) {
+    const card = next.stock.pop()!;
+    card.faceUp = true;
+    next.waste.push(card);
+  }
   return next;
 }
 

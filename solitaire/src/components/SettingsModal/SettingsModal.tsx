@@ -47,6 +47,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
+        {/* Draw mode */}
+        <div className={styles.section}>
+          <div className={styles.label}>Draw Mode (Klondike)</div>
+          <div className={styles.options}>
+            <button
+              className={
+                settings.drawCount === 1
+                  ? styles.optionBtnActive
+                  : styles.optionBtn
+              }
+              onClick={() => onUpdate({ ...settings, drawCount: 1 })}
+            >
+              Draw 1
+            </button>
+            <button
+              className={
+                settings.drawCount === 3
+                  ? styles.optionBtnActive
+                  : styles.optionBtn
+              }
+              onClick={() => onUpdate({ ...settings, drawCount: 3 })}
+            >
+              Draw 3
+            </button>
+          </div>
+        </div>
+
         {/* Theme */}
         <div className={styles.section}>
           <div className={styles.label}>Theme</div>

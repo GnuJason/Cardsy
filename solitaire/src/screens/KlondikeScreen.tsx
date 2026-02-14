@@ -4,6 +4,7 @@ import { useTimer } from '../hooks/useTimer';
 import { GameBoard } from '../components/GameBoard/GameBoard';
 import { HUD } from '../components/HUD/HUD';
 import { WinModal } from '../components/WinModal/WinModal';
+import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { timerBonus } from '../logic/scoring';
 import type { GameModeStats } from '../logic/types';
@@ -17,6 +18,8 @@ import {
 interface KlondikeScreenProps {
   cardBackImage: string | null;
   modeStats: GameModeStats;
+  drawCount: 1 | 3;
+  reducedMotion: boolean;
   onRecordStart: () => void;
   onRecordWin: (score: number, time: number) => void;
   onRecordLoss: () => void;
@@ -30,6 +33,8 @@ interface KlondikeScreenProps {
 export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
   cardBackImage,
   modeStats,
+  drawCount: settingsDrawCount,
+  reducedMotion,
   onRecordStart,
   onRecordWin,
   onRecordLoss,
@@ -40,13 +45,15 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
   onWin,
 }) => {
   const klondike = useGameState();
-  const { game, canUndo, canAutoComplete, hasMoves, usedUndo, undoStack, actions } = klondike;
+  const { game, canUndo, canAutoComplete, hasMoves, usedUndo, undoStack, drawCount, actions } = klondike;
 
   const isPlaying = game.status === 'playing';
   const { elapsed, reset: resetTimer } = useTimer(isPlaying);
 
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isAutoCompleting, setIsAutoCompleting] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showWinModal, setShowWinModal] = useState(false);
   const gameStartedRef = useRef(false);
   const restoredRef = useRef(false);
 
@@ -56,7 +63,10 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
     restoredRef.current = true;
     const saved = getSavedKlondikeGame();
     if (saved) {
-      actions.restoreGame(saved.state, saved.undoStack);
+      actions.restoreGame(saved.state, saved.undoStack, saved.drawCount);
+    } else {
+      // Apply drawCount from settings for the initial game
+      actions.setDrawCount(settingsDrawCount);
     }
   }, [actions]);
 
@@ -89,6 +99,7 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
       onWin(elapsed, usedUndo);
       clearSavedKlondikeGame();
       soundManager.play('win');
+      setShowCelebration(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status]);
@@ -109,11 +120,17 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
         state: game,
         undoStack,
         savedAt: Date.now(),
+        drawCount,
       });
     }
-  }, [game, undoStack]);
+  }, [game, undoStack, drawCount]);
 
   // ── Handlers ──────────────────────────────────────────────
+
+  const handleCelebrationComplete = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(true);
+  }, []);
 
   const handleNewGame = useCallback(() => {
     if (autoRef.current) {
@@ -121,17 +138,20 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
       autoRef.current = null;
     }
     setIsAutoCompleting(false);
+    setShowCelebration(false);
+    setShowWinModal(false);
 
     if (game.status === 'playing' && gameStartedRef.current) {
       onRecordLoss();
     }
 
     actions.newGame();
+    actions.setDrawCount(settingsDrawCount);
     resetTimer();
     clearSavedKlondikeGame();
     gameStartedRef.current = false;
     soundManager.play('shuffle');
-  }, [game.status, actions, resetTimer, onRecordLoss]);
+  }, [game.status, actions, resetTimer, onRecordLoss, settingsDrawCount]);
 
   const handleAutoComplete = useCallback(() => {
     setIsAutoCompleting(true);
@@ -208,13 +228,21 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
       <GameBoard
         game={game}
         cardBackImage={cardBackImage}
+        drawCount={drawCount}
         onDraw={handleDraw}
         onTapWaste={handleTapWaste}
         onTapTableau={handleTapTableau}
         onTapFoundation={handleTapFoundation}
       />
 
-      {game.status === 'won' && (
+      {showCelebration && (
+        <WinCelebration
+          onComplete={handleCelebrationComplete}
+          reducedMotion={reducedMotion}
+        />
+      )}
+
+      {showWinModal && (
         <WinModal
           score={game.score}
           moves={game.moves}

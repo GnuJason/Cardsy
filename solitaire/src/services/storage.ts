@@ -28,6 +28,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   cardBack: 'default.png',
   soundEnabled: true,
   theme: DEFAULT_THEME_ID,
+  drawCount: 1,
 };
 
 function safeGet(key: string): string | null {
@@ -78,6 +79,7 @@ export function getSettings(): UserSettings {
       cardBack: typeof parsed.cardBack === 'string' ? parsed.cardBack : DEFAULT_SETTINGS.cardBack,
       soundEnabled: typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : DEFAULT_SETTINGS.soundEnabled,
       theme: typeof parsed.theme === 'string' ? parsed.theme : DEFAULT_SETTINGS.theme,
+      drawCount: parsed.drawCount === 1 || parsed.drawCount === 3 ? parsed.drawCount : DEFAULT_SETTINGS.drawCount,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

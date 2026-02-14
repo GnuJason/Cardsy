@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useTriPeaksState } from '../hooks/useTriPeaksState';
 import { useTimer } from '../hooks/useTimer';
 import { TriPeaksBoard } from '../components/TriPeaksBoard/TriPeaksBoard';
 import { HUD } from '../components/HUD/HUD';
 import { WinModal } from '../components/WinModal/WinModal';
+import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { timerBonus } from '../logic/scoring';
 import type { GameModeStats } from '../logic/types';
@@ -17,6 +18,7 @@ import {
 interface TriPeaksScreenProps {
   cardBackImage: string | null;
   modeStats: GameModeStats;
+  reducedMotion: boolean;
   onRecordStart: () => void;
   onRecordWin: (score: number, time: number) => void;
   onRecordLoss: () => void;
@@ -30,6 +32,7 @@ interface TriPeaksScreenProps {
 export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
   cardBackImage,
   modeStats,
+  reducedMotion,
   onRecordStart,
   onRecordWin,
   onRecordLoss,
@@ -47,6 +50,8 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
 
   const gameStartedRef = useRef(false);
   const restoredRef = useRef(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showWinModal, setShowWinModal] = useState(false);
 
   // Restore saved game on mount
   useEffect(() => {
@@ -89,6 +94,7 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
       onWin(elapsed, usedStock, peaksClearedInStreak);
       clearSavedTriPeaksGame();
       soundManager.play('win');
+      setShowCelebration(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.status]);
@@ -115,7 +121,14 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
 
   // ── Handlers ──────────────────────────────────────────────
 
+  const handleCelebrationComplete = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(true);
+  }, []);
+
   const handleNewGame = useCallback(() => {
+    setShowCelebration(false);
+    setShowWinModal(false);
     if (game.status === 'playing' && gameStartedRef.current) {
       onRecordLoss();
     }
@@ -167,7 +180,14 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
         onDraw={handleDraw}
       />
 
-      {game.status === 'won' && (
+      {showCelebration && (
+        <WinCelebration
+          onComplete={handleCelebrationComplete}
+          reducedMotion={reducedMotion}
+        />
+      )}
+
+      {showWinModal && (
         <WinModal
           score={game.score}
           moves={game.moves}

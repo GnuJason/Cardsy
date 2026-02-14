@@ -206,6 +206,8 @@ export const App: React.FC = () => {
             <KlondikeScreen
               cardBackImage={cardBackImage}
               modeStats={stats.klondike}
+              drawCount={settings.drawCount}
+              reducedMotion={settings.reducedMotion}
               onRecordStart={() => handleRecordStart('klondike')}
               onRecordWin={(score, time) => handleRecordWin('klondike', score, time)}
               onRecordLoss={() => handleRecordLoss('klondike')}
@@ -220,6 +222,7 @@ export const App: React.FC = () => {
             <TriPeaksScreen
               cardBackImage={cardBackImage}
               modeStats={stats.tripeaks}
+              reducedMotion={settings.reducedMotion}
               onRecordStart={() => handleRecordStart('tripeaks')}
               onRecordWin={(score, time) => handleRecordWin('tripeaks', score, time)}
               onRecordLoss={() => handleRecordLoss('tripeaks')}

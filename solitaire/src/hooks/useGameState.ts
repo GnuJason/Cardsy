@@ -19,6 +19,7 @@ interface FullState {
   game: GameState;
   undoStack: GameState[];
   usedUndo: boolean;
+  drawCount: 1 | 3;
 }
 
 type Action =
@@ -31,7 +32,8 @@ type Action =
   | { type: 'AUTO_COMPLETE_STEP' }
   | { type: 'SET_ELAPSED'; seconds: number }
   | { type: 'SET_NO_MOVES' }
-  | { type: 'RESTORE_GAME'; game: GameState; undoStack: GameState[] };
+  | { type: 'SET_DRAW_COUNT'; drawCount: 1 | 3 }
+  | { type: 'RESTORE_GAME'; game: GameState; undoStack: GameState[]; drawCount?: 1 | 3 };
 
 function createInitialState(): FullState {
   const deal = newGame();
@@ -45,6 +47,7 @@ function createInitialState(): FullState {
     },
     undoStack: [],
     usedUndo: false,
+    drawCount: 1,
   };
 }
 
@@ -57,18 +60,20 @@ function pushUndo(state: FullState): GameState[] {
 
 function reducer(state: FullState, action: Action): FullState {
   switch (action.type) {
-    case 'NEW_GAME':
-      return createInitialState();
+    case 'NEW_GAME': {
+      const fresh = createInitialState();
+      return { ...fresh, drawCount: state.drawCount };
+    }
 
     case 'DRAW': {
       if (state.game.stock.length === 0) {
-        // Recycle waste (free for Draw 1)
+        // Recycle waste (free for both Draw 1 & Draw 3)
         const recycled = recycleWaste(state.game);
         if (recycled === state.game) return state;
-        return { game: recycled, undoStack: pushUndo(state), usedUndo: state.usedUndo };
+        return { ...state, game: recycled, undoStack: pushUndo(state) };
       }
-      const drawn = drawFromStock(state.game);
-      return { game: drawn, undoStack: pushUndo(state), usedUndo: state.usedUndo };
+      const drawn = drawFromStock(state.game, state.drawCount);
+      return { ...state, game: drawn, undoStack: pushUndo(state) };
     }
 
     case 'TAP_WASTE': {
@@ -84,7 +89,7 @@ function reducer(state: FullState, action: Action): FullState {
         result = moveWasteToTableau(state.game, target.pileIndex);
       }
       if (!result) return state;
-      return { game: result, undoStack: pushUndo(state), usedUndo: state.usedUndo };
+      return { ...state, game: result, undoStack: pushUndo(state) };
     }
 
     case 'TAP_TABLEAU': {
@@ -98,7 +103,7 @@ function reducer(state: FullState, action: Action): FullState {
       if (cardIndex === pile.length - 1) {
         const toFoundation = moveTableauToFoundation(state.game, pileIndex);
         if (toFoundation) {
-          return { game: toFoundation, undoStack: pushUndo(state), usedUndo: state.usedUndo };
+          return { ...state, game: toFoundation, undoStack: pushUndo(state) };
         }
       }
 
@@ -108,7 +113,7 @@ function reducer(state: FullState, action: Action): FullState {
 
       if (target.zone === 'foundation' && cardIndex === pile.length - 1) {
         const result = moveTableauToFoundation(state.game, pileIndex);
-        if (result) return { game: result, undoStack: pushUndo(state), usedUndo: state.usedUndo };
+        if (result) return { ...state, game: result, undoStack: pushUndo(state) };
       } else if (target.zone === 'tableau') {
         const result = moveTableauToTableau(
           state.game,
@@ -116,7 +121,7 @@ function reducer(state: FullState, action: Action): FullState {
           cardIndex,
           target.pileIndex,
         );
-        if (result) return { game: result, undoStack: pushUndo(state), usedUndo: state.usedUndo };
+        if (result) return { ...state, game: result, undoStack: pushUndo(state) };
       }
 
       return state;
@@ -136,13 +141,13 @@ function reducer(state: FullState, action: Action): FullState {
         score: state.game.score + scoreMove('undo'),
         elapsedSeconds: state.game.elapsedSeconds, // keep current time
       };
-      return { game: undoneGame, undoStack: newStack, usedUndo: true };
+      return { game: undoneGame, undoStack: newStack, usedUndo: true, drawCount: state.drawCount };
     }
 
     case 'AUTO_COMPLETE_STEP': {
       const result = autoCompleteStep(state.game);
       if (!result) return state;
-      return { game: result, undoStack: state.undoStack, usedUndo: state.usedUndo };
+      return { ...state, game: result };
     }
 
     case 'SET_ELAPSED':
@@ -157,11 +162,18 @@ function reducer(state: FullState, action: Action): FullState {
         game: { ...state.game, status: 'no-moves' },
       };
 
+    case 'SET_DRAW_COUNT':
+      return {
+        ...state,
+        drawCount: action.drawCount,
+      };
+
     case 'RESTORE_GAME':
       return {
         game: action.game,
         undoStack: action.undoStack,
         usedUndo: false,
+        drawCount: action.drawCount ?? 1,
       };
 
     default:
@@ -200,8 +212,12 @@ export function useGameState() {
     [],
   );
   const restoreGame = useCallback(
-    (game: GameState, undoStack: GameState[]) =>
-      dispatch({ type: 'RESTORE_GAME', game, undoStack }),
+    (game: GameState, undoStack: GameState[], drawCount?: 1 | 3) =>
+      dispatch({ type: 'RESTORE_GAME', game, undoStack, drawCount }),
+    [],
+  );
+  const setDrawCount = useCallback(
+    (drawCount: 1 | 3) => dispatch({ type: 'SET_DRAW_COUNT', drawCount }),
     [],
   );
 
@@ -209,6 +225,7 @@ export function useGameState() {
     game: state.game,
     undoStack: state.undoStack,
     usedUndo: state.usedUndo,
+    drawCount: state.drawCount,
     canUndo: state.undoStack.length > 0,
     canAutoComplete: canAutoComplete(state.game),
     hasMoves: hasAnyMoves(state.game),
@@ -223,6 +240,7 @@ export function useGameState() {
       setElapsed,
       setNoMoves,
       restoreGame,
+      setDrawCount,
     },
   };
 }
