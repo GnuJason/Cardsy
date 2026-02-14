@@ -1,0 +1,68 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--gap-md) var(--gap-sm);
+}
+
+.pyramid {
+  display: grid;
+  /* 20 half-card columns for the widest row (10 cards × 2 cols each) */
+  grid-template-columns: repeat(20, calc(var(--card-width) / 2));
+  grid-template-rows: repeat(4, calc(var(--card-height) * 0.65));
+  justify-content: center;
+  margin-bottom: var(--gap-lg);
+}
+
+.pyramidSlot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  transition: opacity var(--anim-duration) var(--anim-easing);
+}
+
+.pyramidSlot:empty {
+  opacity: 0;
+}
+
+.exposed {
+  cursor: pointer;
+}
+
+.exposed:hover {
+  filter: brightness(1.05);
+  z-index: 2;
+}
+
+.bottomRow {
+  display: flex;
+  gap: var(--gap-xl);
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--gap-md) 0 var(--gap-xl);
+}
+
+.stockPile {
+  position: relative;
+  cursor: pointer;
+}
+
+.stockCount {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  background: var(--color-hud-bg);
+  color: var(--color-hud-text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.wastePile {
+  min-width: var(--card-width);
+  min-height: var(--card-height);
+}

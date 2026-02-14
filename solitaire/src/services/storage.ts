@@ -1,9 +1,12 @@
-import type { UserSettings } from '../logic/types';
+import type { UserSettings, AllStats, GameModeStats, GameMode } from '../logic/types';
+import { DEFAULT_MODE_STATS } from '../logic/types';
 
 const KEYS = {
   bestScore: 'solitaire_best_score',
   settings: 'solitaire_settings',
   splashSeen: 'solitaire_splash_seen',
+  stats: 'solitaire_stats',
+  gameMode: 'solitaire_mode',
 } as const;
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -23,6 +26,14 @@ function safeGet(key: string): string | null {
 function safeSet(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
+  } catch {
+    // localStorage unavailable — silent fail
+  }
+}
+
+function safeRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
   } catch {
     // localStorage unavailable — silent fail
   }
@@ -66,4 +77,85 @@ export function getSplashSeen(): boolean {
 
 export function setSplashSeen(): void {
   safeSet(KEYS.splashSeen, 'true');
+}
+
+// ── Statistics ──────────────────────────────────────────────
+
+const DEFAULT_ALL_STATS: AllStats = {
+  klondike: { ...DEFAULT_MODE_STATS },
+  tripeaks: { ...DEFAULT_MODE_STATS },
+};
+
+function validateModeStats(raw: unknown): GameModeStats {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_MODE_STATS };
+  const obj = raw as Record<string, unknown>;
+  return {
+    bestScore:
+      typeof obj.bestScore === 'number' && Number.isFinite(obj.bestScore)
+        ? obj.bestScore
+        : null,
+    bestTime:
+      typeof obj.bestTime === 'number' && Number.isFinite(obj.bestTime)
+        ? obj.bestTime
+        : null,
+    currentWinStreak:
+      typeof obj.currentWinStreak === 'number' ? obj.currentWinStreak : 0,
+    bestWinStreak:
+      typeof obj.bestWinStreak === 'number' ? obj.bestWinStreak : 0,
+    totalWins: typeof obj.totalWins === 'number' ? obj.totalWins : 0,
+    totalGamesPlayed:
+      typeof obj.totalGamesPlayed === 'number' ? obj.totalGamesPlayed : 0,
+  };
+}
+
+export function getStats(): AllStats {
+  const raw = safeGet(KEYS.stats);
+  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS } };
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      klondike: validateModeStats(parsed?.klondike),
+      tripeaks: validateModeStats(parsed?.tripeaks),
+    };
+  } catch {
+    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS } };
+  }
+}
+
+export function setStats(stats: AllStats): void {
+  safeSet(KEYS.stats, JSON.stringify(stats));
+}
+
+/**
+ * One-time migration: move legacy `solitaire_best_score` into
+ * the new per-mode stats structure as the Klondike best score.
+ */
+export function migrateFromLegacy(): void {
+  const legacyScore = safeGet(KEYS.bestScore);
+  if (legacyScore === null) return;
+
+  const score = Number(legacyScore);
+  if (!Number.isFinite(score)) {
+    safeRemove(KEYS.bestScore);
+    return;
+  }
+
+  const stats = getStats();
+  if (stats.klondike.bestScore === null || score > stats.klondike.bestScore) {
+    stats.klondike.bestScore = score;
+  }
+  setStats(stats);
+  safeRemove(KEYS.bestScore);
+}
+
+// ── Game Mode Persistence ───────────────────────────────────
+
+export function getGameMode(): GameMode {
+  const raw = safeGet(KEYS.gameMode);
+  if (raw === 'klondike' || raw === 'tripeaks') return raw;
+  return 'klondike';
+}
+
+export function setGameMode(mode: GameMode): void {
+  safeSet(KEYS.gameMode, mode);
 }

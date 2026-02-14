@@ -92,3 +92,53 @@ export interface UserSettings {
   cardSize: 'small' | 'medium' | 'large';
   cardBack: string; // filename in public/cards/backs/
 }
+
+// ── Game Modes ──────────────────────────────────────────────
+
+export type GameMode = 'klondike' | 'tripeaks';
+
+// ── Per-Mode Statistics ─────────────────────────────────────
+
+export interface GameModeStats {
+  bestScore: number | null;
+  bestTime: number | null; // lowest elapsed seconds for a win
+  currentWinStreak: number;
+  bestWinStreak: number;
+  totalWins: number;
+  totalGamesPlayed: number;
+}
+
+export interface AllStats {
+  klondike: GameModeStats;
+  tripeaks: GameModeStats;
+}
+
+export const DEFAULT_MODE_STATS: GameModeStats = {
+  bestScore: null,
+  bestTime: null,
+  currentWinStreak: 0,
+  bestWinStreak: 0,
+  totalWins: 0,
+  totalGamesPlayed: 0,
+};
+
+// ── TriPeaks Types ──────────────────────────────────────────
+
+export interface TriPeaksCard extends Card {
+  pyramidIndex: number; // 0-27 position in the pyramid
+  removed: boolean;
+}
+
+export type TriPeaksStatus = 'playing' | 'won' | 'no-moves';
+
+export interface TriPeaksGameState {
+  pyramid: TriPeaksCard[];
+  stock: Card[];
+  waste: Card[];
+  score: number;
+  moves: number;
+  streak: number; // consecutive plays without stock draw
+  elapsedSeconds: number;
+  status: TriPeaksStatus;
+  peaksCleared: [boolean, boolean, boolean];
+}

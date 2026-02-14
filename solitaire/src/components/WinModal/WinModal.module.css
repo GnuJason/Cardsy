@@ -64,3 +64,9 @@
 .secondaryBtn:hover {
   background: #d0d0d0;
 }
+
+.streakInfo {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 20px;
+}

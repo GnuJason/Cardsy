@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatTime } from '../../hooks/useTimer';
 import { timerBonus } from '../../logic/scoring';
+import type { GameModeStats } from '../../logic/types';
 import styles from './WinModal.module.css';
 
 interface WinModalProps {
@@ -9,6 +10,8 @@ interface WinModalProps {
   elapsed: number;
   bestScore: number | null;
   onNewGame: () => void;
+  modeStats?: GameModeStats;
+  isTriPeaks?: boolean;
 }
 
 export const WinModal: React.FC<WinModalProps> = ({
@@ -17,6 +20,7 @@ export const WinModal: React.FC<WinModalProps> = ({
   elapsed,
   bestScore,
   onNewGame,
+  modeStats,
 }) => {
   const bonus = timerBonus(elapsed);
   const finalScore = score + bonus;
@@ -43,7 +47,19 @@ export const WinModal: React.FC<WinModalProps> = ({
               🏆 <strong>New best score!</strong>
             </>
           )}
+          {modeStats && modeStats.bestTime !== null && elapsed <= modeStats.bestTime && (
+            <>
+              <br />
+              ⏱️ <strong>New best time!</strong>
+            </>
+          )}
         </p>
+        {modeStats && (
+          <p className={styles.streakInfo}>
+            Win streak: <strong>{modeStats.currentWinStreak}</strong>
+            {modeStats.currentWinStreak > 1 && ' 🔥'}
+          </p>
+        )}
         <div className={styles.buttons}>
           <button className={styles.primaryBtn} onClick={onNewGame}>
             Play Again

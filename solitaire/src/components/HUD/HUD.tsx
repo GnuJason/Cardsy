@@ -7,11 +7,13 @@ interface HUDProps {
   moves: number;
   elapsed: number;
   canUndo: boolean;
-  canAutoComplete: boolean;
+  canAutoComplete?: boolean;
   onUndo: () => void;
   onNewGame: () => void;
-  onAutoComplete: () => void;
+  onAutoComplete?: () => void;
   onSettings: () => void;
+  onStats?: () => void;
+  onChangeMode?: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -24,6 +26,8 @@ export const HUD: React.FC<HUDProps> = ({
   onNewGame,
   onAutoComplete,
   onSettings,
+  onStats,
+  onChangeMode,
 }) => {
   return (
     <div className={styles.hud}>
@@ -67,6 +71,15 @@ export const HUD: React.FC<HUDProps> = ({
         >
           🃏 New
         </button>
+        {onStats && (
+          <button
+            className={styles.controlBtn}
+            onClick={onStats}
+            aria-label="Statistics"
+          >
+            📊
+          </button>
+        )}
         <button
           className={styles.controlBtn}
           onClick={onSettings}
@@ -74,6 +87,15 @@ export const HUD: React.FC<HUDProps> = ({
         >
           ⚙
         </button>
+        {onChangeMode && (
+          <button
+            className={styles.controlBtn}
+            onClick={onChangeMode}
+            aria-label="Change game mode"
+          >
+            🔀
+          </button>
+        )}
       </div>
     </div>
   );

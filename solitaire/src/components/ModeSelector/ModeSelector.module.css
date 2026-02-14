@@ -1,0 +1,76 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-splash);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a6b3c 0%, #0d4025 50%, #1a6b3c 100%);
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.content {
+  text-align: center;
+  padding: 40px 24px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-gold);
+  margin-bottom: 36px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px 20px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  min-height: 100px;
+}
+
+.modeBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-gold);
+  transform: scale(1.02);
+}
+
+.modeBtn:active {
+  transform: scale(0.98);
+}
+
+.modeIcon {
+  font-size: 40px;
+  margin-bottom: 4px;
+}
+
+.modeName {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.modeDesc {
+  font-size: 14px;
+  opacity: 0.7;
+}
