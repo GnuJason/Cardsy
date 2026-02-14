@@ -91,6 +91,8 @@ export interface UserSettings {
   reducedMotion: boolean;
   cardSize: 'small' | 'medium' | 'large';
   cardBack: string; // filename in public/cards/backs/
+  soundEnabled: boolean;
+  theme: string; // theme ID from themes config
 }
 
 // ── Game Modes ──────────────────────────────────────────────
@@ -141,4 +143,35 @@ export interface TriPeaksGameState {
   elapsedSeconds: number;
   status: TriPeaksStatus;
   peaksCleared: [boolean, boolean, boolean];
+}
+
+// ── Saved Game (Continue Last Game) ─────────────────────────
+
+export interface SavedKlondikeGame {
+  state: GameState;
+  undoStack: GameState[];
+  savedAt: number;
+}
+
+export interface SavedTriPeaksGame {
+  state: TriPeaksGameState;
+  undoStack: TriPeaksGameState[];
+  savedAt: number;
+}
+
+// ── Achievement Types ───────────────────────────────────────
+
+export interface AchievementDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  mode: GameMode | 'global';
+  tiers?: number[]; // e.g. [5, 25, 100] — progressive thresholds
+}
+
+export interface UnlockedAchievement {
+  id: string;
+  unlockedAt: number;
+  tier?: number; // which threshold was reached (for tiered achievements)
 }

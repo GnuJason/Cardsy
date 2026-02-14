@@ -1,5 +1,14 @@
-import type { UserSettings, AllStats, GameModeStats, GameMode } from '../logic/types';
+import type {
+  UserSettings,
+  AllStats,
+  GameModeStats,
+  GameMode,
+  SavedKlondikeGame,
+  SavedTriPeaksGame,
+  UnlockedAchievement,
+} from '../logic/types';
 import { DEFAULT_MODE_STATS } from '../logic/types';
+import { DEFAULT_THEME_ID } from '../config/themes';
 
 const KEYS = {
   bestScore: 'solitaire_best_score',
@@ -7,12 +16,18 @@ const KEYS = {
   splashSeen: 'solitaire_splash_seen',
   stats: 'solitaire_stats',
   gameMode: 'solitaire_mode',
+  savedKlondike: 'solitaire_saved_klondike',
+  savedTripeaks: 'solitaire_saved_tripeaks',
+  achievements: 'solitaire_achievements',
+  playDates: 'solitaire_play_dates',
 } as const;
 
 const DEFAULT_SETTINGS: UserSettings = {
   reducedMotion: false,
   cardSize: 'medium',
   cardBack: 'default.png',
+  soundEnabled: true,
+  theme: DEFAULT_THEME_ID,
 };
 
 function safeGet(key: string): string | null {
@@ -61,6 +76,8 @@ export function getSettings(): UserSettings {
       reducedMotion: typeof parsed.reducedMotion === 'boolean' ? parsed.reducedMotion : DEFAULT_SETTINGS.reducedMotion,
       cardSize: ['small', 'medium', 'large'].includes(parsed.cardSize) ? parsed.cardSize : DEFAULT_SETTINGS.cardSize,
       cardBack: typeof parsed.cardBack === 'string' ? parsed.cardBack : DEFAULT_SETTINGS.cardBack,
+      soundEnabled: typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : DEFAULT_SETTINGS.soundEnabled,
+      theme: typeof parsed.theme === 'string' ? parsed.theme : DEFAULT_SETTINGS.theme,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -158,4 +175,82 @@ export function getGameMode(): GameMode {
 
 export function setGameMode(mode: GameMode): void {
   safeSet(KEYS.gameMode, mode);
+}
+
+// ── Saved Games (Continue Last Game) ────────────────────────
+
+export function getSavedKlondikeGame(): SavedKlondikeGame | null {
+  const raw = safeGet(KEYS.savedKlondike);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as SavedKlondikeGame;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedKlondikeGame(save: SavedKlondikeGame): void {
+  safeSet(KEYS.savedKlondike, JSON.stringify(save));
+}
+
+export function clearSavedKlondikeGame(): void {
+  safeRemove(KEYS.savedKlondike);
+}
+
+export function getSavedTriPeaksGame(): SavedTriPeaksGame | null {
+  const raw = safeGet(KEYS.savedTripeaks);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as SavedTriPeaksGame;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedTriPeaksGame(save: SavedTriPeaksGame): void {
+  safeSet(KEYS.savedTripeaks, JSON.stringify(save));
+}
+
+export function clearSavedTriPeaksGame(): void {
+  safeRemove(KEYS.savedTripeaks);
+}
+
+// ── Achievements ────────────────────────────────────────────
+
+export function getAchievements(): UnlockedAchievement[] {
+  const raw = safeGet(KEYS.achievements);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function setAchievements(achievements: UnlockedAchievement[]): void {
+  safeSet(KEYS.achievements, JSON.stringify(achievements));
+}
+
+// ── Play Dates (for Dedicated achievement) ──────────────────
+
+export function getPlayDates(): string[] {
+  const raw = safeGet(KEYS.playDates);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordPlayDate(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  const dates = getPlayDates();
+  if (!dates.includes(today)) {
+    // Keep only last 30 days to prevent unbounded growth
+    const updated = [...dates, today].slice(-30);
+    safeSet(KEYS.playDates, JSON.stringify(updated));
+  }
 }

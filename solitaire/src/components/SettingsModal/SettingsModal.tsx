@@ -1,5 +1,6 @@
 import React from 'react';
 import type { UserSettings } from '../../logic/types';
+import { THEMES } from '../../config/themes';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {
@@ -43,6 +44,61 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {size.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Theme */}
+        <div className={styles.section}>
+          <div className={styles.label}>Theme</div>
+          <div className={styles.themeGrid}>
+            {THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                className={
+                  settings.theme === theme.id
+                    ? styles.themeSwatchActive
+                    : styles.themeSwatch
+                }
+                onClick={() => onUpdate({ ...settings, theme: theme.id })}
+                aria-label={theme.name}
+                title={theme.name}
+              >
+                <span
+                  className={styles.swatchColor}
+                  style={{ backgroundColor: theme.swatch }}
+                />
+                <span className={styles.swatchName}>{theme.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sound toggle */}
+        <div className={styles.section}>
+          <div className={styles.toggle}>
+            <span className={styles.toggleLabel}>Sound effects</span>
+            <button
+              className={
+                settings.soundEnabled
+                  ? styles.toggleSwitchOn
+                  : styles.toggleSwitch
+              }
+              onClick={() =>
+                onUpdate({
+                  ...settings,
+                  soundEnabled: !settings.soundEnabled,
+                })
+              }
+              aria-label="Toggle sound effects"
+            >
+              <div
+                className={
+                  settings.soundEnabled
+                    ? styles.toggleKnobOn
+                    : styles.toggleKnob
+                }
+              />
+            </button>
           </div>
         </div>
 

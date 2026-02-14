@@ -122,3 +122,51 @@
   font-size: 16px;
   border-radius: 50px;
 }
+
+/* ── Theme swatches ── */
+
+.themeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.themeSwatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  border: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  min-height: 44px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.themeSwatch:hover {
+  background: #e4e4e4;
+}
+
+.themeSwatchActive {
+  composes: themeSwatch;
+  border-color: var(--color-button-bg);
+  background: #e8f5e9;
+}
+
+.swatchColor {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.swatchName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

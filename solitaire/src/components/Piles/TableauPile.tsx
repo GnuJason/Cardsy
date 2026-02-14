@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { Card as CardType } from '../../logic/types';
 import { Card, EmptyPile } from '../Card/Card';
 import styles from './Piles.module.css';
@@ -16,6 +16,12 @@ export const TableauPile: React.FC<TableauPileProps> = ({
   onCardTap,
   cardBackImage,
 }) => {
+  // Stable callback: bind pileIndex once, Card passes cardIndex via onTapCard
+  const handleTap = useCallback(
+    (cardIndex: number) => onCardTap(pileIndex, cardIndex),
+    [onCardTap, pileIndex],
+  );
+
   if (cards.length === 0) {
     return <EmptyPile />;
   }
@@ -33,7 +39,8 @@ export const TableauPile: React.FC<TableauPileProps> = ({
         >
           <Card
             card={card}
-            onClick={() => onCardTap(pileIndex, idx)}
+            cardIndex={idx}
+            onTapCard={handleTap}
             cardBackImage={cardBackImage}
           />
         </div>

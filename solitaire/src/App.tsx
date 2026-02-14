@@ -1,20 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useGameState } from './hooks/useGameState';
-import { useTriPeaksState } from './hooks/useTriPeaksState';
-import { useTimer } from './hooks/useTimer';
+import React, { useState, useCallback, lazy, Suspense } from 'react';
 import { useGameStats } from './hooks/useGameStats';
-import { GameBoard } from './components/GameBoard/GameBoard';
-import { TriPeaksBoard } from './components/TriPeaksBoard/TriPeaksBoard';
-import { HUD } from './components/HUD/HUD';
+import { useTheme } from './hooks/useTheme';
+import { useAchievements } from './hooks/useAchievements';
 import { SplashScreen } from './components/SplashScreen/SplashScreen';
 import { ModeSelector } from './components/ModeSelector/ModeSelector';
 import { SettingsModal } from './components/SettingsModal/SettingsModal';
 import { StatsModal } from './components/StatsModal/StatsModal';
-import { WinModal } from './components/WinModal/WinModal';
-import { NoMovesModal } from './components/NoMovesModal/NoMovesModal';
+import { AchievementsModal } from './components/AchievementsModal/AchievementsModal';
+import { AchievementToast } from './components/AchievementToast/AchievementToast';
 import { ConfirmModal } from './components/ConfirmModal/ConfirmModal';
-import { timerBonus } from './logic/scoring';
 import type { UserSettings, GameMode } from './logic/types';
+import { soundManager } from './services/sound';
 import {
   getSplashSeen,
   setSplashSeen,
@@ -23,8 +19,18 @@ import {
   getGameMode,
   setGameMode,
   migrateFromLegacy,
+  getSavedKlondikeGame,
+  getSavedTriPeaksGame,
 } from './services/storage';
 import { cardBackUrl } from './config/cardArt';
+
+// Lazy-load screen components for code splitting
+const KlondikeScreen = lazy(() =>
+  import('./screens/KlondikeScreen').then((m) => ({ default: m.KlondikeScreen })),
+);
+const TriPeaksScreen = lazy(() =>
+  import('./screens/TriPeaksScreen').then((m) => ({ default: m.TriPeaksScreen })),
+);
 
 // Run one-time migration on module load
 migrateFromLegacy();
@@ -35,99 +41,41 @@ export const App: React.FC = () => {
 
   // ── Mode selection ────────────────────────────────────────
   const [selectedMode, setSelectedMode] = useState<GameMode | null>(() => {
-    if (!getSplashSeen()) return null; // show splash first
+    if (!getSplashSeen()) return null;
     return getGameMode();
   });
-  const [showModeSelector, setShowModeSelector] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(() => {
+    // Show mode selector if splash already seen but no saved game
+    if (getSplashSeen()) {
+      const mode = getGameMode();
+      const hasSaved =
+        mode === 'klondike'
+          ? !!getSavedKlondikeGame()
+          : !!getSavedTriPeaksGame();
+      return !hasSaved;
+    }
+    return false;
+  });
   const [confirmModeSwitch, setConfirmModeSwitch] = useState(false);
 
   // ── Settings ──────────────────────────────────────────────
   const [settings, setSettingsState] = useState<UserSettings>(getSettings());
   const [showSettings, setShowSettings] = useState(false);
 
+  // Sync sound manager with settings
+  soundManager.setEnabled(settings.soundEnabled);
+
+  // ── Theme ─────────────────────────────────────────────────
+  useTheme(settings.theme, selectedMode === 'tripeaks');
+
   // ── Stats ─────────────────────────────────────────────────
   const { stats, recordGameStart, recordWin, recordLoss, resetStats } = useGameStats();
   const [showStats, setShowStats] = useState(false);
 
-  // ── Game states (both hooks always called — Rules of Hooks) ──
-  const klondike = useGameState();
-  const tripeaks = useTriPeaksState();
-
-  const isKlondike = selectedMode === 'klondike';
-  const isTriPeaks = selectedMode === 'tripeaks';
-
-  // Unified accessors for the active game
-  const activeGame = isKlondike ? klondike.game : isTriPeaks ? tripeaks.game : null;
-  const activeScore = activeGame?.score ?? 0;
-  const activeMoves = activeGame?.moves ?? 0;
-  const activeStatus = activeGame?.status ?? 'playing';
-  const activeCanUndo = isKlondike ? klondike.canUndo : isTriPeaks ? tripeaks.canUndo : false;
-
-  // ── Timer ─────────────────────────────────────────────────
-  const isPlaying = activeStatus === 'playing' && !showSplash && selectedMode !== null && !showModeSelector;
-  const { elapsed, reset: resetTimer } = useTimer(isPlaying);
-
-  // ── Auto-complete (Klondike only) ─────────────────────────
-  const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [isAutoCompleting, setIsAutoCompleting] = useState(false);
-
-  // Track whether the current game has been recorded as started
-  const gameStartedRef = useRef(false);
-
-  // Sync elapsed time to active game state
-  useEffect(() => {
-    if (isKlondike) klondike.actions.setElapsed(elapsed);
-    else if (isTriPeaks) tripeaks.actions.setElapsed(elapsed);
-  }, [elapsed, isKlondike, isTriPeaks, klondike.actions, tripeaks.actions]);
-
-  // Record game start when mode first becomes active
-  useEffect(() => {
-    if (selectedMode && !showModeSelector && !showSplash && !gameStartedRef.current) {
-      recordGameStart(selectedMode);
-      gameStartedRef.current = true;
-    }
-  }, [selectedMode, showModeSelector, showSplash, recordGameStart]);
-
-  // Detect no-moves (Klondike)
-  useEffect(() => {
-    if (
-      isKlondike &&
-      klondike.game.status === 'playing' &&
-      !klondike.hasMoves &&
-      klondike.game.stock.length === 0
-    ) {
-      klondike.actions.setNoMoves();
-    }
-  }, [isKlondike, klondike.game, klondike.hasMoves, klondike.actions]);
-
-  // Detect no-moves (TriPeaks) — handled in playCard/draw, but catch edge cases
-  useEffect(() => {
-    if (
-      isTriPeaks &&
-      tripeaks.game.status === 'playing' &&
-      !tripeaks.hasMoves
-    ) {
-      tripeaks.actions.setNoMoves();
-    }
-  }, [isTriPeaks, tripeaks.game, tripeaks.hasMoves, tripeaks.actions]);
-
-  // Handle win
-  useEffect(() => {
-    if (activeStatus === 'won' && selectedMode) {
-      const bonus = timerBonus(elapsed);
-      const finalScore = activeScore + bonus;
-      recordWin(selectedMode, finalScore, elapsed);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStatus]);
-
-  // Handle loss (no-moves)
-  useEffect(() => {
-    if (activeStatus === 'no-moves' && selectedMode) {
-      recordLoss(selectedMode);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStatus]);
+  // ── Achievements ──────────────────────────────────────────
+  const { unlocked, toastQueue, dismissToast, checkOnWin, checkOnGameStart } =
+    useAchievements();
+  const [showAchievements, setShowAchievements] = useState(false);
 
   // ── Handlers ──────────────────────────────────────────────
 
@@ -135,6 +83,7 @@ export const App: React.FC = () => {
     setSplashSeen();
     setShowSplash(false);
     setShowModeSelector(true);
+    soundManager.play('buttonClick');
   }, []);
 
   const handleModeSelect = useCallback(
@@ -142,82 +91,75 @@ export const App: React.FC = () => {
       setSelectedMode(mode);
       setGameMode(mode);
       setShowModeSelector(false);
-      if (mode === 'klondike') klondike.actions.newGame();
-      else tripeaks.actions.newGame();
-      resetTimer();
-      gameStartedRef.current = false; // will be recorded by effect
-    },
-    [klondike.actions, tripeaks.actions, resetTimer],
-  );
-
-  const handleNewGame = useCallback(() => {
-    if (autoRef.current) {
-      clearInterval(autoRef.current);
-      autoRef.current = null;
-    }
-    setIsAutoCompleting(false);
-
-    // If current game was still in progress, record as loss
-    if (activeStatus === 'playing' && selectedMode && gameStartedRef.current) {
-      recordLoss(selectedMode);
-    }
-
-    if (isKlondike) klondike.actions.newGame();
-    else if (isTriPeaks) tripeaks.actions.newGame();
-    resetTimer();
-    gameStartedRef.current = false;
-  }, [isKlondike, isTriPeaks, klondike.actions, tripeaks.actions, resetTimer, activeStatus, selectedMode, recordLoss]);
-
-  const handleAutoComplete = useCallback(() => {
-    setIsAutoCompleting(true);
-    autoRef.current = setInterval(() => {
-      klondike.actions.autoComplete();
-    }, 150);
-  }, [klondike.actions]);
-
-  // Stop auto-complete when game is won or no more moves to auto-complete
-  useEffect(() => {
-    if (isAutoCompleting && (klondike.game.status === 'won' || !klondike.canAutoComplete)) {
-      if (autoRef.current) {
-        clearInterval(autoRef.current);
-        autoRef.current = null;
-      }
-      setIsAutoCompleting(false);
-    }
-  }, [isAutoCompleting, klondike.game.status, klondike.canAutoComplete]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (autoRef.current) clearInterval(autoRef.current);
-    };
-  }, []);
-
-  const handleChangeMode = useCallback(() => {
-    if (activeStatus === 'playing' && gameStartedRef.current) {
-      setConfirmModeSwitch(true);
-    } else {
-      setShowModeSelector(true);
-    }
-  }, [activeStatus]);
-
-  const handleConfirmModeSwitch = useCallback(() => {
-    if (selectedMode) recordLoss(selectedMode);
-    setConfirmModeSwitch(false);
-    setShowModeSelector(true);
-    if (autoRef.current) {
-      clearInterval(autoRef.current);
-      autoRef.current = null;
-    }
-    setIsAutoCompleting(false);
-  }, [selectedMode, recordLoss]);
-
-  const handleSettingsUpdate = useCallback(
-    (newSettings: UserSettings) => {
-      setSettingsState(newSettings);
-      saveSettings(newSettings);
+      soundManager.play('buttonClick');
     },
     [],
+  );
+
+  const handleContinue = useCallback(
+    (mode: GameMode) => {
+      setSelectedMode(mode);
+      setGameMode(mode);
+      setShowModeSelector(false);
+      soundManager.play('buttonClick');
+    },
+    [],
+  );
+
+  const handleChangeMode = useCallback(() => {
+    setConfirmModeSwitch(true);
+  }, []);
+
+  const handleConfirmModeSwitch = useCallback(() => {
+    setConfirmModeSwitch(false);
+    setShowModeSelector(true);
+    setSelectedMode(null);
+    soundManager.play('buttonClick');
+  }, []);
+
+  const handleSettingsUpdate = useCallback((newSettings: UserSettings) => {
+    setSettingsState(newSettings);
+    saveSettings(newSettings);
+    soundManager.setEnabled(newSettings.soundEnabled);
+  }, []);
+
+  // Stats callbacks passed to screens
+  const handleRecordStart = useCallback(
+    (mode: GameMode) => {
+      recordGameStart(mode);
+      checkOnGameStart(stats, mode);
+    },
+    [recordGameStart, checkOnGameStart, stats],
+  );
+
+  const handleRecordWin = useCallback(
+    (mode: GameMode, score: number, time: number) => {
+      recordWin(mode, score, time);
+    },
+    [recordWin],
+  );
+
+  const handleRecordLoss = useCallback(
+    (mode: GameMode) => {
+      recordLoss(mode);
+    },
+    [recordLoss],
+  );
+
+  // Achievement check on win — Klondike
+  const handleKlondikeWin = useCallback(
+    (elapsed: number, usedUndo: boolean) => {
+      checkOnWin(stats, 'klondike', elapsed, usedUndo, false, false);
+    },
+    [checkOnWin, stats],
+  );
+
+  // Achievement check on win — TriPeaks
+  const handleTriPeaksWin = useCallback(
+    (elapsed: number, usedStock: boolean, peaksClearedInStreak: boolean) => {
+      checkOnWin(stats, 'tripeaks', elapsed, false, usedStock, peaksClearedInStreak);
+    },
+    [checkOnWin, stats],
   );
 
   // ── Card size class ───────────────────────────────────────
@@ -228,11 +170,7 @@ export const App: React.FC = () => {
         ? 'card-size-small'
         : '';
 
-  const rootClass = [
-    sizeClass,
-    settings.reducedMotion ? 'reduced-motion' : '',
-    isTriPeaks ? 'tripeaks-mode' : '',
-  ]
+  const rootClass = [sizeClass, settings.reducedMotion ? 'reduced-motion' : '']
     .filter(Boolean)
     .join(' ');
 
@@ -241,75 +179,61 @@ export const App: React.FC = () => {
       ? cardBackUrl(settings.cardBack)
       : null;
 
-  const modeStats = selectedMode ? stats[selectedMode] : undefined;
-
   // ── Render ────────────────────────────────────────────────
 
   return (
     <div className={rootClass} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {showSplash && <SplashScreen onStart={handleSplashDismiss} />}
+
       {showModeSelector && !showSplash && (
-        <ModeSelector onSelect={handleModeSelect} />
+        <ModeSelector
+          onSelect={handleModeSelect}
+          savedKlondike={getSavedKlondikeGame()}
+          savedTriPeaks={getSavedTriPeaksGame()}
+          onContinue={handleContinue}
+        />
       )}
 
       {selectedMode && !showModeSelector && !showSplash && (
-        <>
-          <HUD
-            score={activeScore}
-            moves={activeMoves}
-            elapsed={elapsed}
-            canUndo={activeCanUndo}
-            canAutoComplete={isKlondike ? klondike.canAutoComplete && !isAutoCompleting : undefined}
-            onUndo={isKlondike ? klondike.actions.undo : tripeaks.actions.undo}
-            onNewGame={handleNewGame}
-            onAutoComplete={isKlondike ? handleAutoComplete : undefined}
-            onSettings={() => setShowSettings(true)}
-            onStats={() => setShowStats(true)}
-            onChangeMode={handleChangeMode}
-          />
-
-          {isKlondike && (
-            <GameBoard
-              game={klondike.game}
+        <Suspense
+          fallback={
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}>
+              Loading…
+            </div>
+          }
+        >
+          {selectedMode === 'klondike' && (
+            <KlondikeScreen
               cardBackImage={cardBackImage}
-              onDraw={klondike.actions.draw}
-              onTapWaste={klondike.actions.tapWaste}
-              onTapTableau={klondike.actions.tapTableau}
-              onTapFoundation={klondike.actions.tapFoundation}
+              modeStats={stats.klondike}
+              onRecordStart={() => handleRecordStart('klondike')}
+              onRecordWin={(score, time) => handleRecordWin('klondike', score, time)}
+              onRecordLoss={() => handleRecordLoss('klondike')}
+              onChangeMode={handleChangeMode}
+              onShowSettings={() => setShowSettings(true)}
+              onShowStats={() => setShowStats(true)}
+              onShowAchievements={() => setShowAchievements(true)}
+              onWin={handleKlondikeWin}
             />
           )}
-
-          {isTriPeaks && (
-            <TriPeaksBoard
-              game={tripeaks.game}
+          {selectedMode === 'tripeaks' && (
+            <TriPeaksScreen
               cardBackImage={cardBackImage}
-              onTapCard={tripeaks.actions.tapCard}
-              onDraw={tripeaks.actions.draw}
+              modeStats={stats.tripeaks}
+              onRecordStart={() => handleRecordStart('tripeaks')}
+              onRecordWin={(score, time) => handleRecordWin('tripeaks', score, time)}
+              onRecordLoss={() => handleRecordLoss('tripeaks')}
+              onChangeMode={handleChangeMode}
+              onShowSettings={() => setShowSettings(true)}
+              onShowStats={() => setShowStats(true)}
+              onShowAchievements={() => setShowAchievements(true)}
+              onWin={handleTriPeaksWin}
             />
           )}
-
-          {activeStatus === 'won' && (
-            <WinModal
-              score={activeScore}
-              moves={activeMoves}
-              elapsed={elapsed}
-              bestScore={modeStats?.bestScore ?? null}
-              onNewGame={handleNewGame}
-              modeStats={modeStats}
-              isTriPeaks={isTriPeaks}
-            />
-          )}
-
-          {activeStatus === 'no-moves' && (
-            <NoMovesModal
-              onUndo={isKlondike ? klondike.actions.undo : tripeaks.actions.undo}
-              onNewGame={handleNewGame}
-              canUndo={activeCanUndo}
-            />
-          )}
-        </>
+        </Suspense>
       )}
 
+      {/* Global modals */}
       {showSettings && (
         <SettingsModal
           settings={settings}
@@ -327,6 +251,13 @@ export const App: React.FC = () => {
         />
       )}
 
+      {showAchievements && (
+        <AchievementsModal
+          unlocked={unlocked}
+          onClose={() => setShowAchievements(false)}
+        />
+      )}
+
       {confirmModeSwitch && (
         <ConfirmModal
           title="Switch Game Mode?"
@@ -336,6 +267,11 @@ export const App: React.FC = () => {
           onConfirm={handleConfirmModeSwitch}
           onCancel={() => setConfirmModeSwitch(false)}
         />
+      )}
+
+      {/* Achievement toasts */}
+      {toastQueue.length > 0 && (
+        <AchievementToast toast={toastQueue[0]} onDismiss={dismissToast} />
       )}
     </div>
   );

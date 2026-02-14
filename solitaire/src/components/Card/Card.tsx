@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { Card as CardType } from '../../logic/types';
 import { suitColor, SUIT_SYMBOLS, RANK_LABELS } from '../../logic/types';
 import { getCardBackImage } from '../../config/cardArt';
@@ -7,12 +7,25 @@ import styles from './Card.module.css';
 interface CardProps {
   card: CardType;
   onClick?: () => void;
+  /** Stable callback pattern: pass index + handler separately to avoid inline closures */
+  cardIndex?: number;
+  onTapCard?: (index: number) => void;
   style?: React.CSSProperties;
   cardBackImage?: string | null;
 }
 
 export const Card: React.FC<CardProps> = React.memo(
-  ({ card, onClick, style, cardBackImage }) => {
+  ({ card, onClick, cardIndex, onTapCard, style, cardBackImage }) => {
+    const handleClick = useCallback(() => {
+      if (onClick) {
+        onClick();
+      } else if (onTapCard !== undefined && cardIndex !== undefined) {
+        onTapCard(cardIndex);
+      }
+    }, [onClick, onTapCard, cardIndex]);
+
+    const isClickable = !!(onClick || (onTapCard && cardIndex !== undefined));
+
     if (!card.faceUp) {
       // Per-card unique back image, with global setting as override
       const backImage = cardBackImage ?? getCardBackImage(card.id);
@@ -21,11 +34,11 @@ export const Card: React.FC<CardProps> = React.memo(
         <div
           className={styles.card}
           style={style}
-          onClick={onClick}
+          onClick={isClickable ? handleClick : undefined}
           role="button"
           aria-label="Face-down card"
           tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+          onKeyDown={(e) => e.key === 'Enter' && isClickable && handleClick()}
         >
           <div className={styles.back}>
             {backImage ? (
@@ -52,11 +65,11 @@ export const Card: React.FC<CardProps> = React.memo(
       <div
         className={styles.card}
         style={style}
-        onClick={onClick}
+        onClick={isClickable ? handleClick : undefined}
         role="button"
         aria-label={`${rankLabel} of ${card.suit}`}
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+        onKeyDown={(e) => e.key === 'Enter' && isClickable && handleClick()}
       >
         <div className={styles.face}>
           <div className={`${styles.topLabel} ${colorClass}`}>

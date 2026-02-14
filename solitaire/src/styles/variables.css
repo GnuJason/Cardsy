@@ -64,10 +64,4 @@
   --fan-offset-down: 18px;
 }
 
-/* ── TriPeaks mode visual variant ── */
-.tripeaks-mode {
-  --color-felt: #1a5b6b;
-  --color-felt-dark: #0d3d4a;
-  --color-button-bg: #2b6a7a;
-  --color-button-hover: #358a9a;
-}
+/* ── TriPeaks mode: theme system now handles felt color via useTheme hook ── */

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import type { TriPeaksGameState } from '../../logic/types';
 import { PYRAMID_POSITIONS } from '../../logic/tripeaks/layout';
 import { isExposed } from '../../logic/tripeaks/rules';
@@ -21,6 +21,20 @@ export const TriPeaksBoard: React.FC<TriPeaksBoardProps> = ({
   const wasteTop =
     game.waste.length > 0 ? game.waste[game.waste.length - 1] : null;
 
+  // Pre-compute exposed status for all cards once per render
+  const exposedFlags = useMemo(
+    () => game.pyramid.map((card, idx) => !card.removed && isExposed(idx, game.pyramid)),
+    [game.pyramid],
+  );
+
+  // Stable callback — Card uses cardIndex + onTapCard pattern
+  const handleTapCard = useCallback(
+    (idx: number) => {
+      if (exposedFlags[idx]) onTapCard(idx);
+    },
+    [onTapCard, exposedFlags],
+  );
+
   return (
     <div className={styles.board}>
       {/* Pyramid */}
@@ -39,7 +53,7 @@ export const TriPeaksBoard: React.FC<TriPeaksBoardProps> = ({
             );
           }
 
-          const exposed = isExposed(idx, game.pyramid);
+          const exposed = exposedFlags[idx];
 
           return (
             <div
@@ -52,7 +66,8 @@ export const TriPeaksBoard: React.FC<TriPeaksBoardProps> = ({
             >
               <Card
                 card={card}
-                onClick={exposed ? () => onTapCard(idx) : undefined}
+                cardIndex={idx}
+                onTapCard={exposed ? handleTapCard : undefined}
                 cardBackImage={cardBackImage}
               />
             </div>

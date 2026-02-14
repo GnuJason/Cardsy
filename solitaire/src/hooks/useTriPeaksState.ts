@@ -10,6 +10,7 @@ import { undoPenalty } from '../logic/tripeaks/scoring';
 interface FullState {
   game: TriPeaksGameState;
   undoStack: TriPeaksGameState[];
+  usedStock: boolean;
 }
 
 type Action =
@@ -18,12 +19,14 @@ type Action =
   | { type: 'TAP_CARD'; pyramidIndex: number }
   | { type: 'UNDO' }
   | { type: 'SET_ELAPSED'; seconds: number }
-  | { type: 'SET_NO_MOVES' };
+  | { type: 'SET_NO_MOVES' }
+  | { type: 'RESTORE_GAME'; game: TriPeaksGameState; undoStack: TriPeaksGameState[] };
 
 function createInitialState(): FullState {
   return {
     game: newTriPeaksGame(),
     undoStack: [],
+    usedStock: false,
   };
 }
 
@@ -42,7 +45,7 @@ function reducer(state: FullState, action: Action): FullState {
       const result = drawFromStock(state.game);
       if (!result) return state;
 
-      const next = { game: result, undoStack: pushUndo(state) };
+      const next = { game: result, undoStack: pushUndo(state), usedStock: true };
 
       // After drawing, check if we now have no moves
       if (!hasAnyMoves(next.game)) {
@@ -57,7 +60,7 @@ function reducer(state: FullState, action: Action): FullState {
     case 'TAP_CARD': {
       const result = playCard(state.game, action.pyramidIndex);
       if (!result) return state;
-      return { game: result, undoStack: pushUndo(state) };
+      return { game: result, undoStack: pushUndo(state), usedStock: state.usedStock };
     }
 
     case 'UNDO': {
@@ -69,7 +72,7 @@ function reducer(state: FullState, action: Action): FullState {
         score: state.game.score + undoPenalty(),
         elapsedSeconds: state.game.elapsedSeconds,
       };
-      return { game: undoneGame, undoStack: newStack };
+      return { game: undoneGame, undoStack: newStack, usedStock: state.usedStock };
     }
 
     case 'SET_ELAPSED':
@@ -82,6 +85,13 @@ function reducer(state: FullState, action: Action): FullState {
       return {
         ...state,
         game: { ...state.game, status: 'no-moves' },
+      };
+
+    case 'RESTORE_GAME':
+      return {
+        game: action.game,
+        undoStack: action.undoStack,
+        usedStock: false,
       };
 
     default:
@@ -109,9 +119,16 @@ export function useTriPeaksState() {
     () => dispatch({ type: 'SET_NO_MOVES' }),
     [],
   );
+  const restoreGame = useCallback(
+    (game: TriPeaksGameState, undoStack: TriPeaksGameState[]) =>
+      dispatch({ type: 'RESTORE_GAME', game, undoStack }),
+    [],
+  );
 
   return {
     game: state.game,
+    undoStack: state.undoStack,
+    usedStock: state.usedStock,
     canUndo: state.undoStack.length > 0,
     hasMoves: hasAnyMoves(state.game),
     actions: {
@@ -121,6 +138,7 @@ export function useTriPeaksState() {
       undo,
       setElapsed,
       setNoMoves,
+      restoreGame,
     },
   };
 }

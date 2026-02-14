@@ -14,6 +14,7 @@ interface HUDProps {
   onSettings: () => void;
   onStats?: () => void;
   onChangeMode?: () => void;
+  onAchievements?: () => void;
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -28,6 +29,7 @@ export const HUD: React.FC<HUDProps> = ({
   onSettings,
   onStats,
   onChangeMode,
+  onAchievements,
 }) => {
   return (
     <div className={styles.hud}>
@@ -78,6 +80,15 @@ export const HUD: React.FC<HUDProps> = ({
             aria-label="Statistics"
           >
             📊
+          </button>
+        )}
+        {onAchievements && (
+          <button
+            className={styles.controlBtn}
+            onClick={onAchievements}
+            aria-label="Achievements"
+          >
+            🏆
           </button>
         )}
         <button

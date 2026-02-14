@@ -18,6 +18,7 @@ import { scoreMove } from '../logic/scoring';
 interface FullState {
   game: GameState;
   undoStack: GameState[];
+  usedUndo: boolean;
 }
 
 type Action =
@@ -29,7 +30,8 @@ type Action =
   | { type: 'UNDO' }
   | { type: 'AUTO_COMPLETE_STEP' }
   | { type: 'SET_ELAPSED'; seconds: number }
-  | { type: 'SET_NO_MOVES' };
+  | { type: 'SET_NO_MOVES' }
+  | { type: 'RESTORE_GAME'; game: GameState; undoStack: GameState[] };
 
 function createInitialState(): FullState {
   const deal = newGame();
@@ -42,6 +44,7 @@ function createInitialState(): FullState {
       status: 'playing',
     },
     undoStack: [],
+    usedUndo: false,
   };
 }
 
@@ -62,10 +65,10 @@ function reducer(state: FullState, action: Action): FullState {
         // Recycle waste (free for Draw 1)
         const recycled = recycleWaste(state.game);
         if (recycled === state.game) return state;
-        return { game: recycled, undoStack: pushUndo(state) };
+        return { game: recycled, undoStack: pushUndo(state), usedUndo: state.usedUndo };
       }
       const drawn = drawFromStock(state.game);
-      return { game: drawn, undoStack: pushUndo(state) };
+      return { game: drawn, undoStack: pushUndo(state), usedUndo: state.usedUndo };
     }
 
     case 'TAP_WASTE': {
@@ -81,7 +84,7 @@ function reducer(state: FullState, action: Action): FullState {
         result = moveWasteToTableau(state.game, target.pileIndex);
       }
       if (!result) return state;
-      return { game: result, undoStack: pushUndo(state) };
+      return { game: result, undoStack: pushUndo(state), usedUndo: state.usedUndo };
     }
 
     case 'TAP_TABLEAU': {
@@ -95,7 +98,7 @@ function reducer(state: FullState, action: Action): FullState {
       if (cardIndex === pile.length - 1) {
         const toFoundation = moveTableauToFoundation(state.game, pileIndex);
         if (toFoundation) {
-          return { game: toFoundation, undoStack: pushUndo(state) };
+          return { game: toFoundation, undoStack: pushUndo(state), usedUndo: state.usedUndo };
         }
       }
 
@@ -105,7 +108,7 @@ function reducer(state: FullState, action: Action): FullState {
 
       if (target.zone === 'foundation' && cardIndex === pile.length - 1) {
         const result = moveTableauToFoundation(state.game, pileIndex);
-        if (result) return { game: result, undoStack: pushUndo(state) };
+        if (result) return { game: result, undoStack: pushUndo(state), usedUndo: state.usedUndo };
       } else if (target.zone === 'tableau') {
         const result = moveTableauToTableau(
           state.game,
@@ -113,7 +116,7 @@ function reducer(state: FullState, action: Action): FullState {
           cardIndex,
           target.pileIndex,
         );
-        if (result) return { game: result, undoStack: pushUndo(state) };
+        if (result) return { game: result, undoStack: pushUndo(state), usedUndo: state.usedUndo };
       }
 
       return state;
@@ -133,13 +136,13 @@ function reducer(state: FullState, action: Action): FullState {
         score: state.game.score + scoreMove('undo'),
         elapsedSeconds: state.game.elapsedSeconds, // keep current time
       };
-      return { game: undoneGame, undoStack: newStack };
+      return { game: undoneGame, undoStack: newStack, usedUndo: true };
     }
 
     case 'AUTO_COMPLETE_STEP': {
       const result = autoCompleteStep(state.game);
       if (!result) return state;
-      return { game: result, undoStack: state.undoStack };
+      return { game: result, undoStack: state.undoStack, usedUndo: state.usedUndo };
     }
 
     case 'SET_ELAPSED':
@@ -152,6 +155,13 @@ function reducer(state: FullState, action: Action): FullState {
       return {
         ...state,
         game: { ...state.game, status: 'no-moves' },
+      };
+
+    case 'RESTORE_GAME':
+      return {
+        game: action.game,
+        undoStack: action.undoStack,
+        usedUndo: false,
       };
 
     default:
@@ -189,9 +199,16 @@ export function useGameState() {
     () => dispatch({ type: 'SET_NO_MOVES' }),
     [],
   );
+  const restoreGame = useCallback(
+    (game: GameState, undoStack: GameState[]) =>
+      dispatch({ type: 'RESTORE_GAME', game, undoStack }),
+    [],
+  );
 
   return {
     game: state.game,
+    undoStack: state.undoStack,
+    usedUndo: state.usedUndo,
     canUndo: state.undoStack.length > 0,
     canAutoComplete: canAutoComplete(state.game),
     hasMoves: hasAnyMoves(state.game),
@@ -205,6 +222,7 @@ export function useGameState() {
       autoComplete,
       setElapsed,
       setNoMoves,
+      restoreGame,
     },
   };
 }
