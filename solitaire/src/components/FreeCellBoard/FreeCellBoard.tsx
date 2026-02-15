@@ -12,8 +12,6 @@ interface FreeCellBoardProps {
   onTapFoundation: (foundIndex: number) => void;
 }
 
-const OVERLAP_PX = 30; // vertical overlap between stacked cards
-
 export const FreeCellBoard: React.FC<FreeCellBoardProps> = ({
   game,
   cardBackImage,
@@ -90,13 +88,13 @@ export const FreeCellBoard: React.FC<FreeCellBoardProps> = ({
         selStart = selectedSource.cardIndex;
       }
 
-      const columnHeight = (col.length - 1) * OVERLAP_PX;
+      const colLen = col.length;
 
       return (
         <div
           key={`col-${colIdx}`}
           className={styles.column}
-          style={{ height: `calc(var(--card-height) + ${columnHeight}px)` }}
+          style={{ height: `calc(var(--card-height) + ${colLen - 1} * var(--fan-offset-down))` }}
         >
           {col.map((card, cardIdx) => {
             const isInSelection = selStart >= 0 && cardIdx >= selStart;
@@ -105,7 +103,7 @@ export const FreeCellBoard: React.FC<FreeCellBoardProps> = ({
               <div
                 key={card.id}
                 className={`${styles.columnCard} ${isInSelection ? styles.selectedCard : ''}`}
-                style={{ top: `${cardIdx * OVERLAP_PX}px` }}
+                style={{ top: `calc(${cardIdx} * var(--fan-offset-down))` }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleColumnTap(colIdx, cardIdx);

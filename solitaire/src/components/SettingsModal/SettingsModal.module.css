@@ -170,3 +170,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Responsive: phone ── */
+@media (max-width: 480px) {
+  .modal {
+    padding: 20px 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .themeGrid {
+    grid-template-columns: 1fr;
+  }
+}

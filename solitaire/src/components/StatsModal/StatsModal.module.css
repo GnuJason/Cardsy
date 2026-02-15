@@ -120,3 +120,25 @@
   border-radius: 50px;
   font-weight: 600;
 }
+
+/* ── Responsive: phone ── */
+@media (max-width: 480px) {
+  .modal {
+    padding: 20px 16px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab,
+  .tabActive {
+    padding: 8px 4px;
+    font-size: 11px;
+    min-height: 40px;
+  }
+
+  .statRow {
+    font-size: 13px;
+  }
+}

@@ -5,9 +5,16 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--gap-md) var(--gap-sm);
-}
 
-/* ── Tableau ─────────────────────────────────────────────── */
+  /* Responsive card scaling: 7 cols + 6 gaps(4) + 2 pad(4) = 32px */
+  --card-width: min(var(--card-width-pref, 80px), calc((100vw - 32px) / 7));
+  --card-height: calc(var(--card-width) * 1.4);
+  --card-font-size: calc(var(--card-width) * 0.225);
+  --card-pip-size: calc(var(--card-width) * 0.3);
+  --card-radius: max(4px, calc(var(--card-width) * 0.1));
+  --fan-offset-down: calc(var(--card-width) * 0.275);
+  --fan-offset-up: calc(var(--card-width) * 0.2);
+}
 
 .tableau {
   display: flex;

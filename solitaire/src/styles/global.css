@@ -63,3 +63,24 @@ button:active {
   animation-duration: 0.01ms !important;
   transition-duration: 0.01ms !important;
 }
+
+/* ── Responsive: phone ── */
+@media (max-width: 600px) {
+  :root {
+    --gap-lg: 8px;
+    --gap-xl: 12px;
+  }
+
+  button {
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+}
+
+/* ── Responsive: landscape phone ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --gap-lg: 6px;
+    --gap-xl: 8px;
+  }
+}

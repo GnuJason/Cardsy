@@ -79,6 +79,20 @@
   display: block;
 }
 
+/* ── Responsive: phone ── */
+@media (max-width: 600px) {
+  .finalPhoto {
+    max-width: 200px;
+    max-height: 280px;
+    width: 50vw;
+  }
+
+  .skipHint {
+    bottom: 12px;
+    font-size: 12px;
+  }
+}
+
 /* Reduced motion: skip all transitions */
 @media (prefers-reduced-motion: reduce) {
   .card, .scatter, .converge {

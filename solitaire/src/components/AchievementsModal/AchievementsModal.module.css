@@ -112,3 +112,28 @@
   font-size: 16px;
   border-radius: 50px;
 }
+
+/* ── Responsive: phone ── */
+@media (max-width: 480px) {
+  .modal {
+    padding: 20px 12px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .cardIcon,
+  .cardLocked {
+    font-size: 22px;
+    width: 28px;
+  }
+
+  .cardName {
+    font-size: 13px;
+  }
+
+  .cardDesc {
+    font-size: 12px;
+  }
+}

@@ -18,6 +18,7 @@
   --color-empty-pile: rgba(255, 255, 255, 0.15);
 
   /* ── Card Dimensions ── */
+  --card-width-pref: 80px;
   --card-width: 80px;
   --card-height: 112px;
   --card-radius: 8px;
@@ -48,6 +49,7 @@
 
 /* ── Large card size override ── */
 .card-size-large {
+  --card-width-pref: 100px;
   --card-width: 100px;
   --card-height: 140px;
   --card-font-size: 22px;
@@ -57,6 +59,7 @@
 
 /* ── Small card size override ── */
 .card-size-small {
+  --card-width-pref: 64px;
   --card-width: 64px;
   --card-height: 90px;
   --card-font-size: 14px;

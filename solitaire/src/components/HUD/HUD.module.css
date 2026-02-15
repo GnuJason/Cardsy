@@ -66,3 +66,53 @@
 .autoCompleteBtn:hover {
   background: #ffdd33;
 }
+
+/* ── Responsive: phone ── */
+@media (max-width: 600px) {
+  .hud {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .stats {
+    gap: 12px;
+  }
+
+  .statValue {
+    font-size: 16px;
+  }
+
+  .statLabel {
+    font-size: 10px;
+  }
+
+  .controls {
+    gap: 4px;
+  }
+
+  .controlBtn {
+    padding: 6px 8px;
+    font-size: 12px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ── Responsive: landscape phone ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hud {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .statValue {
+    font-size: 14px;
+  }
+
+  .controlBtn {
+    padding: 4px 6px;
+    font-size: 12px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+}

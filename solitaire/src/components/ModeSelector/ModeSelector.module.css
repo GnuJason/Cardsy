@@ -74,3 +74,78 @@
   font-size: 14px;
   opacity: 0.7;
 }
+
+/* ── Responsive: phone ── */
+@media (max-width: 600px) {
+  .overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .content {
+    padding: 24px 16px;
+  }
+
+  .title {
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+
+  .modes {
+    gap: 10px;
+  }
+
+  .modeBtn {
+    padding: 14px 16px;
+    min-height: 72px;
+  }
+
+  .modeIcon {
+    font-size: 28px;
+  }
+
+  .modeName {
+    font-size: 18px;
+  }
+}
+
+/* ── Responsive: landscape phone ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .modes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .modeBtn {
+    padding: 10px 12px;
+    min-height: 56px;
+  }
+
+  .modeIcon {
+    font-size: 24px;
+    margin-bottom: 0;
+  }
+
+  .modeName {
+    font-size: 15px;
+  }
+
+  .modeDesc {
+    font-size: 12px;
+  }
+}
