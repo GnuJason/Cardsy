@@ -6,7 +6,7 @@ import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { SpiderWinModal } from '../components/SpiderWinModal/SpiderWinModal';
-import type { GameModeStats, SpiderDifficulty } from '../logic/types';
+import type { GameModeStats } from '../logic/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedSpiderGame,
