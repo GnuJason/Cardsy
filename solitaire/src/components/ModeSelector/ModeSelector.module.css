@@ -3,8 +3,10 @@
   inset: 0;
   z-index: var(--z-splash);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(135deg, #1a6b3c 0%, #0d4025 50%, #1a6b3c 100%);
   animation: fadeIn 0.4s ease-out;
 }
@@ -108,11 +110,6 @@
 
 /* ── Responsive: phone ── */
 @media (max-width: 600px) {
-  .overlay {
-    align-items: flex-start;
-    overflow-y: auto;
-  }
-
   .content {
     padding: 24px 16px;
   }
