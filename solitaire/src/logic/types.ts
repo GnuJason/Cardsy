@@ -98,7 +98,7 @@ export interface UserSettings {
 
 // ── Game Modes ──────────────────────────────────────────────
 
-export type GameMode = 'klondike' | 'tripeaks' | 'golf' | 'pyramid' | 'freecell';
+export type GameMode = 'klondike' | 'tripeaks' | 'golf' | 'pyramid' | 'freecell' | 'spider';
 
 // ── Per-Mode Statistics ─────────────────────────────────────
 
@@ -117,6 +117,7 @@ export interface AllStats {
   golf: GameModeStats;
   pyramid: GameModeStats;
   freecell: GameModeStats;
+  spider: GameModeStats;
 }
 
 export const DEFAULT_MODE_STATS: GameModeStats = {
@@ -232,6 +233,37 @@ export interface SavedFreeCellGame {
   state: FreeCellGameState;
   undoStack: FreeCellGameState[];
   savedAt: number;
+}
+
+// ── Spider Types ────────────────────────────────────────────
+
+export type SpiderDifficulty = 1 | 2 | 4;
+
+export type SpiderStatus = 'playing' | 'won' | 'no-moves';
+
+export interface SpiderSource {
+  colIndex: number;
+  cardIndex: number;
+}
+
+export interface SpiderGameState {
+  columns: Card[][];              // 10 columns
+  stock: Card[];                  // 50 cards initially
+  foundations: Card[][];           // 8 piles for completed runs
+  completedRuns: number;          // 0→8
+  score: number;                  // starts at 500, -1 per move
+  moves: number;
+  elapsedSeconds: number;
+  status: SpiderStatus;
+  difficulty: SpiderDifficulty;
+  selectedSource: SpiderSource | null;
+}
+
+export interface SavedSpiderGame {
+  state: SpiderGameState;
+  undoStack: SpiderGameState[];
+  savedAt: number;
+  difficulty: SpiderDifficulty;
 }
 
 // ── Achievement Types ───────────────────────────────────────

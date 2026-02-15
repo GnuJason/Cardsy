@@ -24,6 +24,7 @@ import {
   getSavedGolfGame,
   getSavedPyramidGame,
   getSavedFreeCellGame,
+  getSavedSpiderGame,
 } from './services/storage';
 import { cardBackUrl } from './config/cardArt';
 
@@ -42,6 +43,9 @@ const PyramidScreen = lazy(() =>
 );
 const FreeCellScreen = lazy(() =>
   import('./screens/FreeCellScreen').then((m) => ({ default: m.FreeCellScreen })),
+);
+const SpiderScreen = lazy(() =>
+  import('./screens/SpiderScreen').then((m) => ({ default: m.SpiderScreen })),
 );
 
 // Run one-time migration on module load
@@ -69,7 +73,9 @@ export const App: React.FC = () => {
               ? !!getSavedGolfGame()
               : mode === 'pyramid'
                 ? !!getSavedPyramidGame()
-                : !!getSavedFreeCellGame();
+                : mode === 'freecell'
+                  ? !!getSavedFreeCellGame()
+                  : !!getSavedSpiderGame();
       return !hasSaved;
     }
     return false;
@@ -204,6 +210,14 @@ export const App: React.FC = () => {
     [checkOnWin, stats],
   );
 
+  // Achievement check on win — Spider
+  const handleSpiderWin = useCallback(
+    (elapsed: number) => {
+      checkOnWin(stats, 'spider', elapsed, false, false, false);
+    },
+    [checkOnWin, stats],
+  );
+
   // ── Card size class ───────────────────────────────────────
   const sizeClass =
     settings.cardSize === 'large'
@@ -235,6 +249,7 @@ export const App: React.FC = () => {
           savedGolf={getSavedGolfGame()}
           savedPyramid={getSavedPyramidGame()}
           savedFreeCell={getSavedFreeCellGame()}
+          savedSpider={getSavedSpiderGame()}
           onContinue={handleContinue}
         />
       )}
@@ -321,6 +336,21 @@ export const App: React.FC = () => {
               onShowStats={() => setShowStats(true)}
               onShowAchievements={() => setShowAchievements(true)}
               onWin={handleFreeCellWin}
+            />
+          )}
+          {selectedMode === 'spider' && (
+            <SpiderScreen
+              cardBackImage={cardBackImage}
+              modeStats={stats.spider}
+              reducedMotion={settings.reducedMotion}
+              onRecordStart={() => handleRecordStart('spider')}
+              onRecordWin={(score, time) => handleRecordWin('spider', score, time)}
+              onRecordLoss={() => handleRecordLoss('spider')}
+              onChangeMode={handleChangeMode}
+              onShowSettings={() => setShowSettings(true)}
+              onShowStats={() => setShowStats(true)}
+              onShowAchievements={() => setShowAchievements(true)}
+              onWin={handleSpiderWin}
             />
           )}
         </Suspense>

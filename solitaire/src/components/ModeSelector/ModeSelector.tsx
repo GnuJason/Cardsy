@@ -1,5 +1,6 @@
-import React from 'react';
-import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame, SavedPyramidGame, SavedFreeCellGame } from '../../logic/types';
+import React, { useState } from 'react';
+import type { GameMode, SavedKlondikeGame, SavedTriPeaksGame, SavedGolfGame, SavedPyramidGame, SavedFreeCellGame, SavedSpiderGame, SpiderDifficulty } from '../../logic/types';
+import { setSpiderDifficulty } from '../../services/storage';
 import styles from './ModeSelector.module.css';
 
 interface ModeSelectorProps {
@@ -9,6 +10,7 @@ interface ModeSelectorProps {
   savedGolf: SavedGolfGame | null;
   savedPyramid: SavedPyramidGame | null;
   savedFreeCell: SavedFreeCellGame | null;
+  savedSpider: SavedSpiderGame | null;
   onContinue: (mode: GameMode) => void;
 }
 
@@ -19,8 +21,16 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   savedGolf,
   savedPyramid,
   savedFreeCell,
+  savedSpider,
   onContinue,
 }) => {
+  const [showSpiderDifficulty, setShowSpiderDifficulty] = useState(false);
+
+  const pickSpiderDifficulty = (d: SpiderDifficulty) => {
+    setSpiderDifficulty(d);
+    onSelect('spider');
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.content}>
@@ -96,6 +106,51 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                 : 'Strategic Stacking'}
             </span>
           </button>
+
+          {/* Spider with difficulty picker */}
+          {showSpiderDifficulty ? (
+            <div className={styles.modeBtn}>
+              <span className={styles.modeIcon}>🕷️</span>
+              <span className={styles.modeName}>Spider</span>
+              <div className={styles.difficultyPicker}>
+                <button
+                  className={styles.difficultyBtn}
+                  onClick={() => pickSpiderDifficulty(1)}
+                >
+                  1 Suit — Easy
+                </button>
+                <button
+                  className={styles.difficultyBtn}
+                  onClick={() => pickSpiderDifficulty(2)}
+                >
+                  2 Suits — Medium
+                </button>
+                <button
+                  className={styles.difficultyBtn}
+                  onClick={() => pickSpiderDifficulty(4)}
+                >
+                  4 Suits — Hard
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className={styles.modeBtn}
+              onClick={() =>
+                savedSpider
+                  ? onContinue('spider')
+                  : setShowSpiderDifficulty(true)
+              }
+            >
+              <span className={styles.modeIcon}>🕷️</span>
+              <span className={styles.modeName}>Spider</span>
+              <span className={styles.modeDesc}>
+                {savedSpider
+                  ? `Continue — ${savedSpider.state.completedRuns}/8 runs`
+                  : 'Build 8 suited runs'}
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </div>

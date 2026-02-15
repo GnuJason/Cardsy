@@ -8,6 +8,8 @@ import type {
   SavedGolfGame,
   SavedPyramidGame,
   SavedFreeCellGame,
+  SavedSpiderGame,
+  SpiderDifficulty,
   UnlockedAchievement,
 } from '../logic/types';
 import { DEFAULT_MODE_STATS } from '../logic/types';
@@ -24,6 +26,8 @@ const KEYS = {
   savedGolf: 'solitaire_saved_golf',
   savedPyramid: 'solitaire_saved_pyramid',
   savedFreeCell: 'solitaire_saved_freecell',
+  savedSpider: 'solitaire_saved_spider',
+  spiderDifficulty: 'solitaire_spider_difficulty',
   achievements: 'solitaire_achievements',
   playDates: 'solitaire_play_dates',
 } as const;
@@ -112,6 +116,7 @@ const DEFAULT_ALL_STATS: AllStats = {
   golf: { ...DEFAULT_MODE_STATS },
   pyramid: { ...DEFAULT_MODE_STATS },
   freecell: { ...DEFAULT_MODE_STATS },
+  spider: { ...DEFAULT_MODE_STATS },
 };
 
 function validateModeStats(raw: unknown): GameModeStats {
@@ -138,7 +143,7 @@ function validateModeStats(raw: unknown): GameModeStats {
 
 export function getStats(): AllStats {
   const raw = safeGet(KEYS.stats);
-  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS }, freecell: { ...DEFAULT_MODE_STATS } };
+  if (!raw) return { ...DEFAULT_ALL_STATS, klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS }, freecell: { ...DEFAULT_MODE_STATS }, spider: { ...DEFAULT_MODE_STATS } };
   try {
     const parsed = JSON.parse(raw);
     return {
@@ -147,9 +152,10 @@ export function getStats(): AllStats {
       golf: validateModeStats(parsed?.golf),
       pyramid: validateModeStats(parsed?.pyramid),
       freecell: validateModeStats(parsed?.freecell),
+      spider: validateModeStats(parsed?.spider),
     };
   } catch {
-    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS }, freecell: { ...DEFAULT_MODE_STATS } };
+    return { klondike: { ...DEFAULT_MODE_STATS }, tripeaks: { ...DEFAULT_MODE_STATS }, golf: { ...DEFAULT_MODE_STATS }, pyramid: { ...DEFAULT_MODE_STATS }, freecell: { ...DEFAULT_MODE_STATS }, spider: { ...DEFAULT_MODE_STATS } };
   }
 }
 
@@ -183,7 +189,7 @@ export function migrateFromLegacy(): void {
 
 export function getGameMode(): GameMode {
   const raw = safeGet(KEYS.gameMode);
-  if (raw === 'klondike' || raw === 'tripeaks' || raw === 'golf' || raw === 'pyramid' || raw === 'freecell') return raw;
+  if (raw === 'klondike' || raw === 'tripeaks' || raw === 'golf' || raw === 'pyramid' || raw === 'freecell' || raw === 'spider') return raw;
   return 'klondike';
 }
 
@@ -342,6 +348,49 @@ export function setSavedFreeCellGame(save: SavedFreeCellGame): void {
 
 export function clearSavedFreeCellGame(): void {
   safeRemove(KEYS.savedFreeCell);
+}
+
+// ── Spider Saved Game ───────────────────────────────────────
+
+export function getSavedSpiderGame(): SavedSpiderGame | null {
+  const raw = safeGet(KEYS.savedSpider);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !parsed.state ||
+      typeof parsed.state !== 'object' ||
+      !Array.isArray(parsed.undoStack) ||
+      typeof parsed.savedAt !== 'number'
+    ) {
+      return null;
+    }
+    return parsed as SavedSpiderGame;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedSpiderGame(save: SavedSpiderGame): void {
+  safeSet(KEYS.savedSpider, JSON.stringify(save));
+}
+
+export function clearSavedSpiderGame(): void {
+  safeRemove(KEYS.savedSpider);
+}
+
+// ── Spider Difficulty Preference ────────────────────────────
+
+export function getSpiderDifficulty(): SpiderDifficulty {
+  const raw = safeGet(KEYS.spiderDifficulty);
+  if (raw === '1' || raw === '2' || raw === '4') return Number(raw) as SpiderDifficulty;
+  return 1;
+}
+
+export function setSpiderDifficulty(difficulty: SpiderDifficulty): void {
+  safeSet(KEYS.spiderDifficulty, String(difficulty));
 }
 
 // ── Achievements ────────────────────────────────────────────

@@ -17,6 +17,7 @@ const MODE_LABELS: Record<GameMode, string> = {
   golf: 'Golf',
   pyramid: 'Pyramid',
   freecell: 'FreeCell',
+  spider: 'Spider',
 };
 
 function StatRow({ label, value }: { label: string; value: string }) {
@@ -39,7 +40,9 @@ function renderModeStats(m: GameModeStats, mode: GameMode) {
       ? 'Best (Cards Left)'
       : mode === 'freecell'
         ? 'Best (Moves)'
-        : 'Best Score';
+        : mode === 'spider'
+          ? 'Best Score'
+          : 'Best Score';
 
   return (
     <>
@@ -69,7 +72,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           <h2 className={styles.title}>Statistics</h2>
 
           <div className={styles.tabs}>
-            {(['klondike', 'tripeaks', 'golf', 'pyramid', 'freecell'] as GameMode[]).map((mode) => (
+            {(['klondike', 'tripeaks', 'golf', 'pyramid', 'freecell', 'spider'] as GameMode[]).map((mode) => (
               <button
                 key={mode}
                 className={viewMode === mode ? styles.tabActive : styles.tab}
