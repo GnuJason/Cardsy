@@ -94,7 +94,13 @@ const CARD_BACKS: Record<string, string> = {
 
 /**
  * Returns the per-card back image URL, or null if none is assigned.
+ * Handles Spider's counter-suffixed IDs (e.g. "spades-5-2" → "spades-5").
  */
 export function getCardBackImage(cardId: string): string | null {
-  return CARD_BACKS[cardId] ?? null;
+  // Direct lookup first (standard 52-card IDs)
+  if (CARD_BACKS[cardId]) return CARD_BACKS[cardId];
+
+  // Strip trailing counter suffix for Spider's 2-deck IDs
+  const baseId = cardId.replace(/-\d+$/, '');
+  return CARD_BACKS[baseId] ?? null;
 }
