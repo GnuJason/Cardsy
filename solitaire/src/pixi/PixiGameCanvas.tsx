@@ -1,9 +1,19 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Container, FederatedPointerEvent, Graphics } from 'pixi.js';
-import { createPixiApp, destroyPixiApp, type PixiAppContext } from './PixiApp';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FederatedPointerEvent, Graphics, Sprite } from 'pixi.js';
+import {
+  createPixiApp,
+  destroyPixiApp,
+  setAppBackground,
+  type PixiAppContext,
+} from './PixiApp';
 import { computeCardSize, getViewportInfo } from './layout/ScalingEngine';
 import { computeLayout } from './layout/LayoutEngine';
-import { generateBackTexture, generateCardTextures, invalidateTextures, makeCardSprite, type TextureCache } from './rendering/CardRenderer';
+import {
+  generateBackTexture,
+  generateCardTextures,
+  invalidateTextures,
+  type TextureCache,
+} from './rendering/CardRenderer';
 import { hitTestPile } from './interaction/HitDetection';
 import { mapTapToEvent } from './interaction/EventMapping';
 import { canDrop, type DragEndpoint } from './interaction/DragValidator';
@@ -11,9 +21,11 @@ import type {
   AnyGameState,
   CardViewModel,
   GameMode,
+  LayoutResult,
   PileType,
   PixiGameCanvasProps,
   PixiGameEvent,
+  PixiThemeColors,
 } from './types';
 import type {
   FreeCellGameState,
@@ -23,6 +35,11 @@ import type {
   SpiderGameState,
   TriPeaksGameState,
 } from '../logic/types';
+import { highContrastOverride } from './HighContrastOverride';
+import { KeyboardOverlay } from './KeyboardOverlay';
+import { SpritePool } from './rendering/SpritePool';
+import { AnimationScheduler } from './animation/AnimationScheduler';
+import type { AnimationPlan, AnimationStep } from './animation/types';
 
 interface PileGroup {
   pileType: PileType;
@@ -30,21 +47,28 @@ interface PileGroup {
   cards: CardViewModel[];
 }
 
-function toViewCards(pileType: PileType, pileIndex: number, cards: CardViewModel['id'][] | any[]): CardViewModel[] {
+function toViewCards(
+  pileType: PileType,
+  pileIndex: number,
+  cards: CardViewModel['id'][] | any[],
+  cardIndexOffset = 0,
+): CardViewModel[] {
   return cards.map((card, cardIndex) => ({
     ...card,
     pileType,
     pileIndex,
-    cardIndex,
+    cardIndex: cardIndex + cardIndexOffset,
   }));
 }
 
-function buildPiles(mode: GameMode, gameState: AnyGameState): PileGroup[] {
+function buildPiles(mode: GameMode, gameState: AnyGameState, drawCount: 1 | 3): PileGroup[] {
   if (mode === 'klondike') {
     const state = gameState as GameState;
+    const wasteStart = Math.max(0, state.waste.length - drawCount);
+    const visibleWaste = state.waste.slice(wasteStart);
     return [
       { pileType: 'stock', pileIndex: 0, cards: toViewCards('stock', 0, state.stock) },
-      { pileType: 'waste', pileIndex: 0, cards: toViewCards('waste', 0, state.waste) },
+      { pileType: 'waste', pileIndex: 0, cards: toViewCards('waste', 0, visibleWaste, wasteStart) },
       ...state.foundations.map((pile, index) => ({
         pileType: 'foundation' as const,
         pileIndex: index,
@@ -142,6 +166,19 @@ interface DragSelection {
   startY: number;
 }
 
+interface DragCandidate {
+  selection: DragSelection;
+  sprite: Sprite;
+}
+
+interface SpriteMeta {
+  event: PixiGameEvent | null;
+  faceUp: boolean;
+  pileType: PileType;
+  pileIndex: number;
+  cardIndex: number;
+}
+
 function emitValidatedDragMove(
   drag: DragSelection,
   targetPile: PileType,
@@ -159,11 +196,29 @@ function emitValidatedDragMove(
   };
 }
 
+function toRenderColors(themeColors: PixiThemeColors): {
+  cardBackground: number;
+  cardBorder: number;
+  redCardColor: number;
+  blackCardColor: number;
+} {
+  return {
+    cardBackground: themeColors.cardBackground,
+    cardBorder: themeColors.cardBorder,
+    redCardColor: themeColors.redCardColor,
+    blackCardColor: themeColors.blackCardColor,
+  };
+}
+
 export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   mode,
   gameState,
   cardBackImage,
   reducedMotion,
+  themeColors,
+  highContrast,
+  cardScale,
+  drawCount = 1,
   onGameEvent,
 }) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -171,66 +226,39 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const textureCacheRef = useRef<TextureCache | null>(null);
   const backTextureRef = useRef<Awaited<ReturnType<typeof generateBackTexture>> | null>(null);
   const dragRef = useRef<DragSelection | null>(null);
+  const dragCandidateRef = useRef<DragCandidate | null>(null);
   const pendingRenderRef = useRef(false);
+  const currentLayoutRef = useRef<LayoutResult | null>(null);
+  const pileCountsRef = useRef<Map<string, number>>(new Map());
+  const cardScaleRef = useRef(cardScale);
+  const spritePoolRef = useRef(new SpritePool());
+  const schedulerRef = useRef(new AnimationScheduler());
+  const spriteMetaRef = useRef(new Map<string, SpriteMeta>());
+  const handlersBoundRef = useRef(new Set<string>());
+  const tickerFnRef = useRef<((ticker: { deltaMS: number }) => void) | null>(null);
 
-  const piles = useMemo(() => buildPiles(mode, gameState), [mode, gameState]);
+  const [layoutState, setLayoutState] = useState<LayoutResult | null>(null);
 
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
+  const effectiveThemeColors = useMemo(
+    () => (highContrast ? highContrastOverride(themeColors) : themeColors),
+    [highContrast, themeColors],
+  );
 
-    let cancelled = false;
-    void (async () => {
-      const ctx = await createPixiApp(host);
-      if (cancelled) {
-        destroyPixiApp(ctx);
-        return;
-      }
-      appCtxRef.current = ctx;
+  const piles = useMemo(
+    () => buildPiles(mode, gameState, drawCount),
+    [mode, gameState, drawCount],
+  );
 
-      const viewport = getViewportInfo(host);
-      const cardSize = computeCardSize(viewport, viewport.dpi, mode);
-      textureCacheRef.current = generateCardTextures(ctx.app, cardSize);
-      backTextureRef.current = await generateBackTexture(ctx.app, cardSize, cardBackImage);
-
-      const resizeObserver = new ResizeObserver(() => {
-        if (!appCtxRef.current || !hostRef.current) return;
-        renderScene();
-      });
-      resizeObserver.observe(host);
-
-      renderScene();
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    })();
-
-    return () => {
-      cancelled = true;
-      if (textureCacheRef.current) {
-        invalidateTextures(textureCacheRef.current);
-      }
-      if (backTextureRef.current) {
-        backTextureRef.current.destroy(true);
-      }
-      textureCacheRef.current = null;
-      backTextureRef.current = null;
-
-      if (appCtxRef.current) {
-        destroyPixiApp(appCtxRef.current);
-      }
-      appCtxRef.current = null;
-    };
-  }, [cardBackImage, mode]);
-
-  useEffect(() => {
-    if (dragRef.current) {
-      pendingRenderRef.current = true;
-      return;
+  const pileCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const pile of piles) {
+      map.set(`${pile.pileType}-${pile.pileIndex}`, pile.cards.length);
     }
-    renderScene();
-  }, [piles, reducedMotion]);
+    return map;
+  }, [piles]);
+
+  pileCountsRef.current = pileCounts;
+  cardScaleRef.current = cardScale;
 
   const renderScene = (): void => {
     const host = hostRef.current;
@@ -241,94 +269,148 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     if (!host || !ctx || !textures || !backTexture) return;
 
     const viewport = getViewportInfo(host);
-    const cardSize = computeCardSize(viewport, viewport.dpi, mode);
-    const layout = computeLayout(mode, viewport, cardSize);
+    const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+    const layout = computeLayout(mode, viewport, cardSize, pileCountsRef.current);
+    currentLayoutRef.current = layout;
+    setLayoutState(layout);
 
-    ctx.root.removeChildren();
+    const animationSteps: AnimationStep[] = [];
+
+    spritePoolRef.current.beginFrame();
 
     for (const pileLayout of layout.piles) {
-      const pileData = piles.find((pile) => pile.pileType === pileLayout.pileType && pile.pileIndex === pileLayout.pileIndex);
-      const pileContainer = new Container();
-      pileContainer.x = pileLayout.x;
-      pileContainer.y = pileLayout.y;
-      pileContainer.sortableChildren = true;
-
       const placeholder = new Graphics()
         .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
-        .stroke({ color: 0xffffff, width: 2, alpha: 0.3 });
-      pileContainer.addChild(placeholder);
+        .stroke({
+          color: effectiveThemeColors.placeholderStroke,
+          width: 2,
+          alpha: effectiveThemeColors.placeholderAlpha,
+        });
+      placeholder.x = pileLayout.x;
+      placeholder.y = pileLayout.y;
+      placeholder.zIndex = 0;
+      ctx.root.addChild(placeholder);
 
+      const pileData = piles.find(
+        (pile) => pile.pileType === pileLayout.pileType && pile.pileIndex === pileLayout.pileIndex,
+      );
       const cards = pileData?.cards ?? [];
-      for (const [index, card] of cards.entries()) {
-        const sprite = makeCardSprite(card.id, textures, backTexture, card.faceUp);
-        sprite.width = cardSize.width;
-        sprite.height = cardSize.height;
 
+      for (const [index, card] of cards.entries()) {
+        const spriteKey = card.id;
+        const texture = card.faceUp ? textures.get(card.id) ?? backTexture : backTexture;
+        const sprite = spritePoolRef.current.acquire(spriteKey, texture);
+
+        const fromX = sprite.x;
+        const fromY = sprite.y;
+        const fromAlpha = sprite.alpha || 1;
+
+        let targetX = pileLayout.x;
+        let targetY = pileLayout.y;
         if (pileLayout.fanDirection === 'down') {
-          sprite.y = pileLayout.fanOffset * index;
+          targetY += pileLayout.fanOffset * index;
         } else if (pileLayout.fanDirection === 'right') {
-          sprite.x = pileLayout.fanOffset * index;
+          targetX += pileLayout.fanOffset * index;
         }
 
-        const event = mapTapToEvent(mode, pileLayout.pileType, pileLayout.pileIndex, index);
-        if (event) {
+        sprite.width = cardSize.width;
+        sprite.height = cardSize.height;
+        sprite.zIndex = index + 1;
+
+        const event = mapTapToEvent(mode, pileLayout.pileType, pileLayout.pileIndex, card.cardIndex);
+        spriteMetaRef.current.set(spriteKey, {
+          event,
+          faceUp: card.faceUp,
+          pileType: pileLayout.pileType,
+          pileIndex: pileLayout.pileIndex,
+          cardIndex: card.cardIndex,
+        });
+
+        if (!handlersBoundRef.current.has(spriteKey)) {
+          handlersBoundRef.current.add(spriteKey);
+
           sprite.eventMode = 'static';
           sprite.cursor = 'pointer';
 
           sprite.on('pointertap', () => {
-            onGameEvent(event);
+            const meta = spriteMetaRef.current.get(spriteKey);
+            if (meta?.event) {
+              onGameEvent(meta.event);
+            }
           });
 
           sprite.on('pointerdown', (pointer: FederatedPointerEvent) => {
-            if (!card.faceUp) return;
-            dragRef.current = {
-              sourcePile: pileLayout.pileType,
-              sourcePileIndex: pileLayout.pileIndex,
-              sourceCardIndex: index,
-              startX: pointer.global.x,
-              startY: pointer.global.y,
+            const meta = spriteMetaRef.current.get(spriteKey);
+            if (!meta || !meta.faceUp) return;
+            dragCandidateRef.current = {
+              selection: {
+                sourcePile: meta.pileType,
+                sourcePileIndex: meta.pileIndex,
+                sourceCardIndex: meta.cardIndex,
+                startX: pointer.global.x,
+                startY: pointer.global.y,
+              },
+              sprite,
             };
-            sprite.alpha = 0.92;
-            sprite.zIndex = 5000;
           });
 
           sprite.on('globalpointermove', (pointer: FederatedPointerEvent) => {
+            const candidate = dragCandidateRef.current;
+            if (candidate && candidate.sprite === sprite && !dragRef.current) {
+              const dx = pointer.global.x - candidate.selection.startX;
+              const dy = pointer.global.y - candidate.selection.startY;
+              if (Math.abs(dx) + Math.abs(dy) >= 6) {
+                dragRef.current = { ...candidate.selection };
+                dragCandidateRef.current = null;
+                sprite.alpha = 0.92;
+                sprite.zIndex = 5000;
+              }
+            }
+
             if (!dragRef.current) return;
-            const dx = pointer.global.x - dragRef.current.startX;
-            const dy = pointer.global.y - dragRef.current.startY;
-            if (Math.abs(dx) + Math.abs(dy) < 6) return;
-            sprite.x += dx;
-            sprite.y += dy;
+            const dragDx = pointer.global.x - dragRef.current.startX;
+            const dragDy = pointer.global.y - dragRef.current.startY;
+            if (Math.abs(dragDx) + Math.abs(dragDy) < 1) return;
+            sprite.x += dragDx;
+            sprite.y += dragDy;
             dragRef.current.startX = pointer.global.x;
             dragRef.current.startY = pointer.global.y;
           });
 
           const handlePointerUp = (pointer: FederatedPointerEvent) => {
-            if (!dragRef.current) return;
-            const hit = hitTestPile(pointer.global, layout);
+            const activeDrag = dragRef.current;
+            dragCandidateRef.current = null;
+            if (!activeDrag) return;
+
+            const activeLayout = currentLayoutRef.current;
             sprite.alpha = 1;
-            if (hit) {
-              const source: DragEndpoint = {
-                pileType: dragRef.current.sourcePile,
-                pileIndex: dragRef.current.sourcePileIndex,
-                cardIndex: dragRef.current.sourceCardIndex,
-              };
-              const target: DragEndpoint = {
-                pileType: hit.pileType,
-                pileIndex: hit.pileIndex,
-                cardIndex: hit.cardIndex,
-              };
-              if (canDrop(mode, gameState, source, target)) {
-                onGameEvent(
-                  emitValidatedDragMove(
-                  dragRef.current,
-                  hit.pileType,
-                  hit.pileIndex,
-                  hit.cardIndex,
-                  ),
-                );
+
+            if (activeLayout) {
+              const hit = hitTestPile(pointer.global, activeLayout, pileCountsRef.current);
+              if (hit) {
+                const source: DragEndpoint = {
+                  pileType: activeDrag.sourcePile,
+                  pileIndex: activeDrag.sourcePileIndex,
+                  cardIndex: activeDrag.sourceCardIndex,
+                };
+                const target: DragEndpoint = {
+                  pileType: hit.pileType,
+                  pileIndex: hit.pileIndex,
+                  cardIndex: hit.cardIndex,
+                };
+                if (canDrop(mode, gameState, source, target)) {
+                  onGameEvent(
+                    emitValidatedDragMove(
+                      activeDrag,
+                      hit.pileType,
+                      hit.pileIndex,
+                      hit.cardIndex,
+                    ),
+                  );
+                }
               }
             }
+
             dragRef.current = null;
             if (pendingRenderRef.current) {
               pendingRenderRef.current = false;
@@ -340,11 +422,38 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           sprite.on('pointerupoutside', handlePointerUp);
         }
 
-        sprite.zIndex = index + 1;
-        pileContainer.addChild(sprite);
-      }
+        if (reducedMotion || fromX === 0 && fromY === 0 && sprite.parent === null) {
+          sprite.x = targetX;
+          sprite.y = targetY;
+          sprite.alpha = 1;
+        } else if (fromX !== targetX || fromY !== targetY) {
+          animationSteps.push({
+            spriteKey,
+            from: { x: fromX, y: fromY, alpha: fromAlpha },
+            to: { x: targetX, y: targetY, alpha: 1 },
+            durationMs: reducedMotion ? 0 : 140,
+            easing: 'easeOut',
+          });
+        }
 
-      ctx.root.addChild(pileContainer);
+        ctx.root.addChild(sprite);
+      }
+    }
+
+    spritePoolRef.current.endFrame();
+
+    if (animationSteps.length > 0) {
+      const plan: AnimationPlan = {
+        steps: animationSteps,
+        groups: [animationSteps.map((_, index) => index)],
+        onComplete: () => {
+          if (pendingRenderRef.current) {
+            pendingRenderRef.current = false;
+            renderScene();
+          }
+        },
+      };
+      schedulerRef.current.schedule(plan, new Map(spritePoolRef.current.active));
     }
 
     if (reducedMotion) {
@@ -354,17 +463,137 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     }
   };
 
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+
+    let active = true;
+    const resizeObserver = new ResizeObserver(() => {
+      if (!appCtxRef.current || !hostRef.current) return;
+      if (schedulerRef.current.isAnimating) {
+        pendingRenderRef.current = true;
+        return;
+      }
+      renderScene();
+    });
+
+    void (async () => {
+      const ctx = await createPixiApp(host, effectiveThemeColors.feltColor);
+      if (!active) {
+        destroyPixiApp(ctx);
+        return;
+      }
+
+      appCtxRef.current = ctx;
+
+      const tick = (ticker: { deltaMS: number }) => {
+        schedulerRef.current.update(ticker.deltaMS);
+      };
+      tickerFnRef.current = tick;
+      ctx.app.ticker.add(tick);
+
+      const viewport = getViewportInfo(host);
+      const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+      textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors));
+
+      const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage);
+      if (!active) {
+        generatedBackTexture.destroy(true);
+        return;
+      }
+      backTextureRef.current = generatedBackTexture;
+
+      resizeObserver.observe(host);
+      renderScene();
+    })();
+
+    return () => {
+      active = false;
+      resizeObserver.disconnect();
+      dragRef.current = null;
+      dragCandidateRef.current = null;
+      schedulerRef.current.cancel();
+
+      if (textureCacheRef.current) {
+        invalidateTextures(textureCacheRef.current);
+      }
+      if (backTextureRef.current) {
+        backTextureRef.current.destroy(true);
+      }
+      textureCacheRef.current = null;
+      backTextureRef.current = null;
+      spriteMetaRef.current.clear();
+      handlersBoundRef.current.clear();
+      spritePoolRef.current.destroyAll();
+
+      if (appCtxRef.current && tickerFnRef.current) {
+        appCtxRef.current.app.ticker.remove(tickerFnRef.current);
+      }
+      tickerFnRef.current = null;
+
+      if (appCtxRef.current) {
+        destroyPixiApp(appCtxRef.current);
+      }
+      appCtxRef.current = null;
+    };
+  }, [cardBackImage, mode]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    const ctx = appCtxRef.current;
+    if (!host || !ctx) return;
+
+    setAppBackground(ctx, effectiveThemeColors.feltColor);
+
+    const viewport = getViewportInfo(host);
+    const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+
+    if (textureCacheRef.current) {
+      invalidateTextures(textureCacheRef.current);
+    }
+    textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors));
+
+    if (schedulerRef.current.isAnimating) {
+      pendingRenderRef.current = true;
+      return;
+    }
+    renderScene();
+  }, [effectiveThemeColors, mode]);
+
+  useEffect(() => {
+    if (dragRef.current || schedulerRef.current.isAnimating) {
+      pendingRenderRef.current = true;
+      return;
+    }
+    renderScene();
+  }, [piles, reducedMotion, mode, cardScale]);
+
   return (
     <div
-      ref={hostRef}
-      role="img"
-      aria-label="Solitaire game board"
       style={{
+        position: 'relative',
         flex: 1,
         minHeight: 420,
         width: '100%',
         touchAction: 'none',
       }}
-    />
+    >
+      <div
+        ref={hostRef}
+        role="img"
+        aria-hidden="true"
+        style={{
+          width: '100%',
+          height: '100%',
+        }}
+      />
+      {layoutState && (
+        <KeyboardOverlay
+          layout={layoutState}
+          mode={mode}
+          onGameEvent={onGameEvent}
+        />
+      )}
+    </div>
   );
 };
