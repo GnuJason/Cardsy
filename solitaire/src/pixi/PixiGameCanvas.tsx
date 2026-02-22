@@ -21,6 +21,7 @@ import { mapTapToEvent } from './interaction/EventMapping';
 import { canDrop, type DragEndpoint } from './interaction/DragValidator';
 import type {
   AnyGameState,
+  CardSize,
   CardViewModel,
   GameMode,
   LayoutResult,
