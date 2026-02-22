@@ -14,13 +14,16 @@ import {
   setSavedKlondikeGame,
   clearSavedKlondikeGame,
 } from '../services/storage';
-import type { PixiGameEvent } from '../pixi/types';
+import type { PixiGameEvent, PixiThemeColors } from '../pixi/types';
 
 interface KlondikeScreenProps {
   cardBackImage: string | null;
+  themeColors: PixiThemeColors;
   modeStats: GameModeStats;
   drawCount: 1 | 3;
   reducedMotion: boolean;
+  highContrast: boolean;
+  cardScale: string;
   onRecordStart: () => void;
   onRecordWin: (score: number, time: number) => void;
   onRecordLoss: () => void;
@@ -33,9 +36,12 @@ interface KlondikeScreenProps {
 
 export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
   cardBackImage,
+  themeColors,
   modeStats,
   drawCount: settingsDrawCount,
   reducedMotion,
+  highContrast,
+  cardScale,
   onRecordStart,
   onRecordWin,
   onRecordLoss,
@@ -269,6 +275,9 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
         gameState={game}
         cardBackImage={cardBackImage}
         reducedMotion={reducedMotion}
+        themeColors={themeColors}
+        highContrast={highContrast}
+        cardScale={cardScale}
         drawCount={drawCount}
         onGameEvent={handleGameEvent}
       />

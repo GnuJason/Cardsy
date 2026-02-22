@@ -5,11 +5,14 @@ export interface PixiAppContext {
   root: Container;
 }
 
-export async function createPixiApp(container: HTMLDivElement): Promise<PixiAppContext> {
+export async function createPixiApp(
+  container: HTMLDivElement,
+  backgroundColor?: number,
+): Promise<PixiAppContext> {
   const app = new Application();
   await app.init({
     resizeTo: container,
-    backgroundColor: 0x0b6b3a,
+    backgroundColor: backgroundColor ?? 0x0b6b3a,
     antialias: true,
     autoDensity: true,
     preference: 'webgl',
@@ -29,4 +32,8 @@ export function destroyPixiApp(ctx: PixiAppContext): void {
     canvas.parentElement.removeChild(canvas);
   }
   ctx.app.destroy(true, { children: true, texture: true });
+}
+
+export function setAppBackground(ctx: PixiAppContext, color: number): void {
+  ctx.app.renderer.background.color = color;
 }

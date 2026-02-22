@@ -1,4 +1,4 @@
-import React, { useState, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useCallback, lazy, Suspense, useMemo } from 'react';
 import { useGameStats } from './hooks/useGameStats';
 import { useTheme } from './hooks/useTheme';
 import { useAchievements } from './hooks/useAchievements';
@@ -27,6 +27,7 @@ import {
   getSavedSpiderGame,
 } from './services/storage';
 import { cardBackUrl } from './config/cardArt';
+import { themeToPixiColors } from './pixi/ThemeAdapter';
 
 // Lazy-load screen components for code splitting
 const KlondikeScreen = lazy(() =>
@@ -90,7 +91,8 @@ export const App: React.FC = () => {
   soundManager.setEnabled(settings.soundEnabled);
 
   // ── Theme ─────────────────────────────────────────────────
-  useTheme(settings.theme, selectedMode === 'tripeaks');
+  const { theme } = useTheme(settings.theme, selectedMode === 'tripeaks');
+  const pixiThemeColors = useMemo(() => themeToPixiColors(theme), [theme]);
 
   // ── Stats ─────────────────────────────────────────────────
   const { stats, recordGameStart, recordWin, recordLoss, resetStats } = useGameStats();
@@ -218,7 +220,10 @@ export const App: React.FC = () => {
     [checkOnWin, stats],
   );
 
-  const rootClass = [settings.reducedMotion ? 'reduced-motion' : '']
+  const rootClass = [
+    settings.reducedMotion ? 'reduced-motion' : '',
+    `card-scale-${settings.cardScale}`,
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -257,9 +262,12 @@ export const App: React.FC = () => {
           {selectedMode === 'klondike' && (
             <KlondikeScreen
               cardBackImage={cardBackImage}
+              themeColors={pixiThemeColors}
               modeStats={stats.klondike}
               drawCount={settings.drawCount}
               reducedMotion={settings.reducedMotion}
+              highContrast={settings.highContrast}
+              cardScale={settings.cardScale}
               onRecordStart={() => handleRecordStart('klondike')}
               onRecordWin={(score, time) => handleRecordWin('klondike', score, time)}
               onRecordLoss={() => handleRecordLoss('klondike')}
@@ -273,8 +281,11 @@ export const App: React.FC = () => {
           {selectedMode === 'tripeaks' && (
             <TriPeaksScreen
               cardBackImage={cardBackImage}
+              themeColors={pixiThemeColors}
               modeStats={stats.tripeaks}
               reducedMotion={settings.reducedMotion}
+              highContrast={settings.highContrast}
+              cardScale={settings.cardScale}
               onRecordStart={() => handleRecordStart('tripeaks')}
               onRecordWin={(score, time) => handleRecordWin('tripeaks', score, time)}
               onRecordLoss={() => handleRecordLoss('tripeaks')}
@@ -288,8 +299,11 @@ export const App: React.FC = () => {
           {selectedMode === 'golf' && (
             <GolfScreen
               cardBackImage={cardBackImage}
+              themeColors={pixiThemeColors}
               modeStats={stats.golf}
               reducedMotion={settings.reducedMotion}
+              highContrast={settings.highContrast}
+              cardScale={settings.cardScale}
               onRecordStart={() => handleRecordStart('golf')}
               onRecordWin={(score, time) => handleRecordWin('golf', score, time)}
               onRecordLoss={() => handleRecordLoss('golf')}
@@ -303,8 +317,11 @@ export const App: React.FC = () => {
           {selectedMode === 'pyramid' && (
             <PyramidScreen
               cardBackImage={cardBackImage}
+              themeColors={pixiThemeColors}
               modeStats={stats.pyramid}
               reducedMotion={settings.reducedMotion}
+              highContrast={settings.highContrast}
+              cardScale={settings.cardScale}
               onRecordStart={() => handleRecordStart('pyramid')}
               onRecordWin={(score, time) => handleRecordWin('pyramid', score, time)}
               onRecordLoss={() => handleRecordLoss('pyramid')}
@@ -318,8 +335,11 @@ export const App: React.FC = () => {
           {selectedMode === 'freecell' && (
             <FreeCellScreen
               cardBackImage={cardBackImage}
+              themeColors={pixiThemeColors}
               modeStats={stats.freecell}
               reducedMotion={settings.reducedMotion}
+              highContrast={settings.highContrast}
+              cardScale={settings.cardScale}
               onRecordStart={() => handleRecordStart('freecell')}
               onRecordWin={(score, time) => handleRecordWin('freecell', score, time)}
               onRecordLoss={() => handleRecordLoss('freecell')}
@@ -333,8 +353,11 @@ export const App: React.FC = () => {
           {selectedMode === 'spider' && (
             <SpiderScreen
               cardBackImage={cardBackImage}
+              themeColors={pixiThemeColors}
               modeStats={stats.spider}
               reducedMotion={settings.reducedMotion}
+              highContrast={settings.highContrast}
+              cardScale={settings.cardScale}
               onRecordStart={() => handleRecordStart('spider')}
               onRecordWin={(score, time) => handleRecordWin('spider', score, time)}
               onRecordLoss={() => handleRecordLoss('spider')}

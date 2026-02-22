@@ -86,6 +86,16 @@ export interface PixiLayoutConfig {
   rowGap: number;
 }
 
+export interface PixiThemeColors {
+  feltColor: number;
+  cardBackground: number;
+  cardBorder: number;
+  redCardColor: number;
+  blackCardColor: number;
+  placeholderStroke: number;
+  placeholderAlpha: number;
+}
+
 export type PixiGameEvent =
   | { type: 'DRAW' }
   | { type: 'TAP_WASTE' }
@@ -111,6 +121,9 @@ export interface PixiGameCanvasProps {
   gameState: AnyGameState;
   cardBackImage: string | null;
   reducedMotion: boolean;
+  themeColors: PixiThemeColors;
+  highContrast: boolean;
+  cardScale: string;
   drawCount?: 1 | 3;
   onGameEvent: (event: PixiGameEvent) => void;
 }

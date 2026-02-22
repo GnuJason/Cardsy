@@ -7,7 +7,7 @@ import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { FreeCellWinModal } from '../components/FreeCellWinModal/FreeCellWinModal';
 import type { GameModeStats } from '../logic/types';
-import type { PixiGameEvent } from '../pixi/types';
+import type { PixiGameEvent, PixiThemeColors } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedFreeCellGame,
@@ -17,8 +17,11 @@ import {
 
 interface FreeCellScreenProps {
   cardBackImage: string | null;
+  themeColors: PixiThemeColors;
   modeStats: GameModeStats;
   reducedMotion: boolean;
+  highContrast: boolean;
+  cardScale: string;
   onRecordStart: () => void;
   onRecordWin: (score: number, time: number) => void;
   onRecordLoss: () => void;
@@ -31,8 +34,11 @@ interface FreeCellScreenProps {
 
 export const FreeCellScreen: React.FC<FreeCellScreenProps> = ({
   cardBackImage,
+  themeColors,
   modeStats,
   reducedMotion,
+  highContrast,
+  cardScale,
   onRecordStart,
   onRecordWin,
   onRecordLoss,
@@ -249,6 +255,9 @@ export const FreeCellScreen: React.FC<FreeCellScreenProps> = ({
         gameState={game}
         cardBackImage={cardBackImage}
         reducedMotion={reducedMotion}
+        themeColors={themeColors}
+        highContrast={highContrast}
+        cardScale={cardScale}
         onGameEvent={handleGameEvent}
       />
 

@@ -7,7 +7,7 @@ import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { PyramidWinModal } from '../components/PyramidWinModal/PyramidWinModal';
 import type { GameModeStats } from '../logic/types';
-import type { PixiGameEvent } from '../pixi/types';
+import type { PixiGameEvent, PixiThemeColors } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedPyramidGame,
@@ -17,8 +17,11 @@ import {
 
 interface PyramidScreenProps {
   cardBackImage: string | null;
+  themeColors: PixiThemeColors;
   modeStats: GameModeStats;
   reducedMotion: boolean;
+  highContrast: boolean;
+  cardScale: string;
   onRecordStart: () => void;
   onRecordWin: (score: number, time: number) => void;
   onRecordLoss: () => void;
@@ -31,8 +34,11 @@ interface PyramidScreenProps {
 
 export const PyramidScreen: React.FC<PyramidScreenProps> = ({
   cardBackImage,
+  themeColors,
   modeStats,
   reducedMotion,
+  highContrast,
+  cardScale,
   onRecordStart,
   onRecordWin,
   onRecordLoss,
@@ -198,6 +204,9 @@ export const PyramidScreen: React.FC<PyramidScreenProps> = ({
         gameState={game}
         cardBackImage={cardBackImage}
         reducedMotion={reducedMotion}
+        themeColors={themeColors}
+        highContrast={highContrast}
+        cardScale={cardScale}
         onGameEvent={handleGameEvent}
       />
 
