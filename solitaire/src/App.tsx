@@ -62,22 +62,10 @@ export const App: React.FC = () => {
     return getGameMode();
   });
   const [showModeSelector, setShowModeSelector] = useState(() => {
-    // Show mode selector if splash already seen but no saved game
+    // Always show mode selector after splash so player explicitly chooses
+    // new game vs continue, rather than auto-resuming a saved state.
     if (getSplashSeen()) {
-      const mode = getGameMode();
-      const hasSaved =
-        mode === 'klondike'
-          ? !!getSavedKlondikeGame()
-          : mode === 'tripeaks'
-            ? !!getSavedTriPeaksGame()
-            : mode === 'golf'
-              ? !!getSavedGolfGame()
-              : mode === 'pyramid'
-                ? !!getSavedPyramidGame()
-                : mode === 'freecell'
-                  ? !!getSavedFreeCellGame()
-                  : !!getSavedSpiderGame();
-      return !hasSaved;
+      return true;
     }
     return false;
   });

@@ -298,6 +298,9 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const placeholdersRef = useRef<Graphics[]>([]);
   const handlersBoundRef = useRef(new Set<string>());
   const tickerFnRef = useRef<((ticker: { deltaMS: number }) => void) | null>(null);
+  const modeRef = useRef(mode);
+  const gameStateRef = useRef(gameState);
+  const onGameEventRef = useRef(onGameEvent);
   const debugRef = useRef<PixiDebugOptions>(DEFAULT_DEBUG_OPTIONS);
   const pointerLogAtRef = useRef(0);
   const fpsWindowRef = useRef({ elapsedMs: 0, frames: 0 });
@@ -305,6 +308,10 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const lastLayoutKeyRef = useRef<string>('');
 
   const [layoutState, setLayoutState] = useState<LayoutResult | null>(null);
+
+  modeRef.current = mode;
+  gameStateRef.current = gameState;
+  onGameEventRef.current = onGameEvent;
 
   debugRef.current = resolveDebugOptions(
     debugOptions,
@@ -452,14 +459,14 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           sprite.on('pointertap', () => {
             const meta = spriteMetaRef.current.get(spriteKey);
             if (meta?.event) {
-              onGameEvent(meta.event);
+              onGameEventRef.current(meta.event);
             }
           });
 
           sprite.on('pointerdown', (pointer: FederatedPointerEvent) => {
             const meta = spriteMetaRef.current.get(spriteKey);
             if (!meta || !meta.faceUp) return;
-            if (!supportsDragMode(mode)) return;
+            if (!supportsDragMode(modeRef.current)) return;
             if (pointer.pointerType === 'mouse' && pointer.button !== 0) return;
             if (debugRef.current.enabled && debugRef.current.pointer) {
               debugLog('pointerdown', {
@@ -547,8 +554,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
                   pileIndex: hit.pileIndex,
                   cardIndex: hit.cardIndex,
                 };
-                if (canDrop(mode, gameState, source, target)) {
-                  onGameEvent(
+                if (canDrop(modeRef.current, gameStateRef.current, source, target)) {
+                  onGameEventRef.current(
                     emitValidatedDragMove(
                       activeDrag,
                       hit.pileType,
@@ -557,7 +564,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
                     ),
                   );
                 } else if (debugRef.current.enabled && debugRef.current.hitBoxes) {
-                  debugLog('drag-rejected', { source, target, mode });
+                  debugLog('drag-rejected', { source, target, mode: modeRef.current });
                 }
               } else if (debugRef.current.enabled && debugRef.current.hitBoxes) {
                 debugLog('hit-miss', {

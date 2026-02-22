@@ -125,13 +125,25 @@ export const WinCelebration: React.FC<WinCelebrationProps> = ({
         opacity: 1,
       };
     }
-    if (phase === 'converge' || phase === 'photo') {
+    if (phase === 'converge') {
       // Converge to center with slight spread for stacking effect
       const offset = (index - 26) * 0.3;
       const rot = (index - 26) * 0.5;
       return {
         transform: `translate(${offset}px, ${offset}px) rotate(${rot}deg)`,
-        opacity: phase === 'photo' ? 0 : 1,
+        opacity: 1,
+      };
+    }
+    if (phase === 'photo') {
+      const cols = 8;
+      const rows = Math.ceil(cardIds.length / cols);
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = (col - (cols - 1) / 2) * 36;
+      const y = (row - (rows - 1) / 2) * 52;
+      return {
+        transform: `translate(${x}px, ${y}px) rotate(0deg)`,
+        opacity: 1,
       };
     }
     return {};
