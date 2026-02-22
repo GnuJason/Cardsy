@@ -26,6 +26,9 @@ export function getTextureResolution(): number {
   return typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
 }
 
+/** Bicycle-style serif font stack for card faces. */
+const CARD_FONT_FAMILY = 'Georgia, "Times New Roman", "Noto Serif", serif';
+
 function makeFrontCardTexture(
   app: Application,
   cardSize: CardSize,
@@ -39,41 +42,49 @@ function makeFrontCardTexture(
     ? colors?.redCardColor ?? RED_CARD_COLOR
     : colors?.blackCardColor ?? BLACK_CARD_COLOR;
 
+  // Pure white card with thin dark border
   const shape = new Graphics()
     .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
     .fill({ color: colors?.cardBackground ?? CARD_BACKGROUND })
-    .stroke({ color: colors?.cardBorder ?? CARD_BORDER, width: 2 });
+    .stroke({ color: colors?.cardBorder ?? CARD_BORDER, width: 1.5 });
+
+  // 8% horizontal, 7% vertical safe-area margins
+  const marginX = Math.round(cardSize.width * 0.08);
+  const marginY = Math.round(cardSize.height * 0.07);
 
   const rankStyle = new TextStyle({
+    fontFamily: CARD_FONT_FAMILY,
     fill: color,
     fontSize: cardSize.fontSize,
     fontWeight: '700',
   });
 
   const pipStyle = new TextStyle({
+    fontFamily: CARD_FONT_FAMILY,
     fill: color,
     fontSize: cardSize.pipSize,
     fontWeight: '700',
   });
 
   const cornerSuitStyle = new TextStyle({
+    fontFamily: CARD_FONT_FAMILY,
     fill: color,
-    fontSize: Math.round(cardSize.fontSize * 0.9),
+    fontSize: Math.round(cardSize.fontSize * 0.85),
     fontWeight: '700',
   });
 
-  // ── Top-left corner ──
+  // ── Top-left corner: rank then suit stacked vertically ──
   const rankText = new Text({ text: RANK_LABELS[rank], style: rankStyle, resolution });
-  rankText.x = Math.round(cardSize.width * 0.08);
-  rankText.y = Math.round(cardSize.height * 0.06);
+  rankText.x = marginX;
+  rankText.y = marginY;
 
   const suitText = new Text({ text: SUIT_SYMBOLS[suit], style: cornerSuitStyle, resolution });
-  suitText.x = Math.round(cardSize.width * 0.08);
-  suitText.y = Math.round(cardSize.height * 0.06) + Math.round(cardSize.fontSize * 1.05);
+  suitText.x = marginX;
+  suitText.y = marginY + Math.round(cardSize.fontSize * 1.0);
 
-  // ── Center pip ──
+  // ── Center pip: single large suit symbol (no rank text for face cards) ──
   const center = new Text({
-    text: rank >= 11 ? `${RANK_LABELS[rank]} ${SUIT_SYMBOLS[suit]}` : SUIT_SYMBOLS[suit],
+    text: SUIT_SYMBOLS[suit],
     style: pipStyle,
     resolution,
   });
@@ -81,18 +92,18 @@ function makeFrontCardTexture(
   center.x = Math.round(cardSize.width * 0.5);
   center.y = Math.round(cardSize.height * 0.5);
 
-  // ── Bottom-right corner (rotated 180°) ──
+  // ── Bottom-right corner: rank + suit rotated 180° ──
   const mirrorRank = new Text({ text: RANK_LABELS[rank], style: rankStyle, resolution });
   mirrorRank.anchor.set(0.5, 0.5);
   mirrorRank.rotation = Math.PI;
-  mirrorRank.x = Math.round(cardSize.width * 0.92);
-  mirrorRank.y = Math.round(cardSize.height * 0.94) - Math.round(cardSize.fontSize * 0.55);
+  mirrorRank.x = cardSize.width - marginX;
+  mirrorRank.y = cardSize.height - marginY - Math.round(cardSize.fontSize * 0.05);
 
   const mirrorSuit = new Text({ text: SUIT_SYMBOLS[suit], style: cornerSuitStyle, resolution });
   mirrorSuit.anchor.set(0.5, 0.5);
   mirrorSuit.rotation = Math.PI;
-  mirrorSuit.x = Math.round(cardSize.width * 0.92);
-  mirrorSuit.y = Math.round(cardSize.height * 0.94) - Math.round(cardSize.fontSize * 0.55) - Math.round(cardSize.fontSize * 1.05);
+  mirrorSuit.x = cardSize.width - marginX;
+  mirrorSuit.y = cardSize.height - marginY - Math.round(cardSize.fontSize * 1.0);
 
   container.addChild(shape, rankText, suitText, center, mirrorRank, mirrorSuit);
   return app.renderer.generateTexture({ target: container, resolution });
