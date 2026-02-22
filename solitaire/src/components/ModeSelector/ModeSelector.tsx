@@ -22,7 +22,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   savedPyramid,
   savedFreeCell,
   savedSpider,
-  onContinue,
+  onContinue: _onContinue,
 }) => {
   const [showSpiderDifficulty, setShowSpiderDifficulty] = useState(false);
 
@@ -38,9 +38,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         <div className={styles.modes}>
           <button
             className={styles.modeBtn}
-            onClick={() =>
-              savedKlondike ? onContinue('klondike') : onSelect('klondike')
-            }
+            onClick={() => onSelect('klondike')}
           >
             <span className={styles.modeIcon}>🃏</span>
             <span className={styles.modeName}>Klondike</span>
@@ -52,9 +50,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           </button>
           <button
             className={styles.modeBtn}
-            onClick={() =>
-              savedTriPeaks ? onContinue('tripeaks') : onSelect('tripeaks')
-            }
+            onClick={() => onSelect('tripeaks')}
           >
             <span className={styles.modeIcon}>⛰️</span>
             <span className={styles.modeName}>TriPeaks</span>
@@ -66,9 +62,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           </button>
           <button
             className={styles.modeBtn}
-            onClick={() =>
-              savedGolf ? onContinue('golf') : onSelect('golf')
-            }
+            onClick={() => onSelect('golf')}
           >
             <span className={styles.modeIcon}>⛳</span>
             <span className={styles.modeName}>Golf</span>
@@ -80,9 +74,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           </button>
           <button
             className={styles.modeBtn}
-            onClick={() =>
-              savedPyramid ? onContinue('pyramid') : onSelect('pyramid')
-            }
+            onClick={() => onSelect('pyramid')}
           >
             <span className={styles.modeIcon}>🏛️</span>
             <span className={styles.modeName}>Pyramid</span>
@@ -94,9 +86,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           </button>
           <button
             className={styles.modeBtn}
-            onClick={() =>
-              savedFreeCell ? onContinue('freecell') : onSelect('freecell')
-            }
+            onClick={() => onSelect('freecell')}
           >
             <span className={styles.modeIcon}>🏗️</span>
             <span className={styles.modeName}>FreeCell</span>
@@ -136,11 +126,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           ) : (
             <button
               className={styles.modeBtn}
-              onClick={() =>
-                savedSpider
-                  ? onContinue('spider')
-                  : setShowSpiderDifficulty(true)
-              }
+              onClick={() => setShowSpiderDifficulty(true)}
             >
               <span className={styles.modeIcon}>🕷️</span>
               <span className={styles.modeName}>Spider</span>

@@ -22,6 +22,24 @@ function makePile(
   };
 }
 
+function computeFoundationStartX(
+  viewportWidth: number,
+  cardWidth: number,
+  padding: number,
+  colGap: number,
+): number {
+  const rightAlignedStart = viewportWidth - padding - (cardWidth * 4 + colGap * 3);
+  const leftGroupEnd = padding + cardWidth * 2 + colGap;
+  const preferredGap = Math.round(cardWidth * 1.1);
+  const maxGap = Math.round(cardWidth * 1.6);
+  const clampedGap = Math.min(maxGap, preferredGap);
+  const compactStart = leftGroupEnd + clampedGap;
+  if (compactStart + cardWidth * 4 + colGap * 3 <= viewportWidth - padding) {
+    return compactStart;
+  }
+  return rightAlignedStart;
+}
+
 export function computeLayout(
   mode: GameMode,
   viewport: ViewportInfo,
@@ -38,7 +56,7 @@ export function computeLayout(
     piles.push(makePile('stock', 0, padding, topY, 'none', 0, cardSize));
     piles.push(makePile('waste', 0, padding + cardSize.width + colGap, topY, 'right', 24, cardSize));
 
-    const foundationStartX = viewport.width - padding - (cardSize.width * 4 + colGap * 3);
+    const foundationStartX = computeFoundationStartX(viewport.width, cardSize.width, padding, colGap);
     for (let i = 0; i < 4; i += 1) {
       piles.push(makePile('foundation', i, foundationStartX + i * (cardSize.width + colGap), topY, 'none', 0, cardSize));
     }

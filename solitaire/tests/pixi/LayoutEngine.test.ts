@@ -34,4 +34,14 @@ describe('computeLayout', () => {
     expect(col0).toBeDefined();
     expect(col0?.fanOffset).toBeLessThanOrEqual(Math.round(cardSize.width * 0.22));
   });
+
+  it('keeps Klondike foundations from drifting too far right on wide viewports', () => {
+    const wideViewport = { width: 2048, height: 900, dpi: 1 };
+    const layout = computeLayout('klondike', wideViewport, cardSize);
+    const waste = layout.piles.find((pile) => pile.pileType === 'waste' && pile.pileIndex === 0);
+    const foundation0 = layout.piles.find((pile) => pile.pileType === 'foundation' && pile.pileIndex === 0);
+    expect(waste).toBeDefined();
+    expect(foundation0).toBeDefined();
+    expect((foundation0?.x ?? 0) - ((waste?.x ?? 0) + (waste?.dropWidth ?? 0))).toBeLessThanOrEqual(Math.round(cardSize.width * 1.8));
+  });
 });
