@@ -291,6 +291,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const spritePoolRef = useRef(new SpritePool());
   const schedulerRef = useRef(new AnimationScheduler());
   const spriteMetaRef = useRef(new Map<string, SpriteMeta>());
+  const placeholdersRef = useRef<Graphics[]>([]);
   const handlersBoundRef = useRef(new Set<string>());
   const tickerFnRef = useRef<((ticker: { deltaMS: number }) => void) | null>(null);
   const debugRef = useRef<PixiDebugOptions>(DEFAULT_DEBUG_OPTIONS);
@@ -309,6 +310,16 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const debugLog = (...args: unknown[]): void => {
     if (!debugRef.current.enabled) return;
     console.warn('[PIXI DEBUG]', ...args);
+  };
+
+  const clearPlaceholders = (): void => {
+    for (const placeholder of placeholdersRef.current) {
+      if (placeholder.parent) {
+        placeholder.parent.removeChild(placeholder);
+      }
+      placeholder.destroy();
+    }
+    placeholdersRef.current = [];
   };
 
   const effectiveThemeColors = useMemo(
@@ -378,6 +389,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       pileMap.set(`${pile.pileType}-${pile.pileIndex}`, pile);
     }
 
+    clearPlaceholders();
     spritePoolRef.current.beginFrame();
 
     for (const pileLayout of layout.piles) {
@@ -392,6 +404,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       placeholder.y = pileLayout.y;
       placeholder.zIndex = 0;
       ctx.root.addChild(placeholder);
+      placeholdersRef.current.push(placeholder);
 
       const pileData = pileMap.get(`${pileLayout.pileType}-${pileLayout.pileIndex}`);
       const cards = pileData?.cards ?? [];
@@ -703,6 +716,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       if (backTextureRef.current) {
         backTextureRef.current.destroy(true);
       }
+      clearPlaceholders();
       textureCacheRef.current = null;
       backTextureRef.current = null;
       spriteMetaRef.current.clear();
