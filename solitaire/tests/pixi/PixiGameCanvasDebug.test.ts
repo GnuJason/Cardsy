@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getDragActivationThreshold, resolveDebugOptions } from '../../src/pixi/PixiGameCanvas';
+import {
+  getDragActivationThreshold,
+  resolveDebugOptions,
+  resolveGameplayBackImage,
+} from '../../src/pixi/PixiGameCanvas';
 
 describe('PixiGameCanvas debug helpers', () => {
   it('returns all-disabled defaults when not in dev mode', () => {
@@ -54,5 +58,13 @@ describe('PixiGameCanvas debug helpers', () => {
   it('uses smaller drag threshold for mouse pointer', () => {
     expect(getDragActivationThreshold('mouse')).toBe(6);
     expect(getDragActivationThreshold('touch')).toBe(10);
+  });
+
+  it('uses explicit global card back override when provided', () => {
+    expect(resolveGameplayBackImage('hearts-1', '/cards/backs/custom.jpg')).toBe('/cards/backs/custom.jpg');
+  });
+
+  it('falls back to per-card image mapping when no global override is provided', () => {
+    expect(resolveGameplayBackImage('hearts-1', null)).toContain('/cards/backs/');
   });
 });

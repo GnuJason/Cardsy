@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FederatedPointerEvent, Graphics, Sprite } from 'pixi.js';
+import { Assets, FederatedPointerEvent, Graphics, Sprite, Texture } from 'pixi.js';
 import {
   createPixiApp,
   destroyPixiApp,
@@ -36,6 +36,7 @@ import type {
   SpiderGameState,
   TriPeaksGameState,
 } from '../logic/types';
+import { getCardBackImage } from '../config/cardArt';
 import { highContrastOverride } from './HighContrastOverride';
 import { KeyboardOverlay } from './KeyboardOverlay';
 import { SpritePool } from './rendering/SpritePool';
@@ -266,6 +267,10 @@ export function getDragActivationThreshold(pointerType: string): number {
   return pointerType === 'mouse' ? 6 : 10;
 }
 
+export function resolveGameplayBackImage(cardId: string, cardBackImage: string | null): string | null {
+  return cardBackImage ?? getCardBackImage(cardId);
+}
+
 function supportsDragMode(mode: GameMode): boolean {
   return mode === 'klondike' || mode === 'freecell' || mode === 'spider';
 }
@@ -286,6 +291,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const appCtxRef = useRef<PixiAppContext | null>(null);
   const textureCacheRef = useRef<TextureCache | null>(null);
   const backTextureRef = useRef<Awaited<ReturnType<typeof generateBackTexture>> | null>(null);
+  const backTextureByUrlRef = useRef<Map<string, Texture>>(new Map());
   const dragRef = useRef<DragSelection | null>(null);
   const dragCandidateRef = useRef<DragCandidate | null>(null);
   const pendingRenderRef = useRef(false);
@@ -331,6 +337,18 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       placeholder.destroy();
     }
     placeholdersRef.current = [];
+  };
+
+  const resolveFaceDownTexture = (cardId: string, fallbackBackTexture: Texture): Texture => {
+    const backImage = resolveGameplayBackImage(cardId, cardBackImage);
+    if (!backImage) return fallbackBackTexture;
+
+    const cached = backTextureByUrlRef.current.get(backImage);
+    if (cached) return cached;
+
+    const texture = Texture.from(backImage);
+    backTextureByUrlRef.current.set(backImage, texture);
+    return texture;
   };
 
   const effectiveThemeColors = useMemo(
@@ -422,7 +440,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
       for (const [index, card] of cards.entries()) {
         const spriteKey = card.id;
-        const texture = card.faceUp ? textures.get(card.id) ?? backTexture : backTexture;
+        const faceDownTexture = resolveFaceDownTexture(card.id, backTexture);
+        const texture = card.faceUp ? textures.get(card.id) ?? faceDownTexture : faceDownTexture;
         const sprite = spritePoolRef.current.acquire(spriteKey, texture);
 
         const fromX = sprite.x;
@@ -703,6 +722,31 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       }
       textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors));
 
+      if (!cardBackImage) {
+        const backUrls = new Set<string>();
+        for (const pile of piles) {
+          for (const card of pile.cards) {
+            const backImage = resolveGameplayBackImage(card.id, cardBackImage);
+            if (backImage) {
+              backUrls.add(backImage);
+            }
+          }
+        }
+
+        await Promise.all(
+          [...backUrls].map(async (url) => {
+            try {
+              const loaded = await Assets.load(url);
+              backTextureByUrlRef.current.set(url, Texture.from(loaded));
+            } catch {
+              if (debugRef.current.enabled && debugRef.current.textureLogs) {
+                debugLog('custom-back-load-failed', { url });
+              }
+            }
+          }),
+        );
+      }
+
       const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage);
       if (!active) {
         generatedBackTexture.destroy(true);
@@ -729,6 +773,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       if (backTextureRef.current) {
         backTextureRef.current.destroy(true);
       }
+      backTextureByUrlRef.current.clear();
       clearPlaceholders();
       textureCacheRef.current = null;
       backTextureRef.current = null;
