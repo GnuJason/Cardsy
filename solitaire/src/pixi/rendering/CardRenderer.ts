@@ -21,12 +21,18 @@ function cardKey(suit: Suit, rank: Rank): string {
   return `${suit}-${rank}`;
 }
 
+/** Return the device-pixel resolution to use for PIXI text rasterisation. */
+export function getTextureResolution(): number {
+  return typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+}
+
 function makeFrontCardTexture(
   app: Application,
   cardSize: CardSize,
   suit: Suit,
   rank: Rank,
   colors?: CardRenderColors,
+  resolution = 1,
 ): Texture {
   const container = new Container();
   const color = suitColor(suit) === 'red'
@@ -50,29 +56,49 @@ function makeFrontCardTexture(
     fontWeight: '700',
   });
 
-  const rankText = new Text({ text: RANK_LABELS[rank], style: rankStyle });
+  const cornerSuitStyle = new TextStyle({
+    fill: color,
+    fontSize: Math.round(cardSize.fontSize * 0.9),
+    fontWeight: '700',
+  });
+
+  // ── Top-left corner ──
+  const rankText = new Text({ text: RANK_LABELS[rank], style: rankStyle, resolution });
   rankText.x = Math.round(cardSize.width * 0.08);
   rankText.y = Math.round(cardSize.height * 0.06);
 
-  const suitText = new Text({ text: SUIT_SYMBOLS[suit], style: pipStyle });
-  suitText.x = Math.round(cardSize.width * 0.1);
-  suitText.y = Math.round(cardSize.height * 0.2);
+  const suitText = new Text({ text: SUIT_SYMBOLS[suit], style: cornerSuitStyle, resolution });
+  suitText.x = Math.round(cardSize.width * 0.08);
+  suitText.y = Math.round(cardSize.height * 0.06) + Math.round(cardSize.fontSize * 1.05);
 
-  const center = new Text({ text: rank >= 11 ? `${RANK_LABELS[rank]} ${SUIT_SYMBOLS[suit]}` : SUIT_SYMBOLS[suit], style: pipStyle });
+  // ── Center pip ──
+  const center = new Text({
+    text: rank >= 11 ? `${RANK_LABELS[rank]} ${SUIT_SYMBOLS[suit]}` : SUIT_SYMBOLS[suit],
+    style: pipStyle,
+    resolution,
+  });
   center.anchor.set(0.5);
   center.x = Math.round(cardSize.width * 0.5);
-  center.y = Math.round(cardSize.height * 0.53);
+  center.y = Math.round(cardSize.height * 0.5);
 
-  const mirrorRank = new Text({ text: RANK_LABELS[rank], style: rankStyle });
-  mirrorRank.anchor.set(1, 1);
-  mirrorRank.x = Math.round(cardSize.width * 0.93);
-  mirrorRank.y = Math.round(cardSize.height * 0.93);
+  // ── Bottom-right corner (rotated 180°) ──
+  const mirrorRank = new Text({ text: RANK_LABELS[rank], style: rankStyle, resolution });
+  mirrorRank.anchor.set(0.5, 0.5);
+  mirrorRank.rotation = Math.PI;
+  mirrorRank.x = Math.round(cardSize.width * 0.92);
+  mirrorRank.y = Math.round(cardSize.height * 0.94) - Math.round(cardSize.fontSize * 0.55);
 
-  container.addChild(shape, rankText, suitText, center, mirrorRank);
-  return app.renderer.generateTexture(container);
+  const mirrorSuit = new Text({ text: SUIT_SYMBOLS[suit], style: cornerSuitStyle, resolution });
+  mirrorSuit.anchor.set(0.5, 0.5);
+  mirrorSuit.rotation = Math.PI;
+  mirrorSuit.x = Math.round(cardSize.width * 0.92);
+  mirrorSuit.y = Math.round(cardSize.height * 0.94) - Math.round(cardSize.fontSize * 0.55) - Math.round(cardSize.fontSize * 1.05);
+
+  container.addChild(shape, rankText, suitText, center, mirrorRank, mirrorSuit);
+  return app.renderer.generateTexture({ target: container, resolution });
 }
 
-function makeBackTexture(app: Application, cardSize: CardSize, borderColor?: number): Texture {
+function makeBackTexture(app: Application, cardSize: CardSize, borderColor?: number, resolution = 1): Texture {
   const container = new Container();
   const back = new Graphics()
     .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
@@ -90,32 +116,33 @@ function makeBackTexture(app: Application, cardSize: CardSize, borderColor?: num
       fontSize: Math.round(cardSize.pipSize * 0.65),
       fontWeight: '700',
     }),
+    resolution,
   });
 
   emblem.anchor.set(0.5);
   emblem.x = cardSize.width / 2;
   emblem.y = cardSize.height / 2;
   container.addChild(back, inner, emblem);
-  return app.renderer.generateTexture(container);
+  return app.renderer.generateTexture({ target: container, resolution });
 }
 
-export async function generateBackTexture(app: Application, cardSize: CardSize, backImage?: string | null): Promise<Texture> {
+export async function generateBackTexture(app: Application, cardSize: CardSize, backImage?: string | null, resolution = 1): Promise<Texture> {
   if (backImage) {
     try {
       const loaded = await Assets.load(backImage);
       return Texture.from(loaded);
     } catch {
-      return makeBackTexture(app, cardSize);
+      return makeBackTexture(app, cardSize, undefined, resolution);
     }
   }
-  return makeBackTexture(app, cardSize);
+  return makeBackTexture(app, cardSize, undefined, resolution);
 }
 
-export function generateCardTextures(app: Application, cardSize: CardSize, colors?: CardRenderColors): TextureCache {
+export function generateCardTextures(app: Application, cardSize: CardSize, colors?: CardRenderColors, resolution = 1): TextureCache {
   const cache: TextureCache = new Map();
   for (const suit of SUITS) {
     for (let rank = 1 as Rank; rank <= 13; rank = (rank + 1) as Rank) {
-      cache.set(cardKey(suit, rank), makeFrontCardTexture(app, cardSize, suit, rank, colors));
+      cache.set(cardKey(suit, rank), makeFrontCardTexture(app, cardSize, suit, rank, colors, resolution));
     }
   }
   return cache;

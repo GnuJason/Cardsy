@@ -4,6 +4,7 @@ import {
   resolveDebugOptions,
   resolveGameplayBackImage,
 } from '../../src/pixi/PixiGameCanvas';
+import { getTextureResolution } from '../../src/pixi/rendering/CardRenderer';
 
 describe('PixiGameCanvas debug helpers', () => {
   it('returns all-disabled defaults when not in dev mode', () => {
@@ -66,5 +67,11 @@ describe('PixiGameCanvas debug helpers', () => {
 
   it('falls back to per-card image mapping when no global override is provided', () => {
     expect(resolveGameplayBackImage('hearts-1', null)).toContain('/cards/backs/');
+  });
+
+  it('returns a positive resolution for texture generation', () => {
+    const res = getTextureResolution();
+    expect(res).toBeGreaterThanOrEqual(1);
+    expect(typeof res).toBe('number');
   });
 });

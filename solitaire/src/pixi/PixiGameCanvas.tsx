@@ -11,6 +11,7 @@ import { computeLayout } from './layout/LayoutEngine';
 import {
   generateBackTexture,
   generateCardTextures,
+  getTextureResolution,
   invalidateTextures,
   type TextureCache,
 } from './rendering/CardRenderer';
@@ -312,6 +313,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const fpsWindowRef = useRef({ elapsedMs: 0, frames: 0 });
   const lastCardSizeRef = useRef<string>('');
   const lastLayoutKeyRef = useRef<string>('');
+  const textureCardSizeKeyRef = useRef<string>('');
 
   const [layoutState, setLayoutState] = useState<LayoutResult | null>(null);
 
@@ -383,6 +385,18 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     const viewport = getViewportInfo(host);
     const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
     const cardSizeKey = `${cardSize.width}x${cardSize.height}@${viewport.dpi}`;
+
+    // Regenerate card-face textures when cardSize changes (resize, scale change)
+    if (cardSizeKey !== textureCardSizeKeyRef.current) {
+      const res = getTextureResolution();
+      if (textureCacheRef.current) invalidateTextures(textureCacheRef.current);
+      textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors), res);
+      textureCardSizeKeyRef.current = cardSizeKey;
+      if (debugRef.current.enabled && debugRef.current.textureLogs) {
+        debugLog('texture-regeneration', { reason: 'cardSize-change', cardSizeKey, resolution: res });
+      }
+    }
+
     if (debugRef.current.enabled && debugRef.current.textureLogs && cardSizeKey !== lastCardSizeRef.current) {
       debugLog('card-size', { mode, cardSize, viewport });
       lastCardSizeRef.current = cardSizeKey;
@@ -713,14 +727,17 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
       const viewport = getViewportInfo(host);
       const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+      const res = getTextureResolution();
       if (debugRef.current.enabled && debugRef.current.textureLogs) {
         debugLog('texture-regeneration', {
           reason: 'mount',
           cardBackImage,
           cardSize,
+          resolution: res,
         });
       }
-      textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors));
+      textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors), res);
+      textureCardSizeKeyRef.current = `${cardSize.width}x${cardSize.height}@${viewport.dpi}`;
 
       if (!cardBackImage) {
         const backUrls = new Set<string>();
@@ -747,7 +764,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
         );
       }
 
-      const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage);
+      const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage, res);
       if (!active) {
         generatedBackTexture.destroy(true);
         return;
@@ -776,6 +793,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       backTextureByUrlRef.current.clear();
       clearPlaceholders();
       textureCacheRef.current = null;
+      textureCardSizeKeyRef.current = '';
       backTextureRef.current = null;
       spriteMetaRef.current.clear();
       handlersBoundRef.current.clear();
@@ -802,17 +820,20 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
     const viewport = getViewportInfo(host);
     const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+    const res = getTextureResolution();
     if (debugRef.current.enabled && debugRef.current.textureLogs) {
       debugLog('texture-regeneration', {
         reason: 'theme-change',
         cardSize,
+        resolution: res,
       });
     }
 
     if (textureCacheRef.current) {
       invalidateTextures(textureCacheRef.current);
     }
-    textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors));
+    textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors), res);
+    textureCardSizeKeyRef.current = `${cardSize.width}x${cardSize.height}@${viewport.dpi}`;
 
     if (schedulerRef.current.isAnimating) {
       pendingRenderRef.current = true;

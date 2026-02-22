@@ -15,6 +15,7 @@ export async function createPixiApp(
     backgroundColor: backgroundColor ?? 0x0b6b3a,
     antialias: true,
     autoDensity: true,
+    resolution: window.devicePixelRatio || 1,
     preference: 'webgl',
   });
 
