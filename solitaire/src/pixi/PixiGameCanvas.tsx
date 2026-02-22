@@ -295,6 +295,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const textureCacheRef = useRef<TextureCache | null>(null);
   const backTextureRef = useRef<Awaited<ReturnType<typeof generateBackTexture>> | null>(null);
   const backTextureByUrlRef = useRef<Map<string, Texture>>(new Map());
+  const maskedBackTextureUrlsRef = useRef<Set<string>>(new Set());
   const dragRef = useRef<DragSelection | null>(null);
   const dragSpriteRef = useRef<Sprite | null>(null);
   const dragCandidateRef = useRef<DragCandidate | null>(null);
@@ -344,19 +345,53 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     placeholdersRef.current = [];
   };
 
-  const resolveFaceDownTexture = (cardId: string, fallbackBackTexture: Texture): Texture => {
+  const resolveFaceDownTexture = (
+    cardId: string,
+    fallbackBackTexture: Texture,
+    cardSize: CardSize,
+  ): Texture => {
     const backImage = resolveGameplayBackImage(cardId, cardBackImage);
     if (!backImage) return fallbackBackTexture;
 
     const cached = backTextureByUrlRef.current.get(backImage);
-    if (cached) return cached;
+    if (cached) {
+      if (!maskedBackTextureUrlsRef.current.has(backImage)) {
+        const ctx = appCtxRef.current;
+        if (ctx) {
+          try {
+            const masked = makeCustomBackTexture(ctx.app, cardSize, cached, getTextureResolution());
+            backTextureByUrlRef.current.set(backImage, masked);
+            maskedBackTextureUrlsRef.current.add(backImage);
+            return masked;
+          } catch {
+            return cached;
+          }
+        }
+      }
+      return cached;
+    }
 
     // Raw Texture.from — will be replaced with masked version once the
     // async preload resolves (see mount effect).  This is a fallback for
     // cards whose preload hasn't completed yet.
-    const texture = Texture.from(backImage);
-    backTextureByUrlRef.current.set(backImage, texture);
-    return texture;
+    const rawTexture = Texture.from(backImage);
+    const ctx = appCtxRef.current;
+    if (ctx) {
+      try {
+        const masked = makeCustomBackTexture(ctx.app, cardSize, rawTexture, getTextureResolution());
+        backTextureByUrlRef.current.set(backImage, masked);
+        maskedBackTextureUrlsRef.current.add(backImage);
+        return masked;
+      } catch {
+        backTextureByUrlRef.current.set(backImage, rawTexture);
+        maskedBackTextureUrlsRef.current.delete(backImage);
+        return rawTexture;
+      }
+    }
+
+    backTextureByUrlRef.current.set(backImage, rawTexture);
+    maskedBackTextureUrlsRef.current.delete(backImage);
+    return rawTexture;
   };
 
   /** Re-render all per-card back textures through the rounded-rect mask. */
@@ -365,14 +400,17 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     if (!ctx) return;
     const res = getTextureResolution();
     const newMap = new Map<string, Texture>();
+    const nextMasked = new Set<string>();
     for (const [url, rawTex] of backTextureByUrlRef.current) {
       try {
         newMap.set(url, makeCustomBackTexture(ctx.app, cardSize, rawTex, res));
+        nextMasked.add(url);
       } catch {
         newMap.set(url, rawTex); // keep raw on failure
       }
     }
     backTextureByUrlRef.current = newMap;
+    maskedBackTextureUrlsRef.current = nextMasked;
   };
 
   const effectiveThemeColors = useMemo(
@@ -420,6 +458,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       const res = getTextureResolution();
       if (textureCacheRef.current) invalidateTextures(textureCacheRef.current);
       textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors), res);
+      maskBackTextures(cardSize);
       textureCardSizeKeyRef.current = cardSizeKey;
       if (debugRef.current.enabled && debugRef.current.textureLogs) {
         debugLog('texture-regeneration', { reason: 'cardSize-change', cardSizeKey, resolution: res });
@@ -483,7 +522,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
       for (const [index, card] of cards.entries()) {
         const spriteKey = card.id;
-        const faceDownTexture = resolveFaceDownTexture(card.id, backTexture);
+        const faceDownTexture = resolveFaceDownTexture(card.id, backTexture, cardSize);
         const texture = card.faceUp ? textures.get(card.id) ?? faceDownTexture : faceDownTexture;
         const sprite = spritePoolRef.current.acquire(spriteKey, texture);
 
@@ -788,6 +827,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
             try {
               const loaded = await Assets.load(url);
               backTextureByUrlRef.current.set(url, Texture.from(loaded));
+              maskedBackTextureUrlsRef.current.delete(url);
             } catch {
               if (debugRef.current.enabled && debugRef.current.textureLogs) {
                 debugLog('custom-back-load-failed', { url });
@@ -830,6 +870,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
         backTextureRef.current.destroy(true);
       }
       backTextureByUrlRef.current.clear();
+      maskedBackTextureUrlsRef.current.clear();
       clearPlaceholders();
       textureCacheRef.current = null;
       textureCardSizeKeyRef.current = '';
