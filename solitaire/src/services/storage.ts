@@ -34,7 +34,8 @@ const KEYS = {
 
 const DEFAULT_SETTINGS: UserSettings = {
   reducedMotion: false,
-  cardSize: 'medium',
+  cardScale: 'medium',
+  highContrast: false,
   cardBack: 'default.png',
   soundEnabled: true,
   theme: DEFAULT_THEME_ID,
@@ -82,14 +83,26 @@ export function getSettings(): UserSettings {
   const raw = safeGet(KEYS.settings);
   if (!raw) return { ...DEFAULT_SETTINGS };
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const migrated = { ...parsed };
+    if ('cardSize' in migrated && !('cardScale' in migrated)) {
+      migrated.cardScale = migrated.cardSize;
+      delete migrated.cardSize;
+    }
+    if (!('highContrast' in migrated)) {
+      migrated.highContrast = DEFAULT_SETTINGS.highContrast;
+    }
+
     return {
-      reducedMotion: typeof parsed.reducedMotion === 'boolean' ? parsed.reducedMotion : DEFAULT_SETTINGS.reducedMotion,
-      cardSize: ['small', 'medium', 'large'].includes(parsed.cardSize) ? parsed.cardSize : DEFAULT_SETTINGS.cardSize,
-      cardBack: typeof parsed.cardBack === 'string' ? parsed.cardBack : DEFAULT_SETTINGS.cardBack,
-      soundEnabled: typeof parsed.soundEnabled === 'boolean' ? parsed.soundEnabled : DEFAULT_SETTINGS.soundEnabled,
-      theme: typeof parsed.theme === 'string' ? parsed.theme : DEFAULT_SETTINGS.theme,
-      drawCount: parsed.drawCount === 1 || parsed.drawCount === 3 ? parsed.drawCount : DEFAULT_SETTINGS.drawCount,
+      reducedMotion: typeof migrated.reducedMotion === 'boolean' ? migrated.reducedMotion : DEFAULT_SETTINGS.reducedMotion,
+      cardScale: ['small', 'medium', 'large', 'xlarge'].includes(String(migrated.cardScale))
+        ? (migrated.cardScale as UserSettings['cardScale'])
+        : DEFAULT_SETTINGS.cardScale,
+      highContrast: typeof migrated.highContrast === 'boolean' ? migrated.highContrast : DEFAULT_SETTINGS.highContrast,
+      cardBack: typeof migrated.cardBack === 'string' ? migrated.cardBack : DEFAULT_SETTINGS.cardBack,
+      soundEnabled: typeof migrated.soundEnabled === 'boolean' ? migrated.soundEnabled : DEFAULT_SETTINGS.soundEnabled,
+      theme: typeof migrated.theme === 'string' ? migrated.theme : DEFAULT_SETTINGS.theme,
+      drawCount: migrated.drawCount === 1 || migrated.drawCount === 3 ? migrated.drawCount : DEFAULT_SETTINGS.drawCount,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

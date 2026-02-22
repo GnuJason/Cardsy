@@ -22,7 +22,12 @@ function makePile(
   };
 }
 
-export function computeLayout(mode: GameMode, viewport: ViewportInfo, cardSize: CardSize): LayoutResult {
+export function computeLayout(
+  mode: GameMode,
+  viewport: ViewportInfo,
+  cardSize: CardSize,
+  pileCounts?: Map<string, number>,
+): LayoutResult {
   const padding = 16;
   const topY = 18;
   const rowGap = 20;
@@ -103,6 +108,21 @@ export function computeLayout(mode: GameMode, viewport: ViewportInfo, cardSize: 
     const bottomY = tableY + Math.round(cardSize.height * 2.45);
     piles.push(makePile('stock', 0, padding, bottomY, 'none', 0, cardSize));
     piles.push(makePile('waste', 0, padding + cardSize.width + colGap, bottomY, 'none', 0, cardSize));
+  }
+
+  for (const pile of piles) {
+    if (pile.fanDirection === 'none') continue;
+    const key = `${pile.pileType}-${pile.pileIndex}`;
+    const count = pileCounts?.get(key) ?? 0;
+    if (count <= 1) continue;
+
+    const maxExtent = pile.fanDirection === 'down'
+      ? viewport.height - pile.y - cardSize.height - 20
+      : viewport.width - pile.x - cardSize.width - 20;
+    const neededExtent = pile.fanOffset * (count - 1);
+    if (neededExtent > maxExtent && maxExtent > 0) {
+      pile.fanOffset = Math.max(4, Math.floor(maxExtent / (count - 1)));
+    }
   }
 
   return {

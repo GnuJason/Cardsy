@@ -5,6 +5,13 @@ export const DEFAULT_SCALING_CONFIG: PixiScalingConfig = {
   maxCardWidth: 160,
 };
 
+export const CARD_SCALE_BOUNDS: Record<string, { min: number; max: number }> = {
+  small: { min: 48, max: 80 },
+  medium: { min: 60, max: 160 },
+  large: { min: 80, max: 200 },
+  xlarge: { min: 120, max: 280 },
+};
+
 export const DEFAULT_LAYOUT_CONFIG: PixiLayoutConfig = {
   padding: 16,
   topRowGap: 18,

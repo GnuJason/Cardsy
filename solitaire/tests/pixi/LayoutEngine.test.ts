@@ -26,4 +26,12 @@ describe('computeLayout', () => {
     const layout = computeLayout('pyramid', viewport, cardSize);
     expect(layout.piles.filter((pile) => pile.pileType === 'pyramid')).toHaveLength(28);
   });
+
+  it('clamps fan offset for deep columns when pile counts are provided', () => {
+    const pileCounts = new Map<string, number>([['column-0', 30]]);
+    const layout = computeLayout('spider', viewport, cardSize, pileCounts);
+    const col0 = layout.piles.find((pile) => pile.pileType === 'column' && pile.pileIndex === 0);
+    expect(col0).toBeDefined();
+    expect(col0?.fanOffset).toBeLessThanOrEqual(Math.round(cardSize.width * 0.22));
+  });
 });

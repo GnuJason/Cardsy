@@ -48,7 +48,8 @@
 }
 
 /* ── Large card size override ── */
-.card-size-large {
+.card-size-large,
+.card-scale-large {
   --card-width-pref: 100px;
   --card-width: 100px;
   --card-height: 140px;
@@ -58,13 +59,24 @@
 }
 
 /* ── Small card size override ── */
-.card-size-small {
+.card-size-small,
+.card-scale-small {
   --card-width-pref: 64px;
   --card-width: 64px;
   --card-height: 90px;
   --card-font-size: 14px;
   --card-pip-size: 18px;
   --fan-offset-down: 18px;
+}
+
+/* ── Extra-large card size override ── */
+.card-scale-xlarge {
+  --card-width-pref: 140px;
+  --card-width: 140px;
+  --card-height: 196px;
+  --card-font-size: 32px;
+  --card-pip-size: 42px;
+  --fan-offset-down: 36px;
 }
 
 /* ── TriPeaks mode: theme system now handles felt color via useTheme hook ── */

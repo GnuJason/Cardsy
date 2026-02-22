@@ -42,4 +42,12 @@ describe('hitTestPile', () => {
     const hit = hitTestPile({ x: 900, y: 700 }, layout);
     expect(hit).toBeNull();
   });
+
+  it('respects explicit pile card counts when inferring index', () => {
+    const pileCounts = new Map<string, number>([['tableau-2', 3]]);
+    const hit = hitTestPile({ x: 140, y: 320 }, layout, pileCounts);
+    expect(hit).not.toBeNull();
+    expect(hit?.pileType).toBe('tableau');
+    expect(hit?.cardIndex).toBe(2);
+  });
 });

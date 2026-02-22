@@ -9,10 +9,13 @@ export interface HitResult {
 export function hitTestPile(
   point: { x: number; y: number },
   layout: LayoutResult,
+  pileCounts?: Map<string, number>,
 ): HitResult | null {
   for (const pile of layout.piles) {
-    const maxY = pile.y + pile.dropHeight + (pile.fanDirection === 'down' ? pile.fanOffset * 20 : 0);
-    const maxX = pile.x + pile.dropWidth + (pile.fanDirection === 'right' ? pile.fanOffset * 4 : 0);
+    const pileKey = `${pile.pileType}-${pile.pileIndex}`;
+    const cardCount = pileCounts?.get(pileKey) ?? 20;
+    const maxY = pile.y + pile.dropHeight + (pile.fanDirection === 'down' ? pile.fanOffset * Math.max(0, cardCount - 1) : 0);
+    const maxX = pile.x + pile.dropWidth + (pile.fanDirection === 'right' ? pile.fanOffset * Math.max(0, cardCount - 1) : 0);
     if (point.x >= pile.x && point.x <= maxX && point.y >= pile.y && point.y <= maxY) {
       const relY = point.y - pile.y;
       const relX = point.x - pile.x;
@@ -21,7 +24,7 @@ export function hitTestPile(
       return {
         pileType: pile.pileType,
         pileIndex: pile.pileIndex,
-        cardIndex: Math.max(0, rawIndex),
+        cardIndex: Math.max(0, Math.min(rawIndex, Math.max(0, cardCount - 1))),
       };
     }
   }

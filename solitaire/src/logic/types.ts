@@ -89,7 +89,8 @@ export interface GameMove {
 
 export interface UserSettings {
   reducedMotion: boolean;
-  cardSize: 'small' | 'medium' | 'large';
+  cardScale: 'small' | 'medium' | 'large' | 'xlarge';
+  highContrast: boolean;
   cardBack: string; // filename in public/cards/backs/
   soundEnabled: boolean;
   theme: string; // theme ID from themes config

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { UserSettings } from '../../logic/types';
 import { THEMES } from '../../config/themes';
 import styles from './SettingsModal.module.css';
@@ -14,10 +14,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdate,
   onClose,
 }) => {
-  const cardSizes: Array<{ value: UserSettings['cardSize']; label: string }> = [
+  useEffect(() => {
+    if (settings.highContrast) return;
+    const contrastQuery = window.matchMedia('(prefers-contrast: more)');
+    if (contrastQuery.matches) {
+      onUpdate({ ...settings, highContrast: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const cardSizes: Array<{ value: UserSettings['cardScale']; label: string }> = [
     { value: 'small', label: 'Small' },
     { value: 'medium', label: 'Medium' },
     { value: 'large', label: 'Large' },
+    { value: 'xlarge', label: 'Extra Large' },
   ];
 
   return (
@@ -33,12 +43,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 key={size.value}
                 className={
-                  settings.cardSize === size.value
+                  settings.cardScale === size.value
                     ? styles.optionBtnActive
                     : styles.optionBtn
                 }
                 onClick={() =>
-                  onUpdate({ ...settings, cardSize: size.value })
+                  onUpdate({ ...settings, cardScale: size.value })
                 }
               >
                 {size.label}
@@ -150,6 +160,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div
                 className={
                   settings.reducedMotion
+                    ? styles.toggleKnobOn
+                    : styles.toggleKnob
+                }
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* High contrast */}
+        <div className={styles.section}>
+          <div className={styles.toggle}>
+            <span className={styles.toggleLabel}>High contrast mode</span>
+            <button
+              className={
+                settings.highContrast
+                  ? styles.toggleSwitchOn
+                  : styles.toggleSwitch
+              }
+              onClick={() =>
+                onUpdate({
+                  ...settings,
+                  highContrast: !settings.highContrast,
+                })
+              }
+              aria-label="Toggle high contrast"
+            >
+              <div
+                className={
+                  settings.highContrast
                     ? styles.toggleKnobOn
                     : styles.toggleKnob
                 }

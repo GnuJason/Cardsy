@@ -1,4 +1,4 @@
-import { DEFAULT_SCALING_CONFIG, MODE_COLUMN_BASIS } from '../constants';
+import { CARD_SCALE_BOUNDS, DEFAULT_SCALING_CONFIG, MODE_COLUMN_BASIS } from '../constants';
 import type { CardSize, GameMode, ViewportInfo } from '../types';
 
 function dpiFactor(dpi: number): number {
@@ -8,14 +8,22 @@ function dpiFactor(dpi: number): number {
   return 1;
 }
 
-export function computeCardSize(viewport: ViewportInfo, dpi: number, mode: GameMode): CardSize {
+export function computeCardSize(
+  viewport: ViewportInfo,
+  dpi: number,
+  mode: GameMode,
+  cardScale?: string,
+): CardSize {
   const cols = MODE_COLUMN_BASIS[mode] ?? 7;
   const gutter = cols + 1;
   const candidate = Math.floor((viewport.width - gutter * 12) / cols);
   const scaled = Math.floor(candidate * dpiFactor(dpi));
+  const scaleBounds = CARD_SCALE_BOUNDS[cardScale ?? 'medium'];
+  const minWidth = scaleBounds?.min ?? DEFAULT_SCALING_CONFIG.minCardWidth;
+  const maxWidth = scaleBounds?.max ?? DEFAULT_SCALING_CONFIG.maxCardWidth;
   const width = Math.max(
-    DEFAULT_SCALING_CONFIG.minCardWidth,
-    Math.min(DEFAULT_SCALING_CONFIG.maxCardWidth, scaled),
+    minWidth,
+    Math.min(maxWidth, scaled),
   );
 
   return {
