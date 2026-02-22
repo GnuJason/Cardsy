@@ -1,5 +1,6 @@
 import { useReducer, useCallback } from 'react';
 import type { GameState } from '../logic/types';
+import { SUIT_INDEX } from '../logic/types';
 import { newGame } from '../logic/deck';
 import {
   drawFromStock,
@@ -28,6 +29,14 @@ type Action =
   | { type: 'TAP_WASTE' }
   | { type: 'TAP_TABLEAU'; pileIndex: number; cardIndex: number }
   | { type: 'TAP_FOUNDATION'; pileIndex: number }
+  | {
+      type: 'MOVE_TO_TARGET';
+      sourcePile: 'waste' | 'tableau';
+      sourcePileIndex: number;
+      sourceCardIndex: number;
+      targetPile: 'tableau' | 'foundation';
+      targetPileIndex: number;
+    }
   | { type: 'UNDO' }
   | { type: 'AUTO_COMPLETE_STEP' }
   | { type: 'SET_ELAPSED'; seconds: number }
@@ -132,6 +141,52 @@ function reducer(state: FullState, action: Action): FullState {
       return state;
     }
 
+    case 'MOVE_TO_TARGET': {
+      const {
+        sourcePile,
+        sourcePileIndex,
+        sourceCardIndex,
+        targetPile,
+        targetPileIndex,
+      } = action;
+
+      let result: GameState | null = null;
+
+      if (sourcePile === 'waste') {
+        if (sourcePileIndex !== 0) return state;
+        if (state.game.waste.length === 0) return state;
+        if (sourceCardIndex !== state.game.waste.length - 1) return state;
+
+        if (targetPile === 'tableau') {
+          result = moveWasteToTableau(state.game, targetPileIndex);
+        } else {
+          const wasteCard = state.game.waste[sourceCardIndex];
+          if (!wasteCard) return state;
+          if (SUIT_INDEX[wasteCard.suit] !== targetPileIndex) return state;
+          result = moveWasteToFoundation(state.game, targetPileIndex);
+        }
+      }
+
+      if (sourcePile === 'tableau') {
+        const pile = state.game.tableau[sourcePileIndex];
+        if (!pile) return state;
+        if (sourceCardIndex < 0 || sourceCardIndex >= pile.length) return state;
+        const card = pile[sourceCardIndex];
+        if (!card.faceUp) return state;
+
+        if (targetPile === 'tableau') {
+          result = moveTableauToTableau(state.game, sourcePileIndex, sourceCardIndex, targetPileIndex);
+        } else {
+          if (sourceCardIndex !== pile.length - 1) return state;
+          if (SUIT_INDEX[card.suit] !== targetPileIndex) return state;
+          result = moveTableauToFoundation(state.game, sourcePileIndex);
+        }
+      }
+
+      if (!result) return state;
+      return { ...state, game: result, undoStack: pushUndo(state) };
+    }
+
     case 'UNDO': {
       if (state.undoStack.length === 0) return state;
       const newStack = [...state.undoStack];
@@ -198,6 +253,24 @@ export function useGameState() {
     (pileIndex: number) => dispatch({ type: 'TAP_FOUNDATION', pileIndex }),
     [],
   );
+  const moveToTarget = useCallback(
+    (
+      sourcePile: 'waste' | 'tableau',
+      sourcePileIndex: number,
+      sourceCardIndex: number,
+      targetPile: 'tableau' | 'foundation',
+      targetPileIndex: number,
+    ) =>
+      dispatch({
+        type: 'MOVE_TO_TARGET',
+        sourcePile,
+        sourcePileIndex,
+        sourceCardIndex,
+        targetPile,
+        targetPileIndex,
+      }),
+    [],
+  );
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const autoComplete = useCallback(
     () => dispatch({ type: 'AUTO_COMPLETE_STEP' }),
@@ -235,6 +308,7 @@ export function useGameState() {
       tapWaste,
       tapTableau,
       tapFoundation,
+      moveToTarget,
       undo,
       autoComplete,
       setElapsed,

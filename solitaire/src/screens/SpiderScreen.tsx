@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useSpiderState } from '../hooks/useSpiderState';
 import { useTimer } from '../hooks/useTimer';
-import { SpiderBoard } from '../components/SpiderBoard/SpiderBoard';
+import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { SpiderWinModal } from '../components/SpiderWinModal/SpiderWinModal';
 import type { GameModeStats } from '../logic/types';
+import type { PixiGameEvent } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedSpiderGame,
@@ -158,6 +159,30 @@ export const SpiderScreen: React.FC<SpiderScreenProps> = ({
     soundManager.play('cardFlip');
   }, [actions]);
 
+  const handleGameEvent = useCallback(
+    (event: PixiGameEvent) => {
+      if (event.type === 'TAP_STOCK') {
+        handleTapStock();
+        return;
+      }
+      if (event.type === 'TAP_COLUMN') {
+        handleTapColumn(event.colIndex, event.cardIndex);
+        return;
+      }
+      if (event.type === 'DRAG_VALIDATED_MOVE') {
+        if (event.sourcePile === 'column' && event.targetPile === 'column') {
+          actions.tapColumn(event.sourcePileIndex, event.sourceCardIndex);
+          const targetColumn = game.columns[event.targetPileIndex] ?? [];
+          const targetCardIndex = targetColumn.length === 0 ? 0 : targetColumn.length - 1;
+          actions.tapColumn(event.targetPileIndex, targetCardIndex);
+          soundManager.play('cardPlace');
+        }
+        return;
+      }
+    },
+    [actions, game.columns, handleTapColumn, handleTapStock],
+  );
+
   // Persist difficulty when user changes it via ModeSelector
   useEffect(() => {
     setSpiderDifficulty(game.difficulty);
@@ -178,11 +203,12 @@ export const SpiderScreen: React.FC<SpiderScreenProps> = ({
         onAchievements={onShowAchievements}
       />
 
-      <SpiderBoard
-        game={game}
+      <PixiGameCanvas
+        mode="spider"
+        gameState={game}
         cardBackImage={cardBackImage}
-        onTapColumn={handleTapColumn}
-        onTapStock={handleTapStock}
+        reducedMotion={reducedMotion}
+        onGameEvent={handleGameEvent}
       />
 
       {showCelebration && (

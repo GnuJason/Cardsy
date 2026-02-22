@@ -1,0 +1,29 @@
+import { describe, expect, it } from 'vitest';
+import { computeLayout } from '../../src/pixi/layout/LayoutEngine';
+
+const viewport = { width: 1280, height: 800, dpi: 2 };
+const cardSize = { width: 120, height: 168, fontSize: 34, pipSize: 44, cornerRadius: 12 };
+
+describe('computeLayout', () => {
+  it('builds Klondike stock/waste/foundation/tableau piles', () => {
+    const layout = computeLayout('klondike', viewport, cardSize);
+    const tableau = layout.piles.filter((pile) => pile.pileType === 'tableau');
+    const foundations = layout.piles.filter((pile) => pile.pileType === 'foundation');
+    expect(layout.piles.some((pile) => pile.pileType === 'stock')).toBe(true);
+    expect(layout.piles.some((pile) => pile.pileType === 'waste')).toBe(true);
+    expect(tableau).toHaveLength(7);
+    expect(foundations).toHaveLength(4);
+  });
+
+  it('builds FreeCell freecell/foundation/column piles', () => {
+    const layout = computeLayout('freecell', viewport, cardSize);
+    expect(layout.piles.filter((pile) => pile.pileType === 'freecell')).toHaveLength(4);
+    expect(layout.piles.filter((pile) => pile.pileType === 'foundation')).toHaveLength(4);
+    expect(layout.piles.filter((pile) => pile.pileType === 'column')).toHaveLength(8);
+  });
+
+  it('builds 28 pyramid slots in pyramid mode', () => {
+    const layout = computeLayout('pyramid', viewport, cardSize);
+    expect(layout.piles.filter((pile) => pile.pileType === 'pyramid')).toHaveLength(28);
+  });
+});

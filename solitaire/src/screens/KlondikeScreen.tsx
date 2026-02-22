@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useTimer } from '../hooks/useTimer';
-import { GameBoard } from '../components/GameBoard/GameBoard';
+import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinModal } from '../components/WinModal/WinModal';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
@@ -14,6 +14,7 @@ import {
   setSavedKlondikeGame,
   clearSavedKlondikeGame,
 } from '../services/storage';
+import type { PixiGameEvent } from '../pixi/types';
 
 interface KlondikeScreenProps {
   cardBackImage: string | null;
@@ -190,6 +191,44 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
     [actions],
   );
 
+  const handleGameEvent = useCallback(
+    (event: PixiGameEvent) => {
+      if (event.type === 'DRAW') {
+        handleDraw();
+        return;
+      }
+      if (event.type === 'TAP_WASTE') {
+        handleTapWaste();
+        return;
+      }
+      if (event.type === 'TAP_TABLEAU') {
+        handleTapTableau(event.pileIndex, event.cardIndex);
+        return;
+      }
+      if (event.type === 'TAP_FOUNDATION') {
+        handleTapFoundation(event.pileIndex);
+        return;
+      }
+      if (event.type === 'DRAG_VALIDATED_MOVE') {
+        if (
+          (event.sourcePile === 'tableau' || event.sourcePile === 'waste') &&
+          (event.targetPile === 'tableau' || event.targetPile === 'foundation')
+        ) {
+          actions.moveToTarget(
+            event.sourcePile,
+            event.sourcePileIndex,
+            event.sourceCardIndex,
+            event.targetPile,
+            event.targetPileIndex,
+          );
+          soundManager.play('cardPlace');
+        }
+        return;
+      }
+    },
+    [actions, handleDraw, handleTapFoundation, handleTapTableau, handleTapWaste],
+  );
+
   // Stop auto-complete when game is won
   useEffect(() => {
     if (isAutoCompleting && (game.status === 'won' || !canAutoComplete)) {
@@ -225,14 +264,13 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
         onAchievements={onShowAchievements}
       />
 
-      <GameBoard
-        game={game}
+      <PixiGameCanvas
+        mode="klondike"
+        gameState={game}
         cardBackImage={cardBackImage}
+        reducedMotion={reducedMotion}
         drawCount={drawCount}
-        onDraw={handleDraw}
-        onTapWaste={handleTapWaste}
-        onTapTableau={handleTapTableau}
-        onTapFoundation={handleTapFoundation}
+        onGameEvent={handleGameEvent}
       />
 
       {showCelebration && (

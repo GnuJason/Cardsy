@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useGolfState } from '../hooks/useGolfState';
 import { useTimer } from '../hooks/useTimer';
-import { GolfBoard } from '../components/GolfBoard/GolfBoard';
+import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { GolfWinModal } from '../components/GolfWinModal/GolfWinModal';
 import type { GameModeStats } from '../logic/types';
+import type { PixiGameEvent } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedGolfGame,
@@ -154,6 +155,20 @@ export const GolfScreen: React.FC<GolfScreenProps> = ({
     [actions],
   );
 
+  const handleGameEvent = useCallback(
+    (event: PixiGameEvent) => {
+      if (event.type === 'DRAW') {
+        handleDraw();
+        return;
+      }
+      if (event.type === 'TAP_CARD') {
+        handleTapCard(event.colIndex);
+        return;
+      }
+    },
+    [handleDraw, handleTapCard],
+  );
+
   return (
     <>
       <HUD
@@ -169,11 +184,12 @@ export const GolfScreen: React.FC<GolfScreenProps> = ({
         onAchievements={onShowAchievements}
       />
 
-      <GolfBoard
-        game={game}
+      <PixiGameCanvas
+        mode="golf"
+        gameState={game}
         cardBackImage={cardBackImage}
-        onTapCard={handleTapCard}
-        onDraw={handleDraw}
+        reducedMotion={reducedMotion}
+        onGameEvent={handleGameEvent}
       />
 
       {showCelebration && (

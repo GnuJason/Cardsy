@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useTriPeaksState } from '../hooks/useTriPeaksState';
 import { useTimer } from '../hooks/useTimer';
-import { TriPeaksBoard } from '../components/TriPeaksBoard/TriPeaksBoard';
+import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinModal } from '../components/WinModal/WinModal';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { timerBonus } from '../logic/scoring';
 import type { GameModeStats } from '../logic/types';
+import type { PixiGameEvent } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedTriPeaksGame,
@@ -158,6 +159,20 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
     [actions],
   );
 
+  const handleGameEvent = useCallback(
+    (event: PixiGameEvent) => {
+      if (event.type === 'DRAW') {
+        handleDraw();
+        return;
+      }
+      if (event.type === 'TAP_PYRAMID') {
+        handleTapCard(event.pyramidIndex);
+        return;
+      }
+    },
+    [handleDraw, handleTapCard],
+  );
+
   return (
     <>
       <HUD
@@ -173,11 +188,12 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
         onAchievements={onShowAchievements}
       />
 
-      <TriPeaksBoard
-        game={game}
+      <PixiGameCanvas
+        mode="tripeaks"
+        gameState={game}
         cardBackImage={cardBackImage}
-        onTapCard={handleTapCard}
-        onDraw={handleDraw}
+        reducedMotion={reducedMotion}
+        onGameEvent={handleGameEvent}
       />
 
       {showCelebration && (

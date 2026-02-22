@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useFreeCellState } from '../hooks/useFreeCellState';
 import { useTimer } from '../hooks/useTimer';
-import { FreeCellBoard } from '../components/FreeCellBoard/FreeCellBoard';
+import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { FreeCellWinModal } from '../components/FreeCellWinModal/FreeCellWinModal';
 import type { GameModeStats } from '../logic/types';
+import type { PixiGameEvent } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedFreeCellGame,
@@ -165,6 +166,63 @@ export const FreeCellScreen: React.FC<FreeCellScreenProps> = ({
     [actions],
   );
 
+  const handleGameEvent = useCallback(
+    (event: PixiGameEvent) => {
+      if (event.type === 'TAP_COLUMN') {
+        handleTapColumn(event.colIndex, event.cardIndex);
+        return;
+      }
+      if (event.type === 'TAP_FREECELL') {
+        handleTapFreeCell(event.cellIndex);
+        return;
+      }
+      if (event.type === 'TAP_FOUNDATION') {
+        handleTapFoundation(event.pileIndex);
+        return;
+      }
+      if (event.type === 'DRAG_VALIDATED_MOVE') {
+        if (event.sourcePile === 'column') {
+          actions.tapColumn(event.sourcePileIndex, event.sourceCardIndex);
+          if (event.targetPile === 'column') {
+            const targetColumn = game.columns[event.targetPileIndex] ?? [];
+            const targetCardIndex = targetColumn.length === 0 ? 0 : targetColumn.length - 1;
+            actions.tapColumn(event.targetPileIndex, targetCardIndex);
+            soundManager.play('cardPlace');
+            return;
+          }
+          if (event.targetPile === 'freecell') {
+            actions.tapFreeCell(event.targetPileIndex);
+            soundManager.play('cardPlace');
+            return;
+          }
+          if (event.targetPile === 'foundation') {
+            actions.tapFoundation(event.targetPileIndex);
+            soundManager.play('cardPlace');
+            return;
+          }
+        }
+
+        if (event.sourcePile === 'freecell') {
+          actions.tapFreeCell(event.sourcePileIndex);
+          if (event.targetPile === 'column') {
+            const targetColumn = game.columns[event.targetPileIndex] ?? [];
+            const targetCardIndex = targetColumn.length === 0 ? 0 : targetColumn.length - 1;
+            actions.tapColumn(event.targetPileIndex, targetCardIndex);
+            soundManager.play('cardPlace');
+            return;
+          }
+          if (event.targetPile === 'foundation') {
+            actions.tapFoundation(event.targetPileIndex);
+            soundManager.play('cardPlace');
+            return;
+          }
+        }
+        return;
+      }
+    },
+    [actions, game.columns, handleTapColumn, handleTapFoundation, handleTapFreeCell],
+  );
+
   // Foundation count for HUD score display
   const foundationCount = game.foundations.reduce(
     (sum, pile) => sum + pile.length,
@@ -186,12 +244,12 @@ export const FreeCellScreen: React.FC<FreeCellScreenProps> = ({
         onAchievements={onShowAchievements}
       />
 
-      <FreeCellBoard
-        game={game}
+      <PixiGameCanvas
+        mode="freecell"
+        gameState={game}
         cardBackImage={cardBackImage}
-        onTapColumn={handleTapColumn}
-        onTapFreeCell={handleTapFreeCell}
-        onTapFoundation={handleTapFoundation}
+        reducedMotion={reducedMotion}
+        onGameEvent={handleGameEvent}
       />
 
       {showCelebration && (

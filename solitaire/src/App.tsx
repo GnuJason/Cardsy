@@ -218,15 +218,7 @@ export const App: React.FC = () => {
     [checkOnWin, stats],
   );
 
-  // ── Card size class ───────────────────────────────────────
-  const sizeClass =
-    settings.cardSize === 'large'
-      ? 'card-size-large'
-      : settings.cardSize === 'small'
-        ? 'card-size-small'
-        : '';
-
-  const rootClass = [sizeClass, settings.reducedMotion ? 'reduced-motion' : '']
+  const rootClass = [settings.reducedMotion ? 'reduced-motion' : '']
     .filter(Boolean)
     .join(' ');
 

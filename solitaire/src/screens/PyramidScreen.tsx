@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { usePyramidState } from '../hooks/usePyramidState';
 import { useTimer } from '../hooks/useTimer';
-import { PyramidBoard } from '../components/PyramidBoard/PyramidBoard';
+import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
 import { PyramidWinModal } from '../components/PyramidWinModal/PyramidWinModal';
 import type { GameModeStats } from '../logic/types';
+import type { PixiGameEvent } from '../pixi/types';
 import { soundManager } from '../services/sound';
 import {
   getSavedPyramidGame,
@@ -159,6 +160,24 @@ export const PyramidScreen: React.FC<PyramidScreenProps> = ({
     soundManager.play('cardPlace');
   }, [actions]);
 
+  const handleGameEvent = useCallback(
+    (event: PixiGameEvent) => {
+      if (event.type === 'DRAW') {
+        handleDraw();
+        return;
+      }
+      if (event.type === 'TAP_WASTE') {
+        handleTapWaste();
+        return;
+      }
+      if (event.type === 'TAP_PYRAMID') {
+        handleTapPyramid(event.pyramidIndex);
+        return;
+      }
+    },
+    [handleDraw, handleTapPyramid, handleTapWaste],
+  );
+
   return (
     <>
       <HUD
@@ -174,12 +193,12 @@ export const PyramidScreen: React.FC<PyramidScreenProps> = ({
         onAchievements={onShowAchievements}
       />
 
-      <PyramidBoard
-        game={game}
+      <PixiGameCanvas
+        mode="pyramid"
+        gameState={game}
         cardBackImage={cardBackImage}
-        onTapPyramid={handleTapPyramid}
-        onTapWaste={handleTapWaste}
-        onDraw={handleDraw}
+        reducedMotion={reducedMotion}
+        onGameEvent={handleGameEvent}
       />
 
       {showCelebration && (
