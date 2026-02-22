@@ -2,6 +2,14 @@ import type { Sprite } from 'pixi.js';
 import type { AnimationPlan } from './types';
 import { getEasing } from './Easing';
 
+export interface AnimationSchedulerDebugSnapshot {
+  isAnimating: boolean;
+  currentGroupIndex: number;
+  currentGroupSize: number;
+  totalSteps: number;
+  groupElapsedMs: number;
+}
+
 export class AnimationScheduler {
   private plan: AnimationPlan | null;
   private spriteMap: Map<string, Sprite> | null;
@@ -19,6 +27,17 @@ export class AnimationScheduler {
 
   get isAnimating(): boolean {
     return this._isAnimating;
+  }
+
+  getDebugSnapshot(): AnimationSchedulerDebugSnapshot {
+    const currentGroup = this.plan?.groups[this.currentGroupIndex] ?? [];
+    return {
+      isAnimating: this._isAnimating,
+      currentGroupIndex: this.currentGroupIndex,
+      currentGroupSize: currentGroup.length,
+      totalSteps: this.plan?.steps.length ?? 0,
+      groupElapsedMs: this.groupElapsed,
+    };
   }
 
   schedule(plan: AnimationPlan, spriteMap: Map<string, Sprite>): void {

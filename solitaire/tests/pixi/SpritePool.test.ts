@@ -40,4 +40,25 @@ describe('SpritePool', () => {
     pool.destroyAll();
     expect(pool.active.size).toBe(0);
   });
+
+  it('reports frame stats for create/reuse/destroy', () => {
+    const pool = new SpritePool();
+    pool.beginFrame();
+    pool.acquire('a', Texture.WHITE);
+    pool.acquire('a', Texture.WHITE);
+    pool.endFrame();
+    expect(pool.getStats()).toMatchObject({
+      created: 1,
+      reused: 1,
+      destroyed: 0,
+      active: 1,
+    });
+
+    pool.beginFrame();
+    pool.endFrame();
+    expect(pool.getStats()).toMatchObject({
+      destroyed: 1,
+      active: 0,
+    });
+  });
 });

@@ -23,6 +23,7 @@ import type {
   GameMode,
   LayoutResult,
   PileType,
+  PixiDebugOptions,
   PixiGameCanvasProps,
   PixiGameEvent,
   PixiThemeColors,
@@ -169,6 +170,8 @@ interface DragSelection {
 interface DragCandidate {
   selection: DragSelection;
   sprite: Sprite;
+  pointerType: string;
+  startedAt: number;
 }
 
 interface SpriteMeta {
@@ -210,6 +213,59 @@ function toRenderColors(themeColors: PixiThemeColors): {
   };
 }
 
+const DEFAULT_DEBUG_OPTIONS: PixiDebugOptions = {
+  enabled: false,
+  fps: false,
+  pointer: false,
+  hitBoxes: false,
+  textureLogs: false,
+  cacheInspector: false,
+  consoleOnly: true,
+};
+
+function parseDebugFlag(searchParams: URLSearchParams, key: string): boolean {
+  const raw = searchParams.get(key);
+  return raw === '1' || raw === 'true';
+}
+
+export function resolveDebugOptions(
+  debugOptions?: PixiDebugOptions,
+  search = '',
+  isDev = import.meta.env.DEV,
+): PixiDebugOptions {
+  if (!isDev) {
+    return DEFAULT_DEBUG_OPTIONS;
+  }
+
+  if (debugOptions) {
+    return {
+      ...DEFAULT_DEBUG_OPTIONS,
+      ...debugOptions,
+      consoleOnly: true,
+    };
+  }
+
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  const enabled = parseDebugFlag(params, 'pixiDebug');
+  if (!enabled) {
+    return DEFAULT_DEBUG_OPTIONS;
+  }
+
+  return {
+    enabled: true,
+    fps: parseDebugFlag(params, 'pixiFps'),
+    pointer: parseDebugFlag(params, 'pixiPointer'),
+    hitBoxes: parseDebugFlag(params, 'pixiHitBoxes'),
+    textureLogs: parseDebugFlag(params, 'pixiTextures'),
+    cacheInspector: parseDebugFlag(params, 'pixiCache'),
+    consoleOnly: true,
+  };
+}
+
+export function getDragActivationThreshold(pointerType: string): number {
+  return pointerType === 'mouse' ? 3 : 6;
+}
+
 export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   mode,
   gameState,
@@ -218,6 +274,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   themeColors,
   highContrast,
   cardScale,
+  debugOptions,
   drawCount = 1,
   onGameEvent,
 }) => {
@@ -236,8 +293,23 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const spriteMetaRef = useRef(new Map<string, SpriteMeta>());
   const handlersBoundRef = useRef(new Set<string>());
   const tickerFnRef = useRef<((ticker: { deltaMS: number }) => void) | null>(null);
+  const debugRef = useRef<PixiDebugOptions>(DEFAULT_DEBUG_OPTIONS);
+  const pointerLogAtRef = useRef(0);
+  const fpsWindowRef = useRef({ elapsedMs: 0, frames: 0 });
+  const lastCardSizeRef = useRef<string>('');
+  const lastLayoutKeyRef = useRef<string>('');
 
   const [layoutState, setLayoutState] = useState<LayoutResult | null>(null);
+
+  debugRef.current = resolveDebugOptions(
+    debugOptions,
+    typeof window !== 'undefined' ? window.location.search : '',
+  );
+
+  const debugLog = (...args: unknown[]): void => {
+    if (!debugRef.current.enabled) return;
+    console.warn('[PIXI DEBUG]', ...args);
+  };
 
   const effectiveThemeColors = useMemo(
     () => (highContrast ? highContrastOverride(themeColors) : themeColors),
@@ -270,11 +342,41 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
     const viewport = getViewportInfo(host);
     const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+    const cardSizeKey = `${cardSize.width}x${cardSize.height}@${viewport.dpi}`;
+    if (debugRef.current.enabled && debugRef.current.textureLogs && cardSizeKey !== lastCardSizeRef.current) {
+      debugLog('card-size', { mode, cardSize, viewport });
+      lastCardSizeRef.current = cardSizeKey;
+    }
+
     const layout = computeLayout(mode, viewport, cardSize, pileCountsRef.current);
     currentLayoutRef.current = layout;
     setLayoutState(layout);
 
+    if (debugRef.current.enabled && debugRef.current.hitBoxes) {
+      const layoutKey = layout.piles
+        .map((pile) => `${pile.pileType}-${pile.pileIndex}:${pile.x},${pile.y},${pile.dropWidth},${pile.dropHeight}`)
+        .join('|');
+      if (layoutKey !== lastLayoutKeyRef.current) {
+        debugLog(
+          'pile-hitboxes',
+          layout.piles.map((pile) => ({
+            pileType: pile.pileType,
+            pileIndex: pile.pileIndex,
+            x: pile.x,
+            y: pile.y,
+            width: pile.dropWidth,
+            height: pile.dropHeight,
+          })),
+        );
+        lastLayoutKeyRef.current = layoutKey;
+      }
+    }
+
     const animationSteps: AnimationStep[] = [];
+    const pileMap = new Map<string, PileGroup>();
+    for (const pile of piles) {
+      pileMap.set(`${pile.pileType}-${pile.pileIndex}`, pile);
+    }
 
     spritePoolRef.current.beginFrame();
 
@@ -291,9 +393,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       placeholder.zIndex = 0;
       ctx.root.addChild(placeholder);
 
-      const pileData = piles.find(
-        (pile) => pile.pileType === pileLayout.pileType && pile.pileIndex === pileLayout.pileIndex,
-      );
+      const pileData = pileMap.get(`${pileLayout.pileType}-${pileLayout.pileIndex}`);
       const cards = pileData?.cards ?? [];
 
       for (const [index, card] of cards.entries()) {
@@ -342,6 +442,14 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           sprite.on('pointerdown', (pointer: FederatedPointerEvent) => {
             const meta = spriteMetaRef.current.get(spriteKey);
             if (!meta || !meta.faceUp) return;
+            if (debugRef.current.enabled && debugRef.current.pointer) {
+              debugLog('pointerdown', {
+                pointerType: pointer.pointerType,
+                x: pointer.global.x,
+                y: pointer.global.y,
+                card: spriteKey,
+              });
+            }
             dragCandidateRef.current = {
               selection: {
                 sourcePile: meta.pileType,
@@ -351,16 +459,38 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
                 startY: pointer.global.y,
               },
               sprite,
+              pointerType: pointer.pointerType,
+              startedAt: performance.now(),
             };
           });
 
           sprite.on('globalpointermove', (pointer: FederatedPointerEvent) => {
+            if (debugRef.current.enabled && debugRef.current.pointer) {
+              const now = performance.now();
+              if (now - pointerLogAtRef.current > 120) {
+                pointerLogAtRef.current = now;
+                debugLog('pointermove', {
+                  pointerType: pointer.pointerType,
+                  x: pointer.global.x,
+                  y: pointer.global.y,
+                });
+              }
+            }
+
             const candidate = dragCandidateRef.current;
             if (candidate && candidate.sprite === sprite && !dragRef.current) {
               const dx = pointer.global.x - candidate.selection.startX;
               const dy = pointer.global.y - candidate.selection.startY;
-              if (Math.abs(dx) + Math.abs(dy) >= 6) {
+              const threshold = getDragActivationThreshold(candidate.pointerType);
+              if (Math.abs(dx) + Math.abs(dy) >= threshold) {
                 dragRef.current = { ...candidate.selection };
+                if (debugRef.current.enabled && debugRef.current.pointer) {
+                  debugLog('drag-activate', {
+                    pointerType: candidate.pointerType,
+                    threshold,
+                    latencyMs: Math.round(performance.now() - candidate.startedAt),
+                  });
+                }
                 dragCandidateRef.current = null;
                 sprite.alpha = 0.92;
                 sprite.zIndex = 5000;
@@ -407,7 +537,14 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
                       hit.cardIndex,
                     ),
                   );
+                } else if (debugRef.current.enabled && debugRef.current.hitBoxes) {
+                  debugLog('drag-rejected', { source, target, mode });
                 }
+              } else if (debugRef.current.enabled && debugRef.current.hitBoxes) {
+                debugLog('hit-miss', {
+                  x: pointer.global.x,
+                  y: pointer.global.y,
+                });
               }
             }
 
@@ -442,6 +579,14 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
     spritePoolRef.current.endFrame();
 
+    if (debugRef.current.enabled && debugRef.current.cacheInspector) {
+      debugLog('cache', {
+        frontTextures: textureCacheRef.current?.size ?? 0,
+        backTextureReady: Boolean(backTextureRef.current),
+        spritePool: spritePoolRef.current.getStats(),
+      });
+    }
+
     if (animationSteps.length > 0) {
       const plan: AnimationPlan = {
         steps: animationSteps,
@@ -454,6 +599,12 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
         },
       };
       schedulerRef.current.schedule(plan, new Map(spritePoolRef.current.active));
+      if (debugRef.current.enabled && debugRef.current.textureLogs) {
+        debugLog('animation-plan', {
+          steps: animationSteps.length,
+          reducedMotion,
+        });
+      }
     }
 
     if (reducedMotion) {
@@ -470,6 +621,12 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     let active = true;
     const resizeObserver = new ResizeObserver(() => {
       if (!appCtxRef.current || !hostRef.current) return;
+      if (debugRef.current.enabled && debugRef.current.textureLogs) {
+        debugLog('resize-observed', {
+          width: hostRef.current.clientWidth,
+          height: hostRef.current.clientHeight,
+        });
+      }
       if (schedulerRef.current.isAnimating) {
         pendingRenderRef.current = true;
         return;
@@ -488,12 +645,36 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
       const tick = (ticker: { deltaMS: number }) => {
         schedulerRef.current.update(ticker.deltaMS);
+
+        if (!debugRef.current.enabled) return;
+
+        if (debugRef.current.fps) {
+          fpsWindowRef.current.elapsedMs += ticker.deltaMS;
+          fpsWindowRef.current.frames += 1;
+          if (fpsWindowRef.current.elapsedMs >= 1000) {
+            const fps = Math.round((fpsWindowRef.current.frames * 1000) / fpsWindowRef.current.elapsedMs);
+            debugLog('fps', { fps });
+            fpsWindowRef.current.elapsedMs = 0;
+            fpsWindowRef.current.frames = 0;
+          }
+        }
+
+        if (debugRef.current.cacheInspector) {
+          debugLog('scheduler', schedulerRef.current.getDebugSnapshot());
+        }
       };
       tickerFnRef.current = tick;
       ctx.app.ticker.add(tick);
 
       const viewport = getViewportInfo(host);
       const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+      if (debugRef.current.enabled && debugRef.current.textureLogs) {
+        debugLog('texture-regeneration', {
+          reason: 'mount',
+          cardBackImage,
+          cardSize,
+        });
+      }
       textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors));
 
       const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage);
@@ -510,6 +691,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     return () => {
       active = false;
       resizeObserver.disconnect();
+      fpsWindowRef.current = { elapsedMs: 0, frames: 0 };
+      pointerLogAtRef.current = 0;
       dragRef.current = null;
       dragCandidateRef.current = null;
       schedulerRef.current.cancel();
@@ -547,6 +730,12 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
 
     const viewport = getViewportInfo(host);
     const cardSize = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+    if (debugRef.current.enabled && debugRef.current.textureLogs) {
+      debugLog('texture-regeneration', {
+        reason: 'theme-change',
+        cardSize,
+      });
+    }
 
     if (textureCacheRef.current) {
       invalidateTextures(textureCacheRef.current);

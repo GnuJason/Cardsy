@@ -96,6 +96,16 @@ export interface PixiThemeColors {
   placeholderAlpha: number;
 }
 
+export interface PixiDebugOptions {
+  enabled: boolean;
+  fps: boolean;
+  pointer: boolean;
+  hitBoxes: boolean;
+  textureLogs: boolean;
+  cacheInspector: boolean;
+  consoleOnly: boolean;
+}
+
 export type PixiGameEvent =
   | { type: 'DRAW' }
   | { type: 'TAP_WASTE' }
@@ -124,6 +134,7 @@ export interface PixiGameCanvasProps {
   themeColors: PixiThemeColors;
   highContrast: boolean;
   cardScale: string;
+  debugOptions?: PixiDebugOptions;
   drawCount?: 1 | 3;
   onGameEvent: (event: PixiGameEvent) => void;
 }

@@ -110,4 +110,24 @@ describe('AnimationScheduler', () => {
     expect(sprites.get('a')?.x).toBe(40);
     expect(scheduler.isAnimating).toBe(false);
   });
+
+  it('reports debug snapshot while animating', () => {
+    const scheduler = new AnimationScheduler();
+    const sprites = makeSpriteMap();
+    scheduler.schedule(
+      {
+        steps: [{ spriteKey: 'a', from: { x: 0, y: 0, alpha: 1 }, to: { x: 40, y: 0, alpha: 1 }, durationMs: 100, easing: 'linear' }],
+        groups: [[0]],
+      },
+      sprites,
+    );
+
+    scheduler.update(20);
+    expect(scheduler.getDebugSnapshot()).toMatchObject({
+      isAnimating: true,
+      currentGroupIndex: 0,
+      currentGroupSize: 1,
+      totalSteps: 1,
+    });
+  });
 });
