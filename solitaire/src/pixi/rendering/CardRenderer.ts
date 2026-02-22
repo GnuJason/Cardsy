@@ -88,19 +88,23 @@ function makeFrontCardTexture(
     style: pipStyle,
     resolution,
   });
-  center.anchor.set(0.5);
-  center.x = Math.round(cardSize.width * 0.5);
-  center.y = Math.round(cardSize.height * 0.5);
+  center.anchor.set(0.5, 0.5);
+  center.x = cardSize.width / 2;
+  center.y = cardSize.height / 2;
 
   // ── Bottom-right corner: rank + suit rotated 180° ──
+  // Mirror the top-left corner layout exactly, then rotate 180° around the
+  // card's bottom-right safe-area origin.  We position the rank and suit at
+  // the same insets from the bottom-right as the top-left uses from the
+  // top-left, then rotate each glyph.
   const mirrorRank = new Text({ text: RANK_LABELS[rank], style: rankStyle, resolution });
-  mirrorRank.anchor.set(0.5, 0.5);
+  mirrorRank.anchor.set(0, 0);
   mirrorRank.rotation = Math.PI;
   mirrorRank.x = cardSize.width - marginX;
-  mirrorRank.y = cardSize.height - marginY - Math.round(cardSize.fontSize * 0.05);
+  mirrorRank.y = cardSize.height - marginY;
 
   const mirrorSuit = new Text({ text: SUIT_SYMBOLS[suit], style: cornerSuitStyle, resolution });
-  mirrorSuit.anchor.set(0.5, 0.5);
+  mirrorSuit.anchor.set(0, 0);
   mirrorSuit.rotation = Math.PI;
   mirrorSuit.x = cardSize.width - marginX;
   mirrorSuit.y = cardSize.height - marginY - Math.round(cardSize.fontSize * 1.0);
@@ -137,11 +141,56 @@ function makeBackTexture(app: Application, cardSize: CardSize, borderColor?: num
   return app.renderer.generateTexture({ target: container, resolution });
 }
 
+/**
+ * Compose a custom photo inside a rounded-rect card shape with a border.
+ * The photo is scaled to 'contain' inside the card area while maintaining
+ * aspect ratio.  A dark border and rounded corners match the front style.
+ */
+export function makeCustomBackTexture(
+  app: Application,
+  cardSize: CardSize,
+  photoTexture: Texture,
+  resolution = 1,
+): Texture {
+  const container = new Container();
+
+  // Background fill + border
+  const bg = new Graphics()
+    .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
+    .fill({ color: 0x111111 })
+    .stroke({ color: 0x222222, width: 1.5 });
+  container.addChild(bg);
+
+  // Photo sprite scaled to contain
+  const photo = new Sprite(photoTexture);
+  const pad = 2;    // leave border visible
+  const availW = cardSize.width - pad * 2;
+  const availH = cardSize.height - pad * 2;
+  const texW = photoTexture.width || availW;
+  const texH = photoTexture.height || availH;
+  const scale = Math.min(availW / texW, availH / texH);
+  photo.width = Math.round(texW * scale);
+  photo.height = Math.round(texH * scale);
+  photo.x = pad + Math.round((availW - photo.width) / 2);
+  photo.y = pad + Math.round((availH - photo.height) / 2);
+  container.addChild(photo);
+
+  // Rounded-rect mask clips the photo to the card shape
+  const mask = new Graphics()
+    .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
+    .fill({ color: 0xffffff });
+  container.addChild(mask);
+  container.mask = mask;
+
+  return app.renderer.generateTexture({ target: container, resolution });
+}
+
 export async function generateBackTexture(app: Application, cardSize: CardSize, backImage?: string | null, resolution = 1): Promise<Texture> {
   if (backImage) {
     try {
       const loaded = await Assets.load(backImage);
-      return Texture.from(loaded);
+      const photoTex = Texture.from(loaded);
+      return makeCustomBackTexture(app, cardSize, photoTex, resolution);
     } catch {
       return makeBackTexture(app, cardSize, undefined, resolution);
     }

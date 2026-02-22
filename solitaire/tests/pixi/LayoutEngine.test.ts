@@ -32,7 +32,10 @@ describe('computeLayout', () => {
     const layout = computeLayout('spider', viewport, cardSize, pileCounts);
     const col0 = layout.piles.find((pile) => pile.pileType === 'column' && pile.pileIndex === 0);
     expect(col0).toBeDefined();
-    expect(col0?.fanOffset).toBeLessThanOrEqual(Math.round(cardSize.width * 0.22));
+    // Spider default is height * 0.16; clamped value should be smaller
+    expect(col0?.fanOffset).toBeLessThan(Math.round(cardSize.height * 0.16));
+    // But still meets minimum visible strip
+    expect(col0?.fanOffset).toBeGreaterThanOrEqual(Math.max(8, Math.round(cardSize.height * 0.06)));
   });
 
   it('keeps Klondike foundations from drifting too far right on wide viewports', () => {
@@ -43,5 +46,35 @@ describe('computeLayout', () => {
     expect(waste).toBeDefined();
     expect(foundation0).toBeDefined();
     expect((foundation0?.x ?? 0) - ((waste?.x ?? 0) + (waste?.dropWidth ?? 0))).toBeLessThanOrEqual(Math.round(cardSize.width * 1.8));
+  });
+
+  it('uses height-based fan offsets for all fanned modes', () => {
+    for (const mode of ['klondike', 'freecell', 'spider', 'golf'] as const) {
+      const layout = computeLayout(mode, viewport, cardSize);
+      const fanned = layout.piles.filter((p) => p.fanDirection === 'down');
+      for (const pile of fanned) {
+        // Fan offset should be a fraction of card height, not width
+        expect(pile.fanOffset).toBeGreaterThanOrEqual(Math.round(cardSize.height * 0.1));
+        expect(pile.fanOffset).toBeLessThanOrEqual(Math.round(cardSize.height * 0.25));
+      }
+    }
+  });
+
+  it('enforces minimum visible strip even with many cards', () => {
+    const largeCounts = new Map<string, number>([['tableau-0', 50]]);
+    const layout = computeLayout('klondike', viewport, cardSize, largeCounts);
+    const tab0 = layout.piles.find((p) => p.pileType === 'tableau' && p.pileIndex === 0);
+    expect(tab0).toBeDefined();
+    const minFan = Math.max(8, Math.round(cardSize.height * 0.06));
+    expect(tab0?.fanOffset).toBeGreaterThanOrEqual(minFan);
+  });
+
+  it('fan offsets scale proportionally with large cards', () => {
+    const largeCard = { width: 200, height: 280, fontSize: 50, pipSize: 70, cornerRadius: 18 };
+    const layout = computeLayout('klondike', viewport, largeCard);
+    const tab = layout.piles.filter((p) => p.pileType === 'tableau');
+    for (const pile of tab) {
+      expect(pile.fanOffset).toBe(Math.round(largeCard.height * 0.2));
+    }
   });
 });

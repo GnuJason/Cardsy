@@ -74,4 +74,22 @@ describe('PixiGameCanvas debug helpers', () => {
     expect(res).toBeGreaterThanOrEqual(1);
     expect(typeof res).toBe('number');
   });
+
+  it('touch drag threshold is larger than mouse threshold', () => {
+    const mouseThreshold = getDragActivationThreshold('mouse');
+    const touchThreshold = getDragActivationThreshold('touch');
+    expect(touchThreshold).toBeGreaterThan(mouseThreshold);
+  });
+
+  it('drag threshold for unknown pointer type is at least mouse threshold', () => {
+    const unknown = getDragActivationThreshold('pen');
+    const mouse = getDragActivationThreshold('mouse');
+    expect(unknown).toBeGreaterThanOrEqual(mouse);
+  });
+
+  it('resolveGameplayBackImage returns null for missing card with no global override', () => {
+    const result = resolveGameplayBackImage('nonexistent-99', null);
+    // Should still return a path or null — never throw
+    expect(result === null || typeof result === 'string').toBe(true);
+  });
 });

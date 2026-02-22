@@ -13,6 +13,7 @@ import {
   generateCardTextures,
   getTextureResolution,
   invalidateTextures,
+  makeCustomBackTexture,
   type TextureCache,
 } from './rendering/CardRenderer';
 import { hitTestPile } from './interaction/HitDetection';
@@ -294,6 +295,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const backTextureRef = useRef<Awaited<ReturnType<typeof generateBackTexture>> | null>(null);
   const backTextureByUrlRef = useRef<Map<string, Texture>>(new Map());
   const dragRef = useRef<DragSelection | null>(null);
+  const dragSpriteRef = useRef<Sprite | null>(null);
   const dragCandidateRef = useRef<DragCandidate | null>(null);
   const pendingRenderRef = useRef(false);
   const currentLayoutRef = useRef<LayoutResult | null>(null);
@@ -348,9 +350,28 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     const cached = backTextureByUrlRef.current.get(backImage);
     if (cached) return cached;
 
+    // Raw Texture.from — will be replaced with masked version once the
+    // async preload resolves (see mount effect).  This is a fallback for
+    // cards whose preload hasn't completed yet.
     const texture = Texture.from(backImage);
     backTextureByUrlRef.current.set(backImage, texture);
     return texture;
+  };
+
+  /** Re-render all per-card back textures through the rounded-rect mask. */
+  const maskBackTextures = (cardSize: CardSize): void => {
+    const ctx = appCtxRef.current;
+    if (!ctx) return;
+    const res = getTextureResolution();
+    const newMap = new Map<string, Texture>();
+    for (const [url, rawTex] of backTextureByUrlRef.current) {
+      try {
+        newMap.set(url, makeCustomBackTexture(ctx.app, cardSize, rawTex, res));
+      } catch {
+        newMap.set(url, rawTex); // keep raw on failure
+      }
+    }
+    backTextureByUrlRef.current = newMap;
   };
 
   const effectiveThemeColors = useMemo(
@@ -375,6 +396,13 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   cardScaleRef.current = cardScale;
 
   const renderScene = (): void => {
+    // Never re-layout while a drag is active — it repositions all sprites
+    // including the one the user is holding, causing a visual scramble.
+    if (dragRef.current) {
+      pendingRenderRef.current = true;
+      return;
+    }
+
     const host = hostRef.current;
     const ctx = appCtxRef.current;
     const textures = textureCacheRef.current;
@@ -543,6 +571,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
               const threshold = getDragActivationThreshold(candidate.pointerType);
               if (Math.hypot(dx, dy) >= threshold) {
                 dragRef.current = { ...candidate.selection };
+                dragSpriteRef.current = sprite;
                 if (debugRef.current.enabled && debugRef.current.pointer) {
                   debugLog('drag-activate', {
                     pointerType: candidate.pointerType,
@@ -556,7 +585,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
               }
             }
 
-            if (!dragRef.current) return;
+            // Only the sprite that owns the drag should move
+            if (!dragRef.current || dragSpriteRef.current !== sprite) return;
             const dragDx = pointer.global.x - dragRef.current.startX;
             const dragDy = pointer.global.y - dragRef.current.startY;
             if (Math.abs(dragDx) + Math.abs(dragDy) < 1) return;
@@ -569,10 +599,12 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           const handlePointerUp = (pointer: FederatedPointerEvent) => {
             const activeDrag = dragRef.current;
             dragCandidateRef.current = null;
-            if (!activeDrag) return;
+            // Only the drag-owning sprite should handle pointerup
+            if (!activeDrag || dragSpriteRef.current !== sprite) return;
 
             const activeLayout = currentLayoutRef.current;
             sprite.alpha = 1;
+            sprite.zIndex = 1;
 
             if (activeLayout) {
               const hit = hitTestPile(pointer.global, activeLayout, pileCountsRef.current);
@@ -608,9 +640,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
             }
 
             dragRef.current = null;
-            if (pendingRenderRef.current) {
-              pendingRenderRef.current = false;
-            }
+            dragSpriteRef.current = null;
+            pendingRenderRef.current = false;
             renderScene();
           };
 
@@ -750,6 +781,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           }
         }
 
+        // First pass: load raw photo textures
         await Promise.all(
           [...backUrls].map(async (url) => {
             try {
@@ -762,6 +794,11 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
             }
           }),
         );
+
+        // Second pass: mask raw textures into rounded-rect card shapes
+        const viewport = getViewportInfo(host);
+        const cs = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
+        maskBackTextures(cs);
       }
 
       const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage, res);
@@ -781,6 +818,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       fpsWindowRef.current = { elapsedMs: 0, frames: 0 };
       pointerLogAtRef.current = 0;
       dragRef.current = null;
+      dragSpriteRef.current = null;
       dragCandidateRef.current = null;
       schedulerRef.current.cancel();
 
@@ -843,7 +881,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   }, [effectiveThemeColors, mode]);
 
   useEffect(() => {
-    if (dragRef.current || schedulerRef.current.isAnimating) {
+    // renderScene itself checks dragRef and defers, so just call it.
+    if (schedulerRef.current.isAnimating) {
       pendingRenderRef.current = true;
       return;
     }
