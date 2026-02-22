@@ -52,7 +52,7 @@ describe('PixiGameCanvas debug helpers', () => {
   });
 
   it('uses smaller drag threshold for mouse pointer', () => {
-    expect(getDragActivationThreshold('mouse')).toBe(3);
-    expect(getDragActivationThreshold('touch')).toBe(6);
+    expect(getDragActivationThreshold('mouse')).toBe(6);
+    expect(getDragActivationThreshold('touch')).toBe(10);
   });
 });

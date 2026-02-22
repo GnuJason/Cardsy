@@ -263,7 +263,11 @@ export function resolveDebugOptions(
 }
 
 export function getDragActivationThreshold(pointerType: string): number {
-  return pointerType === 'mouse' ? 3 : 6;
+  return pointerType === 'mouse' ? 6 : 10;
+}
+
+function supportsDragMode(mode: GameMode): boolean {
+  return mode === 'klondike' || mode === 'freecell' || mode === 'spider';
 }
 
 export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
@@ -455,6 +459,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           sprite.on('pointerdown', (pointer: FederatedPointerEvent) => {
             const meta = spriteMetaRef.current.get(spriteKey);
             if (!meta || !meta.faceUp) return;
+            if (!supportsDragMode(mode)) return;
+            if (pointer.pointerType === 'mouse' && pointer.button !== 0) return;
             if (debugRef.current.enabled && debugRef.current.pointer) {
               debugLog('pointerdown', {
                 pointerType: pointer.pointerType,
@@ -495,7 +501,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
               const dx = pointer.global.x - candidate.selection.startX;
               const dy = pointer.global.y - candidate.selection.startY;
               const threshold = getDragActivationThreshold(candidate.pointerType);
-              if (Math.abs(dx) + Math.abs(dy) >= threshold) {
+              if (Math.hypot(dx, dy) >= threshold) {
                 dragRef.current = { ...candidate.selection };
                 if (debugRef.current.enabled && debugRef.current.pointer) {
                   debugLog('drag-activate', {
