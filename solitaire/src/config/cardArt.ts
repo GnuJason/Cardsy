@@ -13,7 +13,7 @@ export const SUIT_PHOTOS: Record<string, string | null> = {
   spades: null,
 };
 
-const SAFE_FILENAME = /^[a-zA-Z0-9_.-]+\.(png|jpe?g)$/;
+const SAFE_FILENAME = /^(?!.*[\\/])(?!.*\.\.)[a-zA-Z0-9 _.~%()-]+\.(png|jpe?g)$/i;
 
 /**
  * Returns the card back image URL for the given filename.

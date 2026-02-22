@@ -46,7 +46,7 @@ export const KeyboardOverlay: React.FC<KeyboardOverlayProps> = ({
               background: 'transparent',
               border: 'none',
               padding: 0,
-              pointerEvents: 'auto',
+              pointerEvents: 'none',
               outline: 'none',
             }}
             onFocus={(focusEvent) => {
