@@ -1,6 +1,7 @@
 import React from 'react';
 import type { UnlockedAchievement } from '../../logic/types';
 import { ACHIEVEMENTS, getTierProgress } from '../../logic/achievements';
+import { Modal } from '../Modal/Modal';
 import styles from './AchievementsModal.module.css';
 
 interface AchievementsModalProps {
@@ -18,8 +19,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} ariaLabel="Achievements" className={styles.achievementsPanel}>
         <h2 className={styles.title}>🏆 Achievements</h2>
 
         <div className={styles.grid}>
@@ -66,7 +66,6 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({
         <button className={styles.closeBtn} onClick={onClose}>
           Done
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 };

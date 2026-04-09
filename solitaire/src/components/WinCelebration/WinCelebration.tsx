@@ -118,11 +118,15 @@ export const WinCelebration: React.FC<WinCelebrationProps> = ({
   if (reducedMotion) return null;
 
   const getCardStyle = (index: number): React.CSSProperties => {
+    // Stagger cards in 4 bursts for a wave effect
+    const staggerDelay = `${(index % 4) * 60}ms`;
+
     if (phase === 'scatter') {
       const pos = scatterPositions[index];
       return {
         transform: `translate(${pos.x}px, ${pos.y}px) rotate(${pos.rotation}deg)`,
         opacity: 1,
+        transitionDelay: staggerDelay,
       };
     }
     if (phase === 'converge') {
@@ -132,6 +136,7 @@ export const WinCelebration: React.FC<WinCelebrationProps> = ({
       return {
         transform: `translate(${offset}px, ${offset}px) rotate(${rot}deg)`,
         opacity: 1,
+        transitionDelay: staggerDelay,
       };
     }
     if (phase === 'photo') {

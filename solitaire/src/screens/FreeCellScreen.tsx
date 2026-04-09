@@ -5,7 +5,8 @@ import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
-import { FreeCellWinModal } from '../components/FreeCellWinModal/FreeCellWinModal';
+import { WinModal } from '../components/WinModal/WinModal';
+import { formatTime } from '../hooks/useTimer';
 import type { GameModeStats } from '../logic/types';
 import type { PixiGameEvent, PixiThemeColors } from '../pixi/types';
 import { soundManager } from '../services/sound';
@@ -269,12 +270,17 @@ export const FreeCellScreen: React.FC<FreeCellScreenProps> = ({
       )}
 
       {showWinModal && (
-        <FreeCellWinModal
+        <WinModal
           moves={game.moves}
           elapsed={elapsed}
           bestScore={modeStats.bestScore}
           onNewGame={handleNewGame}
           modeStats={modeStats}
+          isNewBest={modeStats.bestScore === null || game.moves < modeStats.bestScore}
+          statLines={[
+            { label: 'Moves', value: game.moves },
+            { label: 'Time', value: formatTime(elapsed) },
+          ]}
         />
       )}
 

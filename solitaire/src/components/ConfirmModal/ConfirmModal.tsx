@@ -1,4 +1,5 @@
 import React from 'react';
+import { Modal } from '../Modal/Modal';
 import styles from './ConfirmModal.module.css';
 
 interface ConfirmModalProps {
@@ -19,8 +20,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onCancel,
 }) => {
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onCancel} ariaLabel={title}>
         <h2 className={styles.title}>{title}</h2>
         <p className={styles.message}>{message}</p>
         <div className={styles.buttons}>
@@ -31,7 +31,6 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             {confirmLabel}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

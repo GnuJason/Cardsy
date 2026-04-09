@@ -1,5 +1,6 @@
 import React from 'react';
-import styles from '../WinModal/WinModal.module.css'; // reuse same modal styles
+import { Modal } from '../Modal/Modal';
+import styles from '../WinModal/WinModal.module.css';
 
 interface NoMovesModalProps {
   onUndo: () => void;
@@ -13,8 +14,7 @@ export const NoMovesModal: React.FC<NoMovesModalProps> = ({
   canUndo,
 }) => {
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <Modal onClose={canUndo ? onUndo : onNewGame} ariaLabel="No moves available">
         <h2 className={styles.title}>No Moves Available</h2>
         <p className={styles.message}>
           There are no more moves you can make. Would you like to undo or start a
@@ -30,7 +30,6 @@ export const NoMovesModal: React.FC<NoMovesModalProps> = ({
             New Game
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

@@ -1,59 +1,35 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-modal-overlay);
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal {
-  background: var(--color-modal-bg);
-  border-radius: 16px;
-  padding: 28px 32px;
-  max-width: 420px;
-  width: 90%;
-  color: #333;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
+/* StatsModal-specific styles — overlay/modal layout handled by Modal component */
 
 .title {
-  font-size: 22px;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .tabs {
   display: flex;
   gap: 0;
-  margin-bottom: 20px;
-  border-radius: 8px;
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid #ddd;
 }
 
 .tab {
   flex: 1;
-  padding: 10px;
+  padding: var(--space-2);
   font-size: 14px;
   font-weight: 600;
-  background: #f5f5f5;
-  color: #666;
+  background: var(--color-surface);
+  color: var(--color-modal-text-subtle);
   border: none;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--duration-sm) var(--ease-out);
 }
 
 .tab:hover {
-  background: #eee;
+  background: var(--color-surface-hover);
 }
 
 .tabActive {
@@ -70,15 +46,15 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .statRow {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid #eee;
-  font-size: 15px;
+  font-size: var(--font-size-md);
 }
 
 .statRow:last-child {
@@ -86,7 +62,7 @@
 }
 
 .statLabel {
-  color: #666;
+  color: var(--color-modal-text-subtle);
 }
 
 .statValue {
@@ -96,14 +72,14 @@
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
 }
 
 .resetBtn {
-  padding: 10px 20px;
-  font-size: 13px;
-  border-radius: 50px;
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-pill);
   font-weight: 600;
   background: #fee;
   color: #c33;
@@ -115,30 +91,26 @@
 }
 
 .closeBtn {
-  padding: 10px 28px;
-  font-size: 15px;
-  border-radius: 50px;
+  padding: var(--space-2) var(--space-7);
+  font-size: var(--font-size-md);
+  border-radius: var(--radius-pill);
   font-weight: 600;
 }
 
 /* ── Responsive: phone ── */
 @media (max-width: 480px) {
-  .modal {
-    padding: 20px 16px;
-  }
-
   .tabs {
     flex-wrap: wrap;
   }
 
   .tab,
   .tabActive {
-    padding: 8px 4px;
-    font-size: 11px;
+    padding: var(--space-2) var(--space-1);
+    font-size: var(--font-size-xs);
     min-height: 40px;
   }
 
   .statRow {
-    font-size: 13px;
+    font-size: var(--font-size-sm);
   }
 }

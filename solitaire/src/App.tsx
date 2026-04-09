@@ -242,11 +242,10 @@ export const App: React.FC = () => {
       {selectedMode && !showModeSelector && !showSplash && (
         <Suspense
           fallback={
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}>
-              Loading…
-            </div>
+            <div className="loading-fallback">Loading…</div>
           }
         >
+          <div className="screen-enter" key={selectedMode} style={{ display: 'contents' }}>
           {selectedMode === 'klondike' && (
             <KlondikeScreen
               cardBackImage={cardBackImage}
@@ -356,6 +355,7 @@ export const App: React.FC = () => {
               onWin={handleSpiderWin}
             />
           )}
+          </div>
         </Suspense>
       )}
 
@@ -399,6 +399,9 @@ export const App: React.FC = () => {
       {toastQueue.length > 0 && (
         <AchievementToast toast={toastQueue[0]} onDismiss={dismissToast} />
       )}
+
+      {/* ARIA live region for screen-reader announcements */}
+      <div id="game-announcer" aria-live="polite" aria-atomic="true" className="sr-only" />
     </div>
   );
 };

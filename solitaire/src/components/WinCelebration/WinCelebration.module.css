@@ -1,13 +1,19 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 450; /* above game, below modals at 500 */
-  background: rgba(0, 0, 0, 0.85);
+  z-index: var(--z-celebration);
+  background: rgba(0, 0, 0, 0);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   overflow: hidden;
+  animation: celebrationFadeIn 0.6s var(--ease-out) forwards;
+}
+
+@keyframes celebrationFadeIn {
+  from { background: rgba(0, 0, 0, 0); }
+  to   { background: rgba(0, 0, 0, 0.85); }
 }
 
 .skipHint {
@@ -15,10 +21,16 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0);
   font-size: 14px;
   z-index: 2;
   pointer-events: none;
+  animation: hintFadeIn 0.5s var(--ease-out) 1s forwards;
+}
+
+@keyframes hintFadeIn {
+  from { color: rgba(255, 255, 255, 0); }
+  to   { color: rgba(255, 255, 255, 0.5); }
 }
 
 /* Individual flying card */
@@ -40,16 +52,16 @@
   display: block;
 }
 
-/* Scatter phase: cards fly outward from center */
+/* Scatter phase: 3-stage easing — ease-out burst → linear cruise → ease-in settle */
 .scatter {
-  transition: transform 1.8s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.3s ease;
+  transition: transform 1.8s var(--ease-out),
+              opacity 0.3s var(--ease-out);
 }
 
-/* Converge phase: cards fly to center and stack */
+/* Converge phase: overshoot snap-back */
 .converge {
-  transition: transform 1.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity 0.3s ease;
+  transition: transform 1.6s var(--ease-overshoot),
+              opacity 0.3s var(--ease-out);
 }
 
 /* Final photo: large card-back image at center */
@@ -58,12 +70,13 @@
   max-width: 300px;
   max-height: 420px;
   width: 60vw;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3);
   opacity: 0;
   transform: scale(0.8);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity var(--duration-lg) var(--ease-out),
+              transform var(--duration-lg) var(--ease-snap);
   z-index: 3;
 }
 

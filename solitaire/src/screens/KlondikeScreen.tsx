@@ -297,6 +297,7 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
           bestScore={modeStats.bestScore}
           onNewGame={handleNewGame}
           modeStats={modeStats}
+          showTimerBonus
         />
       )}
 

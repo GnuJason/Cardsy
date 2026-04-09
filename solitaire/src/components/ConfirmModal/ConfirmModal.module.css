@@ -1,80 +1,51 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-modal-overlay);
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal {
-  background: var(--color-modal-bg);
-  border-radius: 16px;
-  padding: 28px 32px;
-  max-width: 380px;
-  width: 90%;
-  color: #333;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
+/* ConfirmModal-specific styles — overlay/modal layout handled by Modal component */
 
 .title {
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .message {
-  font-size: 15px;
-  color: #555;
-  margin-bottom: 24px;
+  font-size: var(--font-size-md);
+  color: var(--color-modal-text-muted);
+  margin-bottom: var(--space-6);
   line-height: 1.5;
 }
 
 .buttons {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
 }
 
 .cancelBtn {
-  padding: 10px 24px;
-  font-size: 15px;
-  border-radius: 50px;
+  padding: var(--space-2) var(--space-6);
+  font-size: var(--font-size-md);
+  border-radius: var(--radius-pill);
   font-weight: 600;
-  background: #e0e0e0;
-  color: #333;
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary-text);
 }
 
 .cancelBtn:hover {
-  background: #d0d0d0;
+  background: var(--color-secondary-hover);
 }
 
 .confirmBtn {
-  padding: 10px 24px;
-  font-size: 15px;
-  border-radius: 50px;
+  padding: var(--space-2) var(--space-6);
+  font-size: var(--font-size-md);
+  border-radius: var(--radius-pill);
   font-weight: 600;
 }
 
 /* ── Responsive: phone ── */
 @media (max-width: 480px) {
-  .modal {
-    padding: 20px 16px;
-  }
-
   .title {
-    font-size: 18px;
+    font-size: var(--font-size-lg);
   }
 
   .message {
-    font-size: 13px;
+    font-size: var(--font-size-sm);
   }
 }

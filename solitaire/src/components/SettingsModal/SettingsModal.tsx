@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import type { UserSettings } from '../../logic/types';
 import { THEMES } from '../../config/themes';
+import { Modal } from '../Modal/Modal';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {
@@ -31,8 +32,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   ];
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} ariaLabel="Settings">
         <h2 className={styles.title}>Settings</h2>
 
         {/* Card size */}
@@ -200,7 +200,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <button className={styles.closeBtn} onClick={onClose}>
           Done
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 };

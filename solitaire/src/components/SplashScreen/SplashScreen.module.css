@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1a6b3c 0%, #0d4025 50%, #1a6b3c 100%);
-  animation: fadeIn 0.8s ease-out;
+  animation: fadeIn 0.8s var(--ease-out);
 }
 
 @keyframes fadeIn {
@@ -22,7 +22,7 @@
   text-align: center;
   padding: 40px;
   max-width: 500px;
-  animation: slideUp 0.8s ease-out 0.3s both;
+  animation: slideUp 0.8s var(--ease-out) 0.3s both;
 }
 
 @keyframes slideUp {
@@ -64,7 +64,8 @@
   border-radius: 50px;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--duration-md) var(--ease-out),
+              box-shadow var(--duration-md) var(--ease-out);
 }
 
 .startBtn:hover {

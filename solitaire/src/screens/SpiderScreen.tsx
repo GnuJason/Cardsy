@@ -5,7 +5,8 @@ import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
 import { NoMovesModal } from '../components/NoMovesModal/NoMovesModal';
-import { SpiderWinModal } from '../components/SpiderWinModal/SpiderWinModal';
+import { WinModal } from '../components/WinModal/WinModal';
+import { formatTime } from '../hooks/useTimer';
 import type { GameModeStats } from '../logic/types';
 import type { PixiGameEvent, PixiThemeColors } from '../pixi/types';
 import { soundManager } from '../services/sound';
@@ -228,13 +229,18 @@ export const SpiderScreen: React.FC<SpiderScreenProps> = ({
       )}
 
       {showWinModal && (
-        <SpiderWinModal
+        <WinModal
           score={game.score}
           moves={game.moves}
           elapsed={elapsed}
           bestScore={modeStats.bestScore}
           onNewGame={handleNewGame}
           modeStats={modeStats}
+          statLines={[
+            { label: 'Score', value: game.score },
+            { label: 'Moves', value: game.moves },
+            { label: 'Time', value: formatTime(elapsed) },
+          ]}
         />
       )}
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { AllStats, GameMode, GameModeStats } from '../../logic/types';
 import { formatTime } from '../../hooks/useTimer';
+import { Modal } from '../Modal/Modal';
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal';
 import styles from './StatsModal.module.css';
 
@@ -67,8 +68,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
   return (
     <>
-      <div className={styles.overlay} onClick={onClose}>
-        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <Modal onClose={onClose} ariaLabel="Statistics">
           <h2 className={styles.title}>Statistics</h2>
 
           <div className={styles.tabs}>
@@ -98,8 +98,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
               Done
             </button>
           </div>
-        </div>
-      </div>
+      </Modal>
 
       {confirmReset && (
         <ConfirmModal

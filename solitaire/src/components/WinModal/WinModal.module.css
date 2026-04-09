@@ -1,87 +1,104 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-modal-overlay);
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal {
-  background: var(--color-modal-bg);
-  border-radius: 16px;
-  padding: 32px;
-  max-width: 400px;
-  width: 90%;
-  color: #333;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
+/* WinModal-specific styles — overlay/modal layout handled by Modal component */
 
 .title {
-  font-size: 24px;
+  font-size: var(--font-size-3xl);
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-4);
 }
 
-.message {
-  font-size: 16px;
-  color: #666;
-  margin-bottom: 24px;
-  line-height: 1.5;
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) 0;
+  font-size: var(--font-size-md);
+  color: var(--color-modal-text-subtle);
+}
+
+.statHighlight {
+  composes: stat;
+  color: var(--color-modal-text);
+  font-weight: 600;
+}
+
+.statLabel {
+  flex-shrink: 0;
+}
+
+.statValue {
+  font-variant-numeric: tabular-nums;
+}
+
+.achievements {
+  margin-bottom: var(--space-4);
+}
+
+.badge {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-modal-text);
+  margin-bottom: var(--space-1);
+}
+
+.streakInfo {
+  font-size: var(--font-size-md);
+  color: var(--color-modal-text-muted);
+  margin-bottom: var(--space-5);
 }
 
 .buttons {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .primaryBtn {
-  padding: 12px 28px;
-  font-size: 16px;
-  border-radius: 50px;
+  padding: var(--space-3) var(--space-7);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-pill);
   font-weight: 600;
 }
 
 .secondaryBtn {
-  padding: 12px 28px;
-  font-size: 16px;
-  border-radius: 50px;
+  padding: var(--space-3) var(--space-7);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-pill);
   font-weight: 600;
-  background: #e0e0e0;
-  color: #333;
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary-text);
 }
 
 .secondaryBtn:hover {
-  background: #d0d0d0;
+  background: var(--color-secondary-hover);
 }
 
-.streakInfo {
-  font-size: 15px;
-  color: #555;
-  margin-bottom: 20px;
+/* Used by NoMovesModal which shares this CSS file */
+.message {
+  font-size: var(--font-size-base);
+  color: var(--color-modal-text-subtle);
+  margin-bottom: var(--space-6);
+  line-height: 1.5;
 }
 
 /* ── Responsive: phone ── */
 @media (max-width: 480px) {
-  .modal {
-    padding: 24px 16px;
+  .title {
+    font-size: var(--font-size-xl);
   }
 
-  .title {
-    font-size: 20px;
+  .stat {
+    font-size: var(--font-size-sm);
   }
 
   .message {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
   }
 }

@@ -8,7 +8,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: linear-gradient(135deg, #1a6b3c 0%, #0d4025 50%, #1a6b3c 100%);
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn var(--duration-lg) var(--ease-out);
 }
 
 @keyframes fadeIn {
@@ -48,7 +48,9 @@
   border-radius: 16px;
   color: #fff;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform var(--duration-sm) var(--ease-out),
+              background var(--duration-sm) var(--ease-out),
+              border-color var(--duration-sm) var(--ease-out);
   min-height: 100px;
 }
 
@@ -96,7 +98,8 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--duration-sm) var(--ease-out),
+              border-color var(--duration-sm) var(--ease-out);
 }
 
 .difficultyBtn:hover {

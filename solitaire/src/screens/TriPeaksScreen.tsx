@@ -220,7 +220,7 @@ export const TriPeaksScreen: React.FC<TriPeaksScreenProps> = ({
           bestScore={modeStats.bestScore}
           onNewGame={handleNewGame}
           modeStats={modeStats}
-          isTriPeaks
+          showTimerBonus
         />
       )}
 
