@@ -142,9 +142,9 @@ function makeBackTexture(app: Application, cardSize: CardSize, borderColor?: num
 }
 
 /**
- * Compose a custom photo inside a rounded-rect card shape with a border.
- * The photo is scaled to 'contain' inside the card area while maintaining
- * aspect ratio.  A dark border and rounded corners match the front style.
+ * Compose a custom photo as a full-bleed card back with rounded corners.
+ * The photo is scaled to 'cover' the entire card area (no padding, no
+ * letterboxing).  A rounded-rect mask clips to the card shape.
  */
 export function makeCustomBackTexture(
   app: Application,
@@ -154,25 +154,16 @@ export function makeCustomBackTexture(
 ): Texture {
   const container = new Container();
 
-  // Background fill + border
-  const bg = new Graphics()
-    .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
-    .fill({ color: 0x111111 })
-    .stroke({ color: 0x222222, width: 1.5 });
-  container.addChild(bg);
-
-  // Photo sprite scaled to contain
+  // Photo sprite scaled to cover (full-bleed, edge-to-edge)
   const photo = new Sprite(photoTexture);
-  const pad = 2;    // leave border visible
-  const availW = cardSize.width - pad * 2;
-  const availH = cardSize.height - pad * 2;
-  const texW = photoTexture.width || availW;
-  const texH = photoTexture.height || availH;
-  const scale = Math.min(availW / texW, availH / texH);
+  const texW = photoTexture.width || cardSize.width;
+  const texH = photoTexture.height || cardSize.height;
+  const scale = Math.max(cardSize.width / texW, cardSize.height / texH);
   photo.width = Math.round(texW * scale);
   photo.height = Math.round(texH * scale);
-  photo.x = pad + Math.round((availW - photo.width) / 2);
-  photo.y = pad + Math.round((availH - photo.height) / 2);
+  // Center the photo so overflow is clipped equally on both sides
+  photo.x = Math.round((cardSize.width - photo.width) / 2);
+  photo.y = Math.round((cardSize.height - photo.height) / 2);
   container.addChild(photo);
 
   // Rounded-rect mask clips the photo to the card shape
