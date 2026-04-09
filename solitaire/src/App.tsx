@@ -244,8 +244,9 @@ export const App: React.FC = () => {
           return url;
         });
       } else {
-        // Custom back was deleted — reset to default
+        // Custom back was deleted — reset to default so game always starts
         setCustomBackUrl(null);
+        handleSettingsUpdate({ ...settings, cardBack: 'default.png' });
       }
     });
     return () => {

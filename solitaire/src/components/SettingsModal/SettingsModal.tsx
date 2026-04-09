@@ -9,6 +9,7 @@ import {
   createBackBlobUrl,
   type CustomCardBack,
 } from '../../services/customBacks';
+import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {
@@ -106,6 +107,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     },
     [settings, onUpdate],
   );
+
+  // ── PWA install prompt ──────────────────────────────────
+  const { installState, promptInstall } = useInstallPrompt();
 
   const cardSizes: Array<{ value: UserSettings['cardScale']; label: string }> = [
     { value: 'small', label: 'Small' },
@@ -347,6 +351,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Install app */}
+        {installState === 'available' && (
+          <div className={styles.section}>
+            <button
+              className={styles.installBtn}
+              onClick={promptInstall}
+              aria-label="Install GrandmaGames"
+            >
+              📲 Install GrandmaGames
+            </button>
+          </div>
+        )}
+        {installState === 'ios-safari' && (
+          <div className={styles.section}>
+            <div className={styles.iosInstallHint}>
+              To install, tap{' '}
+              <span aria-label="Share" role="img">⬆</span>{' '}
+              then <strong>Add to Home Screen</strong>.
+            </div>
+          </div>
+        )}
 
         <button className={styles.closeBtn} onClick={onClose}>
           Done

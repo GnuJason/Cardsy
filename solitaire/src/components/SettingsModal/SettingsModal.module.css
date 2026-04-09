@@ -242,6 +242,45 @@
   border-color: var(--color-button-bg);
 }
 
+/* ── Install button ── */
+
+.installBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  background: var(--color-button-bg);
+  color: var(--color-button-text);
+  min-height: 44px;
+  border: none;
+  cursor: pointer;
+  transition: background var(--duration-sm) var(--ease-out),
+              transform var(--duration-sm) var(--ease-out);
+}
+
+.installBtn:hover {
+  filter: brightness(1.1);
+}
+
+.installBtn:active {
+  transform: scale(0.97);
+}
+
+.iosInstallHint {
+  font-size: var(--font-size-sm);
+  color: var(--color-modal-text-muted);
+  text-align: center;
+  line-height: 1.5;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
 /* ── Responsive: phone ── */
 @media (max-width: 480px) {
   .title {
