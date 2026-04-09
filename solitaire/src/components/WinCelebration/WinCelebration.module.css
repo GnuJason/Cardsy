@@ -8,7 +8,7 @@
   justify-content: center;
   cursor: pointer;
   overflow: hidden;
-  animation: celebrationFadeIn 0.6s var(--ease-out) forwards;
+  animation: celebrationFadeIn var(--duration-2xl) var(--ease-out) forwards;
 }
 
 @keyframes celebrationFadeIn {
@@ -18,14 +18,14 @@
 
 .skipHint {
   position: absolute;
-  bottom: 24px;
+  bottom: var(--space-6);
   left: 50%;
   transform: translateX(-50%);
   color: rgba(255, 255, 255, 0);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   z-index: 2;
   pointer-events: none;
-  animation: hintFadeIn 0.5s var(--ease-out) 1s forwards;
+  animation: hintFadeIn var(--duration-xl) var(--ease-out) 1s forwards;
 }
 
 @keyframes hintFadeIn {
@@ -42,7 +42,7 @@
   overflow: hidden;
   will-change: transform, opacity;
   backface-visibility: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-md);
 }
 
 .card img {
@@ -54,14 +54,14 @@
 
 /* Scatter phase: 3-stage easing — ease-out burst → linear cruise → ease-in settle */
 .scatter {
-  transition: transform 1.8s var(--ease-out),
-              opacity 0.3s var(--ease-out);
+  transition: transform var(--duration-scatter) var(--ease-out),
+              opacity var(--duration-lg) var(--ease-out);
 }
 
 /* Converge phase: overshoot snap-back */
 .converge {
-  transition: transform 1.6s var(--ease-overshoot),
-              opacity 0.3s var(--ease-out);
+  transition: transform var(--duration-converge) var(--ease-overshoot),
+              opacity var(--duration-lg) var(--ease-out);
 }
 
 /* Final photo: large card-back image at center */
@@ -72,7 +72,7 @@
   width: 60vw;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3);
+  box-shadow: var(--shadow-celebrate);
   opacity: 0;
   transform: scale(0.8);
   transition: opacity var(--duration-lg) var(--ease-out),
@@ -101,8 +101,8 @@
   }
 
   .skipHint {
-    bottom: 12px;
-    font-size: 12px;
+    bottom: var(--space-3);
+    font-size: var(--font-size-xs);
   }
 }
 

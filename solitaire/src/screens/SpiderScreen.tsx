@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useSpiderState } from '../hooks/useSpiderState';
-import { useTimer } from '../hooks/useTimer';
+import { useScreenLifecycle } from '../hooks/useScreenLifecycle';
 import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
@@ -55,98 +55,40 @@ export const SpiderScreen: React.FC<SpiderScreenProps> = ({
   const spider = useSpiderState(savedDifficulty);
   const { game, canUndo, hasMoves, undoStack, actions } = spider;
 
-  const isPlaying = game.status === 'playing';
-  const { elapsed, reset: resetTimer } = useTimer(isPlaying);
-
-  const gameStartedRef = useRef(false);
-  const restoredRef = useRef(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showWinModal, setShowWinModal] = useState(false);
-
-  // Restore saved game on mount
-  useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
-    const saved = getSavedSpiderGame();
-    if (saved) {
-      actions.restoreGame(saved.state, saved.undoStack);
-    }
-  }, [actions]);
-
-  // Sync elapsed time
-  useEffect(() => {
-    actions.setElapsed(elapsed);
-  }, [elapsed, actions]);
-
-  // Record game start
-  useEffect(() => {
-    if (isPlaying && !gameStartedRef.current) {
-      onRecordStart();
-      gameStartedRef.current = true;
-    }
-  }, [isPlaying, onRecordStart]);
-
-  // Detect no-moves
-  useEffect(() => {
-    if (isPlaying && !hasMoves) {
-      actions.setNoMoves();
-    }
-  }, [isPlaying, hasMoves, actions]);
-
-  // Handle win
-  useEffect(() => {
-    if (game.status === 'won') {
+  const lifecycle = useScreenLifecycle({
+    gameStatus: game.status,
+    hasMoves,
+    undoStack,
+    restore: () => {
+      const saved = getSavedSpiderGame();
+      if (saved) actions.restoreGame(saved.state, saved.undoStack);
+    },
+    save: () => setSavedSpiderGame({ state: game, undoStack, savedAt: Date.now(), difficulty: game.difficulty }),
+    clearSave: clearSavedSpiderGame,
+    setElapsed: actions.setElapsed,
+    setNoMoves: actions.setNoMoves,
+    onRecordStart,
+    onRecordLoss,
+    onWinTriggered: (elapsed) => {
       onRecordWin(game.score, elapsed);
       onWin(elapsed);
-      clearSavedSpiderGame();
-      soundManager.play('win');
-      setShowCelebration(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status]);
+    },
+  });
 
-  // Handle loss
-  useEffect(() => {
-    if (game.status === 'no-moves') {
-      onRecordLoss();
-      clearSavedSpiderGame();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status]);
-
-  // Auto-save on every state change
-  useEffect(() => {
-    if (game.status === 'playing') {
-      setSavedSpiderGame({
-        state: game,
-        undoStack,
-        savedAt: Date.now(),
-        difficulty: game.difficulty,
-      });
-    }
-  }, [game, undoStack]);
+  const { elapsed, showCelebration, showWinModal, gameStartedRef, handleCelebrationComplete } = lifecycle;
 
   // ── Handlers ──────────────────────────────────────────────
 
-  const handleCelebrationComplete = useCallback(() => {
-    setShowCelebration(false);
-    setShowWinModal(true);
-  }, []);
-
   const handleNewGame = useCallback(() => {
-    setShowCelebration(false);
-    setShowWinModal(false);
     if (game.status === 'playing' && gameStartedRef.current) {
       onRecordLoss();
     }
 
     const diff = getSpiderDifficulty();
+    lifecycle.resetForNewGame();
     actions.newGame(diff);
-    resetTimer();
-    clearSavedSpiderGame();
-    gameStartedRef.current = false;
     soundManager.play('shuffle');
-  }, [game.status, actions, resetTimer, onRecordLoss]);
+  }, [game.status, actions, lifecycle, onRecordLoss, gameStartedRef]);
 
   const handleUndo = useCallback(() => {
     actions.undo();

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { usePyramidState } from '../hooks/usePyramidState';
-import { useTimer } from '../hooks/useTimer';
+import { useScreenLifecycle } from '../hooks/useScreenLifecycle';
 import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinCelebration } from '../components/WinCelebration/WinCelebration';
@@ -52,97 +52,39 @@ export const PyramidScreen: React.FC<PyramidScreenProps> = ({
   const pyramid = usePyramidState();
   const { game, canUndo, hasMoves, undoStack, actions } = pyramid;
 
-  const isPlaying = game.status === 'playing';
-  const { elapsed, reset: resetTimer } = useTimer(isPlaying);
-
-  const gameStartedRef = useRef(false);
-  const restoredRef = useRef(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showWinModal, setShowWinModal] = useState(false);
-
-  // Restore saved game on mount
-  useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
-    const saved = getSavedPyramidGame();
-    if (saved) {
-      actions.restoreGame(saved.state, saved.undoStack);
-    }
-  }, [actions]);
-
-  // Sync elapsed time
-  useEffect(() => {
-    actions.setElapsed(elapsed);
-  }, [elapsed, actions]);
-
-  // Record game start
-  useEffect(() => {
-    if (isPlaying && !gameStartedRef.current) {
-      onRecordStart();
-      gameStartedRef.current = true;
-    }
-  }, [isPlaying, onRecordStart]);
-
-  // Detect no-moves
-  useEffect(() => {
-    if (isPlaying && !hasMoves) {
-      actions.setNoMoves();
-    }
-  }, [isPlaying, hasMoves, actions]);
-
-  // Handle win
-  useEffect(() => {
-    if (game.status === 'won') {
-      // Pyramid score = cardsRemaining (0 for a perfect clear)
+  const lifecycle = useScreenLifecycle({
+    gameStatus: game.status,
+    hasMoves,
+    undoStack,
+    restore: () => {
+      const saved = getSavedPyramidGame();
+      if (saved) actions.restoreGame(saved.state, saved.undoStack);
+    },
+    save: () => setSavedPyramidGame({ state: game, undoStack, savedAt: Date.now() }),
+    clearSave: clearSavedPyramidGame,
+    setElapsed: actions.setElapsed,
+    setNoMoves: actions.setNoMoves,
+    onRecordStart,
+    onRecordLoss,
+    onWinTriggered: (elapsed) => {
       onRecordWin(game.cardsRemaining, elapsed);
       onWin(elapsed);
-      clearSavedPyramidGame();
-      soundManager.play('win');
-      setShowCelebration(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status]);
+    },
+  });
 
-  // Handle loss
-  useEffect(() => {
-    if (game.status === 'no-moves') {
-      onRecordLoss();
-      clearSavedPyramidGame();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status]);
-
-  // Auto-save on every state change
-  useEffect(() => {
-    if (game.status === 'playing') {
-      setSavedPyramidGame({
-        state: game,
-        undoStack,
-        savedAt: Date.now(),
-      });
-    }
-  }, [game, undoStack]);
+  const { elapsed, showCelebration, showWinModal, gameStartedRef, handleCelebrationComplete } = lifecycle;
 
   // ── Handlers ──────────────────────────────────────────────
 
-  const handleCelebrationComplete = useCallback(() => {
-    setShowCelebration(false);
-    setShowWinModal(true);
-  }, []);
-
   const handleNewGame = useCallback(() => {
-    setShowCelebration(false);
-    setShowWinModal(false);
     if (game.status === 'playing' && gameStartedRef.current) {
       onRecordLoss();
     }
 
+    lifecycle.resetForNewGame();
     actions.newGame();
-    resetTimer();
-    clearSavedPyramidGame();
-    gameStartedRef.current = false;
     soundManager.play('shuffle');
-  }, [game.status, actions, resetTimer, onRecordLoss]);
+  }, [game.status, actions, lifecycle, onRecordLoss, gameStartedRef]);
 
   const handleUndo = useCallback(() => {
     actions.undo();

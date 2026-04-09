@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useGameState } from '../hooks/useGameState';
-import { useTimer } from '../hooks/useTimer';
+import { useScreenLifecycle } from '../hooks/useScreenLifecycle';
 import { PixiGameCanvas } from '../pixi/PixiGameCanvas';
 import { HUD } from '../components/HUD/HUD';
 import { WinModal } from '../components/WinModal/WinModal';
@@ -54,90 +54,39 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
   const klondike = useGameState();
   const { game, canUndo, canAutoComplete, hasMoves, usedUndo, undoStack, drawCount, actions } = klondike;
 
-  const isPlaying = game.status === 'playing';
-  const { elapsed, reset: resetTimer } = useTimer(isPlaying);
-
-  const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [isAutoCompleting, setIsAutoCompleting] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showWinModal, setShowWinModal] = useState(false);
-  const gameStartedRef = useRef(false);
-  const restoredRef = useRef(false);
-
-  // Restore saved game on mount
-  useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
-    const saved = getSavedKlondikeGame();
-    if (saved) {
-      actions.restoreGame(saved.state, saved.undoStack, saved.drawCount);
-    } else {
-      // Apply drawCount from settings for the initial game
-      actions.setDrawCount(settingsDrawCount);
-    }
-  }, [actions]);
-
-  // Sync elapsed time
-  useEffect(() => {
-    actions.setElapsed(elapsed);
-  }, [elapsed, actions]);
-
-  // Record game start
-  useEffect(() => {
-    if (isPlaying && !gameStartedRef.current) {
-      onRecordStart();
-      gameStartedRef.current = true;
-    }
-  }, [isPlaying, onRecordStart]);
-
-  // Detect no-moves
-  useEffect(() => {
-    if (isPlaying && !hasMoves && game.stock.length === 0) {
-      actions.setNoMoves();
-    }
-  }, [isPlaying, hasMoves, game.stock.length, actions]);
-
-  // Handle win
-  useEffect(() => {
-    if (game.status === 'won') {
+  const lifecycle = useScreenLifecycle({
+    gameStatus: game.status,
+    hasMoves,
+    undoStack,
+    noMovesReady: game.stock.length === 0,
+    restore: () => {
+      const saved = getSavedKlondikeGame();
+      if (saved) {
+        actions.restoreGame(saved.state, saved.undoStack, saved.drawCount);
+      } else {
+        actions.setDrawCount(settingsDrawCount);
+      }
+    },
+    save: () => setSavedKlondikeGame({ state: game, undoStack, savedAt: Date.now(), drawCount }),
+    clearSave: clearSavedKlondikeGame,
+    setElapsed: actions.setElapsed,
+    setNoMoves: actions.setNoMoves,
+    onRecordStart,
+    onRecordLoss,
+    onWinTriggered: (elapsed) => {
       const bonus = timerBonus(elapsed);
       const finalScore = game.score + bonus;
       onRecordWin(finalScore, elapsed);
       onWin(elapsed, usedUndo);
-      clearSavedKlondikeGame();
-      soundManager.play('win');
-      setShowCelebration(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status]);
+    },
+  });
 
-  // Handle loss
-  useEffect(() => {
-    if (game.status === 'no-moves') {
-      onRecordLoss();
-      clearSavedKlondikeGame();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.status]);
+  const { elapsed, showCelebration, showWinModal, gameStartedRef, handleCelebrationComplete } = lifecycle;
 
-  // Auto-save on every state change
-  useEffect(() => {
-    if (game.status === 'playing') {
-      setSavedKlondikeGame({
-        state: game,
-        undoStack,
-        savedAt: Date.now(),
-        drawCount,
-      });
-    }
-  }, [game, undoStack, drawCount]);
+  const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isAutoCompleting, setIsAutoCompleting] = useState(false);
 
   // ── Handlers ──────────────────────────────────────────────
-
-  const handleCelebrationComplete = useCallback(() => {
-    setShowCelebration(false);
-    setShowWinModal(true);
-  }, []);
 
   const handleNewGame = useCallback(() => {
     if (autoRef.current) {
@@ -145,20 +94,16 @@ export const KlondikeScreen: React.FC<KlondikeScreenProps> = ({
       autoRef.current = null;
     }
     setIsAutoCompleting(false);
-    setShowCelebration(false);
-    setShowWinModal(false);
 
     if (game.status === 'playing' && gameStartedRef.current) {
       onRecordLoss();
     }
 
+    lifecycle.resetForNewGame();
     actions.newGame();
     actions.setDrawCount(settingsDrawCount);
-    resetTimer();
-    clearSavedKlondikeGame();
-    gameStartedRef.current = false;
     soundManager.play('shuffle');
-  }, [game.status, actions, resetTimer, onRecordLoss, settingsDrawCount]);
+  }, [game.status, actions, lifecycle, onRecordLoss, settingsDrawCount, gameStartedRef]);
 
   const handleAutoComplete = useCallback(() => {
     setIsAutoCompleting(true);

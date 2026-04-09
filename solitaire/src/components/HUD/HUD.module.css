@@ -2,16 +2,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   background: var(--color-hud-bg);
   color: var(--color-hud-text);
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .stats {
   display: flex;
-  gap: 20px;
+  gap: var(--space-5);
   align-items: center;
 }
 
@@ -50,13 +50,13 @@
 
 .controls {
   display: flex;
-  gap: 8px;
+  gap: var(--gap-md);
   align-items: center;
 }
 
 .controlBtn {
-  padding: 8px 14px;
-  font-size: 14px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
   border-radius: var(--radius-sm);
   min-width: 44px;
   min-height: 44px;
@@ -89,29 +89,29 @@
 /* ── Responsive: phone ── */
 @media (max-width: 600px) {
   .hud {
-    padding: 6px 8px;
-    gap: 8px;
+    padding: var(--space-1) var(--space-2);
+    gap: var(--gap-md);
   }
 
   .stats {
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .statValue {
-    font-size: 16px;
+    font-size: var(--font-size-base);
   }
 
   .statLabel {
-    font-size: 10px;
+    font-size: var(--font-size-2xs);
   }
 
   .controls {
-    gap: 4px;
+    gap: var(--gap-sm);
   }
 
   .controlBtn {
-    padding: 6px 8px;
-    font-size: 12px;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
     min-width: 40px;
     min-height: 40px;
   }
@@ -120,17 +120,17 @@
 /* ── Responsive: landscape phone ── */
 @media (max-height: 500px) and (orientation: landscape) {
   .hud {
-    padding: 4px 8px;
-    gap: 6px;
+    padding: var(--space-1) var(--space-2);
+    gap: var(--space-1);
   }
 
   .statValue {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
   }
 
   .controlBtn {
-    padding: 4px 6px;
-    font-size: 12px;
+    padding: var(--space-1) var(--space-1);
+    font-size: var(--font-size-xs);
     min-width: 36px;
     min-height: 36px;
   }

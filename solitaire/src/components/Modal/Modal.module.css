@@ -38,7 +38,7 @@
   overflow-y: auto;
   color: var(--color-modal-text);
   text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
   animation: modalIn var(--duration-md) var(--ease-snap) both;
 }
 

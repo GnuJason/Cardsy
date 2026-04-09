@@ -29,6 +29,7 @@
   --color-secondary-text: #333333;
 
   /* ── Typography ── */
+  --font-size-2xs: 10px;
   --font-size-xs: 11px;
   --font-size-sm: 13px;
   --font-size-md: 15px;
@@ -39,6 +40,7 @@
   --font-size-3xl: 24px;
   --font-size-4xl: 30px;
   --font-size-5xl: 42px;
+  --font-size-6xl: 64px;
 
   /* ── Spacing ── */
   --space-1: 4px;
@@ -49,6 +51,7 @@
   --space-6: 24px;
   --space-7: 28px;
   --space-8: 32px;
+  --space-9: 36px;
   --space-10: 40px;
   --gap-sm: 4px;
   --gap-md: 8px;
@@ -83,6 +86,11 @@
   --duration-sm: 120ms;
   --duration-md: 200ms;
   --duration-lg: 350ms;
+  --duration-xl: 500ms;
+  --duration-2xl: 600ms;
+  --duration-3xl: 800ms;
+  --duration-scatter: 1800ms;
+  --duration-converge: 1600ms;
 
   /* ── Easing tokens ── */
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -94,6 +102,13 @@
   --card-hover-lift: -3px;
   --card-hover-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   --card-shadow-rest: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+  /* ── Box-shadow tokens ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 8px var(--color-gold);
+  --shadow-celebrate: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3);
 
   /* ── Modal cinematic ── */
   --modal-scale-from: 0.96;

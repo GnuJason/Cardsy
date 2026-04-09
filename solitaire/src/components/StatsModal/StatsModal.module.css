@@ -19,7 +19,7 @@
 .tab {
   flex: 1;
   padding: var(--space-2);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   background: var(--color-surface);
   color: var(--color-modal-text-subtle);

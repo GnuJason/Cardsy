@@ -59,7 +59,7 @@
   border: 3px solid var(--color-accent, #ffd700);
   border-radius: var(--card-radius, 8px);
   pointer-events: none;
-  box-shadow: 0 0 8px var(--color-accent, #ffd700);
+  box-shadow: var(--shadow-glow);
 }
 
 /* ── Stock + Waste ───────────────────────────────────────── */

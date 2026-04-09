@@ -97,10 +97,10 @@
   right: -6px;
   background: var(--color-hud-bg, rgba(0, 0, 0, 0.6));
   color: var(--color-hud-text, #fff);
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 10px;
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-lg);
   pointer-events: none;
 }
 
@@ -159,5 +159,5 @@
   border: 3px solid var(--color-accent, #ffd700);
   border-radius: var(--card-radius, 8px);
   pointer-events: none;
-  box-shadow: 0 0 8px var(--color-accent, #ffd700);
+  box-shadow: var(--shadow-glow);
 }

@@ -37,14 +37,14 @@
 }
 
 .cardIcon {
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   flex-shrink: 0;
   width: 36px;
   text-align: center;
 }
 
 .cardLocked {
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   flex-shrink: 0;
   width: 36px;
   text-align: center;
@@ -70,14 +70,14 @@
 }
 
 .cardTier {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   color: var(--color-modal-text-faint);
   margin-top: 2px;
 }
 
 .cardBadge {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   padding: 3px var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--color-gold);
@@ -101,7 +101,7 @@
 
   .cardIcon,
   .cardLocked {
-    font-size: 22px;
+    font-size: var(--font-size-2xl);
     width: 28px;
   }
 
@@ -110,6 +110,6 @@
   }
 
   .cardDesc {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
   }
 }

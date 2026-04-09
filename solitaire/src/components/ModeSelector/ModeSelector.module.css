@@ -18,34 +18,34 @@
 
 .content {
   text-align: center;
-  padding: 40px 24px;
+  padding: var(--space-10) var(--space-6);
   max-width: 500px;
   width: 100%;
 }
 
 .title {
-  font-size: 32px;
+  font-size: var(--font-size-4xl);
   font-weight: 800;
   color: var(--color-gold);
-  margin-bottom: 36px;
+  margin-bottom: var(--space-9);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .modes {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .modeBtn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 24px 20px;
+  gap: var(--gap-sm);
+  padding: var(--space-6) var(--space-5);
   background: rgba(255, 255, 255, 0.12);
   border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   color: #fff;
   cursor: pointer;
   transition: transform var(--duration-sm) var(--ease-out),
@@ -65,38 +65,38 @@
 }
 
 .modeIcon {
-  font-size: 40px;
-  margin-bottom: 4px;
+  font-size: var(--font-size-5xl);
+  margin-bottom: var(--space-1);
 }
 
 .modeName {
-  font-size: 22px;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
 }
 
 .modeDesc {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   opacity: 0.7;
 }
 
 /* ── Difficulty sub-picker (Spider) ── */
 .difficultyPicker {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--gap-md);
+  margin-top: var(--space-2);
   width: 100%;
   justify-content: center;
 }
 
 .difficultyBtn {
   flex: 1;
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: #fff;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: background var(--duration-sm) var(--ease-out),
               border-color var(--duration-sm) var(--ease-out);
@@ -114,29 +114,29 @@
 /* ── Responsive: phone ── */
 @media (max-width: 600px) {
   .content {
-    padding: 24px 16px;
+    padding: var(--space-6) var(--space-4);
   }
 
   .title {
-    font-size: 26px;
-    margin-bottom: 20px;
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--space-5);
   }
 
   .modes {
-    gap: 10px;
+    gap: var(--space-2);
   }
 
   .modeBtn {
-    padding: 14px 16px;
+    padding: var(--space-3) var(--space-4);
     min-height: 72px;
   }
 
   .modeIcon {
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
   }
 
   .modeName {
-    font-size: 18px;
+    font-size: var(--font-size-lg);
   }
 }
 
@@ -148,35 +148,35 @@
   }
 
   .content {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .title {
-    font-size: 22px;
-    margin-bottom: 12px;
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-3);
   }
 
   .modes {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: var(--gap-md);
   }
 
   .modeBtn {
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
     min-height: 56px;
   }
 
   .modeIcon {
-    font-size: 24px;
+    font-size: var(--font-size-3xl);
     margin-bottom: 0;
   }
 
   .modeName {
-    font-size: 15px;
+    font-size: var(--font-size-md);
   }
 
   .modeDesc {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
   }
 }
