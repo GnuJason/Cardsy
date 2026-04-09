@@ -179,6 +179,18 @@ export function makeCustomBackTexture(
 export async function generateBackTexture(app: Application, cardSize: CardSize, backImage?: string | null, resolution = 1): Promise<Texture> {
   if (backImage) {
     try {
+      // blob: URLs can't go through Pixi's Asset Loader — load directly
+      if (backImage.startsWith('blob:')) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('blob image load failed'));
+          img.src = backImage;
+        });
+        const photoTex = Texture.from(img);
+        return makeCustomBackTexture(app, cardSize, photoTex, resolution);
+      }
       const loaded = await Assets.load(backImage);
       const photoTex = Texture.from(loaded);
       return makeCustomBackTexture(app, cardSize, photoTex, resolution);

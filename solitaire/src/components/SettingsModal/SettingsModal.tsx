@@ -112,25 +112,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const { installState, promptInstall } = useInstallPrompt();
 
   // ── Clear app cache ─────────────────────────────────────
-  const [cacheCleared, setCacheCleared] = useState(false);
 
   const handleClearCache = useCallback(() => {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const onMessage = (e: MessageEvent) => {
         if (e.data?.type === 'CACHES_CLEARED') {
           navigator.serviceWorker.removeEventListener('message', onMessage);
-          setCacheCleared(true);
+          window.location.reload();
         }
       };
       navigator.serviceWorker.addEventListener('message', onMessage);
       navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' });
     } else {
-      // No SW controller — clear caches directly
-      if ('caches' in window) {
-        caches.keys().then((keys) =>
-          Promise.all(keys.map((k) => caches.delete(k)))
-        ).then(() => setCacheCleared(true));
-      }
+      // No SW controller — clear caches directly and unregister any SW
+      const clearAndReload = async () => {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((r) => r.unregister()));
+        }
+        window.location.reload();
+      };
+      clearAndReload();
     }
   }, []);
 
@@ -399,11 +405,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Clear app cache */}
         <div className={styles.section}>
-          {cacheCleared ? (
-            <div className={styles.iosInstallHint}>
-              Cache cleared. Please reload the app.
-            </div>
-          ) : (
             <button
               className={styles.clearCacheBtn}
               onClick={handleClearCache}
@@ -411,7 +412,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             >
               🗑 Clear App Cache
             </button>
-          )}
         </div>
 
         <button className={styles.closeBtn} onClick={onClose}>

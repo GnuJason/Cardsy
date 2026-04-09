@@ -2,7 +2,7 @@
 // Precaches app shell; runtime-caches static assets (200 only).
 // Does NOT cache user-uploaded images (IndexedDB blobs).
 
-const SW_VERSION = 'v5.2.2';
+const SW_VERSION = 'v5.3.0';
 const CACHE_NAME = `grandmagame-static-${SW_VERSION}`;
 
 // App shell — populated at build time by the list below.
@@ -43,6 +43,8 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'CLEAR_CACHES') {
     caches.keys().then((keys) =>
       Promise.all(keys.map((key) => caches.delete(key)))
+    ).then(() =>
+      self.registration.unregister()
     ).then(() => {
       if (event.source) {
         event.source.postMessage({ type: 'CACHES_CLEARED' });
@@ -70,7 +72,7 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           // Only cache successful full responses (never 206 partials)
-          if (response.ok) {
+          if (response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
@@ -87,7 +89,7 @@ self.addEventListener('fetch', (event) => {
       cache.match(request).then((cached) => {
         const fetched = fetch(request).then((response) => {
           // Only cache 200 OK — never partials (206) or errors
-          if (response.ok) {
+          if (response.status === 200) {
             cache.put(request, response.clone());
           }
           return response;

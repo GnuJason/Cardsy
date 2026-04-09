@@ -378,7 +378,12 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     // Raw Texture.from — will be replaced with masked version once the
     // async preload resolves (see mount effect).  This is a fallback for
     // cards whose preload hasn't completed yet.
-    const rawTexture = Texture.from(backImage);
+    let rawTexture: Texture;
+    try {
+      rawTexture = Texture.from(backImage);
+    } catch {
+      return fallbackBackTexture;
+    }
     const ctx = appCtxRef.current;
     if (ctx) {
       try {
