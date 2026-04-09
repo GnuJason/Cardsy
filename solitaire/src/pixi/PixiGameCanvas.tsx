@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Assets, FederatedPointerEvent, Graphics, Sprite, Texture } from 'pixi.js';
+import { FederatedPointerEvent, Graphics, Sprite, Texture } from 'pixi.js';
 import {
   createPixiApp,
   destroyPixiApp,
@@ -13,7 +13,9 @@ import {
   generateCardTextures,
   getTextureResolution,
   invalidateTextures,
+  loadTextureFromUrl,
   makeCustomBackTexture,
+  textureFromUrl,
   type TextureCache,
 } from './rendering/CardRenderer';
 import { hitTestPile } from './interaction/HitDetection';
@@ -375,13 +377,17 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       return cached;
     }
 
-    // Raw Texture.from — will be replaced with masked version once the
+    // Raw texture — will be replaced with masked version once the
     // async preload resolves (see mount effect).  This is a fallback for
     // cards whose preload hasn't completed yet.
+    // textureFromUrl() avoids Pixi's Assets cache for blob: URLs.
     let rawTexture: Texture;
     try {
-      rawTexture = Texture.from(backImage);
+      rawTexture = textureFromUrl(backImage);
     } catch {
+      if (import.meta.env.DEV) {
+        console.warn('[Pixi] Null back texture detected, using fallback.');
+      }
       return fallbackBackTexture;
     }
     const ctx = appCtxRef.current;
@@ -532,7 +538,13 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       for (const [index, card] of cards.entries()) {
         const spriteKey = card.id;
         const faceDownTexture = resolveFaceDownTexture(card.id, backTexture, cardSize);
-        const texture = card.faceUp ? textures.get(card.id) ?? faceDownTexture : faceDownTexture;
+        let texture = card.faceUp ? textures.get(card.id) ?? faceDownTexture : faceDownTexture;
+        if (!texture) {
+          if (import.meta.env.DEV) {
+            console.warn('[Pixi] Null back texture detected, using fallback.');
+          }
+          texture = backTexture;
+        }
         const sprite = spritePoolRef.current.acquire(spriteKey, texture);
 
         const fromX = sprite.x;
@@ -830,12 +842,12 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
           }
         }
 
-        // First pass: load raw photo textures
+        // First pass: load raw photo textures (bypasses Assets cache for blob URLs)
         await Promise.all(
           [...backUrls].map(async (url) => {
             try {
-              const loaded = await Assets.load(url);
-              backTextureByUrlRef.current.set(url, Texture.from(loaded));
+              const tex = await loadTextureFromUrl(url);
+              backTextureByUrlRef.current.set(url, tex);
               maskedBackTextureUrlsRef.current.delete(url);
             } catch {
               if (debugRef.current.enabled && debugRef.current.textureLogs) {

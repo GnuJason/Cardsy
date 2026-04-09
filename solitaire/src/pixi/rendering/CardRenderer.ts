@@ -8,6 +8,41 @@ import {
 import type { CardSize } from '../types';
 import { RANK_LABELS, SUITS, SUIT_SYMBOLS, suitColor, type Rank, type Suit } from '../../logic/types';
 
+/**
+ * Load an image URL into a Pixi Texture.
+ * For blob: URLs we bypass Pixi's Assets cache (which can't resolve them)
+ * and create the texture from an HTMLImageElement directly.
+ */
+export async function loadTextureFromUrl(url: string): Promise<Texture> {
+  if (url.startsWith('blob:')) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('blob image load failed'));
+      img.src = url;
+    });
+    return Texture.from(img);
+  }
+  const loaded = await Assets.load(url);
+  return Texture.from(loaded);
+}
+
+/**
+ * Synchronously create a Texture from a URL.
+ * For blob: URLs, creates an HTMLImageElement source to avoid Pixi's Assets cache.
+ * For normal URLs, delegates to Texture.from(string) which uses the Assets cache.
+ */
+export function textureFromUrl(url: string): Texture {
+  if (url.startsWith('blob:')) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = url;
+    return Texture.from(img);
+  }
+  return Texture.from(url);
+}
+
 export type TextureCache = Map<string, Texture>;
 
 interface CardRenderColors {
@@ -179,20 +214,7 @@ export function makeCustomBackTexture(
 export async function generateBackTexture(app: Application, cardSize: CardSize, backImage?: string | null, resolution = 1): Promise<Texture> {
   if (backImage) {
     try {
-      // blob: URLs can't go through Pixi's Asset Loader — load directly
-      if (backImage.startsWith('blob:')) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error('blob image load failed'));
-          img.src = backImage;
-        });
-        const photoTex = Texture.from(img);
-        return makeCustomBackTexture(app, cardSize, photoTex, resolution);
-      }
-      const loaded = await Assets.load(backImage);
-      const photoTex = Texture.from(loaded);
+      const photoTex = await loadTextureFromUrl(backImage);
       return makeCustomBackTexture(app, cardSize, photoTex, resolution);
     } catch {
       return makeBackTexture(app, cardSize, undefined, resolution);
