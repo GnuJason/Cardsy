@@ -92,15 +92,44 @@ const CARD_BACKS: Record<string, string> = {
   'spades-12': '/cards/backs/Screenshot%202026-02-10%20174744.png',
 };
 
+// ── Runtime family deck overlay ─────────────────────────────
+// When the user uploads per-card photos via the Family Deck Builder,
+// blob URLs are stored here at startup and override the built-in CARD_BACKS.
+const familyDeckOverlay = new Map<string, string>();
+
+/** Replace the entire family deck overlay (called once at app startup). */
+export function setFamilyDeckOverlay(entries: Map<string, string>): void {
+  familyDeckOverlay.clear();
+  for (const [id, url] of entries) {
+    familyDeckOverlay.set(id, url);
+  }
+}
+
+/** Clear the family deck overlay and revoke all blob URLs. */
+export function clearFamilyDeckOverlay(): void {
+  for (const url of familyDeckOverlay.values()) {
+    URL.revokeObjectURL(url);
+  }
+  familyDeckOverlay.clear();
+}
+
 /**
  * Returns the per-card back image URL, or null if none is assigned.
+ * Checks family deck overlay first, then falls back to built-in CARD_BACKS.
  * Handles Spider's counter-suffixed IDs (e.g. "spades-5-2" → "spades-5").
  */
 export function getCardBackImage(cardId: string): string | null {
-  // Direct lookup first (standard 52-card IDs)
+  // Family deck overlay takes priority
+  if (familyDeckOverlay.has(cardId)) return familyDeckOverlay.get(cardId)!;
+
+  // Direct lookup in built-in map
   if (CARD_BACKS[cardId]) return CARD_BACKS[cardId];
 
   // Strip trailing counter suffix for Spider's 2-deck IDs
   const baseId = cardId.replace(/-\d+$/, '');
+
+  // Check overlay with base ID
+  if (familyDeckOverlay.has(baseId)) return familyDeckOverlay.get(baseId)!;
+
   return CARD_BACKS[baseId] ?? null;
 }

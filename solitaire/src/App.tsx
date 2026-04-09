@@ -12,6 +12,7 @@ import { ConfirmModal } from './components/ConfirmModal/ConfirmModal';
 import type { UserSettings, GameMode } from './logic/types';
 import { soundManager } from './services/sound';
 import { getCustomBack, createBackBlobUrl } from './services/customBacks';
+import { loadFamilyDeck, createFamilyDeckBlobUrl } from './services/familyDeck';
 import {
   getSplashSeen,
   setSplashSeen,
@@ -27,7 +28,7 @@ import {
   getSavedFreeCellGame,
   getSavedSpiderGame,
 } from './services/storage';
-import { cardBackUrl } from './config/cardArt';
+import { cardBackUrl, setFamilyDeckOverlay, clearFamilyDeckOverlay } from './config/cardArt';
 import { themeToPixiColors } from './pixi/ThemeAdapter';
 
 // Lazy-load screen components for code splitting
@@ -256,6 +257,25 @@ export const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.cardBack]);
 
+  // ── Family deck overlay ───────────────────────────────────
+  // Load user-uploaded per-card photos from IndexedDB and set them as
+  // the overlay in cardArt. Runs once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    loadFamilyDeck().then((cards) => {
+      if (cancelled) return;
+      const overlay = new Map<string, string>();
+      for (const c of cards) {
+        overlay.set(c.id, createFamilyDeckBlobUrl(c));
+      }
+      setFamilyDeckOverlay(overlay);
+    });
+    return () => {
+      cancelled = true;
+      clearFamilyDeckOverlay();
+    };
+  }, []);
+
   // resolvedCardBack: null = per-card family photos, string = uniform back URL.
   // During custom-back async load, falls through to null (family photos) so
   // the game always renders immediately.
@@ -422,6 +442,17 @@ export const App: React.FC = () => {
           settings={settings}
           onUpdate={handleSettingsUpdate}
           onClose={() => setShowSettings(false)}
+          onFamilyDeckChange={() => {
+            // Reload family deck overlay from IndexedDB
+            clearFamilyDeckOverlay();
+            loadFamilyDeck().then((cards) => {
+              const overlay = new Map<string, string>();
+              for (const c of cards) {
+                overlay.set(c.id, createFamilyDeckBlobUrl(c));
+              }
+              setFamilyDeckOverlay(overlay);
+            });
+          }}
         />
       )}
 

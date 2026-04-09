@@ -9,6 +9,8 @@ import {
   createBackBlobUrl,
   type CustomCardBack,
 } from '../../services/customBacks';
+import { getFamilyDeckCount } from '../../services/familyDeck';
+import { FamilyDeckBuilder } from '../FamilyDeckBuilder/FamilyDeckBuilder';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import styles from './SettingsModal.module.css';
 
@@ -16,12 +18,14 @@ interface SettingsModalProps {
   settings: UserSettings;
   onUpdate: (settings: UserSettings) => void;
   onClose: () => void;
+  onFamilyDeckChange?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onUpdate,
   onClose,
+  onFamilyDeckChange,
 }) => {
   useEffect(() => {
     if (settings.highContrast) return;
@@ -36,6 +40,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [customBacks, setCustomBacks] = useState<CustomCardBack[]>([]);
   const [blobUrls, setBlobUrls] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showDeckBuilder, setShowDeckBuilder] = useState(false);
+  const [familyDeckCount, setFamilyDeckCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +53,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         urls[b.id] = createBackBlobUrl(b);
       }
       setBlobUrls(urls);
+    });
+    getFamilyDeckCount().then((count) => {
+      if (!cancelled) setFamilyDeckCount(count);
     });
     return () => {
       cancelled = true;
@@ -148,6 +157,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   ];
 
   return (
+    <>
     <Modal onClose={onClose} ariaLabel="Settings">
         <h2 className={styles.title}>Settings</h2>
 
@@ -292,6 +302,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               style={{ display: 'none' }}
             />
           </label>
+
+          {/* Family deck builder */}
+          {settings.cardBack === 'default.png' && (
+            <button
+              className={styles.editDeckBtn}
+              onClick={() => setShowDeckBuilder(true)}
+              aria-label="Edit Family Deck"
+            >
+              🖼 Edit Family Deck
+              {familyDeckCount > 0 && (
+                <span className={styles.deckCount}>
+                  {familyDeckCount}/52
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Sound toggle */}
@@ -427,5 +453,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           Done
         </button>
     </Modal>
+
+    {showDeckBuilder && (
+      <FamilyDeckBuilder
+        onClose={() => {
+          setShowDeckBuilder(false);
+          // Refresh count after editing
+          getFamilyDeckCount().then(setFamilyDeckCount);
+          // Notify parent to reload the overlay
+          onFamilyDeckChange?.();
+        }}
+      />
+    )}
+    </>
   );
 };
