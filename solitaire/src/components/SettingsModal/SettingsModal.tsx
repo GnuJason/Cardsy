@@ -1,7 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { UserSettings } from '../../logic/types';
 import { THEMES } from '../../config/themes';
 import { Modal } from '../Modal/Modal';
+import {
+  getAllCustomBacks,
+  saveCustomBack,
+  deleteCustomBack,
+  createBackBlobUrl,
+  type CustomCardBack,
+} from '../../services/customBacks';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {
@@ -23,6 +30,82 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Custom card backs ───────────────────────────────────
+  const [customBacks, setCustomBacks] = useState<CustomCardBack[]>([]);
+  const [blobUrls, setBlobUrls] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAllCustomBacks().then((backs) => {
+      if (cancelled) return;
+      setCustomBacks(backs);
+      const urls: Record<string, string> = {};
+      for (const b of backs) {
+        urls[b.id] = createBackBlobUrl(b);
+      }
+      setBlobUrls(urls);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Revoke blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(blobUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      // Validate type
+      if (!file.type.startsWith('image/')) return;
+      // Limit to 5 MB
+      if (file.size > 5 * 1024 * 1024) return;
+
+      const id = crypto.randomUUID();
+      const back: CustomCardBack = {
+        id,
+        blob: file,
+        name: file.name,
+        createdAt: Date.now(),
+      };
+      await saveCustomBack(back);
+      const url = createBackBlobUrl(back);
+      setCustomBacks((prev) => [...prev, back]);
+      setBlobUrls((prev) => ({ ...prev, [id]: url }));
+      onUpdate({ ...settings, cardBack: `custom:${id}` });
+      // Reset input so the same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    },
+    [settings, onUpdate],
+  );
+
+  const handleDeleteCustomBack = useCallback(
+    async (id: string) => {
+      await deleteCustomBack(id);
+      setCustomBacks((prev) => prev.filter((b) => b.id !== id));
+      setBlobUrls((prev) => {
+        const next = { ...prev };
+        if (next[id]) {
+          URL.revokeObjectURL(next[id]);
+          delete next[id];
+        }
+        return next;
+      });
+      // If this was the active back, reset to default
+      if (settings.cardBack === `custom:${id}`) {
+        onUpdate({ ...settings, cardBack: 'default.png' });
+      }
+    },
+    [settings, onUpdate],
+  );
 
   const cardSizes: Array<{ value: UserSettings['cardScale']; label: string }> = [
     { value: 'small', label: 'Small' },
@@ -108,6 +191,74 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Card back */}
+        <div className={styles.section}>
+          <div className={styles.label}>Card Back</div>
+          <div className={styles.backPreviewGrid}>
+            {/* Default: family photos */}
+            <button
+              className={
+                settings.cardBack === 'default.png'
+                  ? styles.backPreviewActive
+                  : styles.backPreviewDefault
+              }
+              onClick={() => onUpdate({ ...settings, cardBack: 'default.png' })}
+              aria-label="Family photos (default)"
+              title="Family photos"
+            >
+              Family Photos
+            </button>
+
+            {/* Custom backs */}
+            {customBacks.map((back) => (
+              <button
+                key={back.id}
+                className={
+                  settings.cardBack === `custom:${back.id}`
+                    ? styles.backPreviewActive
+                    : styles.backPreview
+                }
+                onClick={() =>
+                  onUpdate({ ...settings, cardBack: `custom:${back.id}` })
+                }
+                aria-label={`Custom back: ${back.name}`}
+                title={back.name}
+              >
+                {blobUrls[back.id] && (
+                  <img
+                    src={blobUrls[back.id]}
+                    alt={back.name}
+                    className={styles.backPreviewImg}
+                  />
+                )}
+                <button
+                  className={styles.backDeleteBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCustomBack(back.id);
+                  }}
+                  aria-label={`Delete ${back.name}`}
+                  title="Delete"
+                >
+                  ×
+                </button>
+              </button>
+            ))}
+          </div>
+
+          {/* Upload button */}
+          <label className={styles.uploadBtn}>
+            + Upload Image
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleUpload}
+              style={{ display: 'none' }}
+            />
+          </label>
         </div>
 
         {/* Sound toggle */}

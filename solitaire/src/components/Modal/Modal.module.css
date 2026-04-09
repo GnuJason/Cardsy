@@ -5,6 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   background: rgba(0, 0, 0, 0);
   animation: backdropIn var(--duration-md) var(--ease-out) forwards;
 }

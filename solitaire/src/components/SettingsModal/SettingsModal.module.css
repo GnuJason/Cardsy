@@ -148,6 +148,100 @@
   text-overflow: ellipsis;
 }
 
+/* ── Card Back Selector ── */
+
+.backPreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 72px);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.backPreview {
+  position: relative;
+  width: 72px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: var(--color-surface);
+  padding: 0;
+}
+
+.backPreview:hover {
+  border-color: var(--color-surface-hover);
+}
+
+.backPreviewActive {
+  composes: backPreview;
+  border-color: var(--color-button-bg);
+}
+
+.backPreviewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.backPreviewDefault {
+  composes: backPreview;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-modal-text-muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.backDeleteBtn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  min-height: auto;
+  line-height: 1;
+}
+
+.backDeleteBtn:hover {
+  background: rgba(200, 0, 0, 0.8);
+}
+
+.uploadBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-modal-text);
+  min-height: 44px;
+  cursor: pointer;
+  border: 2px dashed var(--color-modal-text-muted);
+  margin-top: var(--space-2);
+  width: 100%;
+}
+
+.uploadBtn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-button-bg);
+}
+
 /* ── Responsive: phone ── */
 @media (max-width: 480px) {
   .title {

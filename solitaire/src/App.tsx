@@ -1,4 +1,4 @@
-import React, { useState, useCallback, lazy, Suspense, useMemo } from 'react';
+import React, { useState, useCallback, lazy, Suspense, useMemo, useEffect } from 'react';
 import { useGameStats } from './hooks/useGameStats';
 import { useTheme } from './hooks/useTheme';
 import { useAchievements } from './hooks/useAchievements';
@@ -11,6 +11,7 @@ import { AchievementToast } from './components/AchievementToast/AchievementToast
 import { ConfirmModal } from './components/ConfirmModal/ConfirmModal';
 import type { UserSettings, GameMode } from './logic/types';
 import { soundManager } from './services/sound';
+import { getCustomBack, createBackBlobUrl } from './services/customBacks';
 import {
   getSplashSeen,
   setSplashSeen,
@@ -220,6 +221,43 @@ export const App: React.FC = () => {
       ? cardBackUrl(settings.cardBack)
       : null;
 
+  // ── Custom card back blob URL ─────────────────────────────
+  const [customBackUrl, setCustomBackUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!settings.cardBack.startsWith('custom:')) {
+      // Revoke previous blob URL if switching away
+      if (customBackUrl) {
+        URL.revokeObjectURL(customBackUrl);
+        setCustomBackUrl(null);
+      }
+      return;
+    }
+    const id = settings.cardBack.slice('custom:'.length);
+    let revoked = false;
+    getCustomBack(id).then((back) => {
+      if (revoked) return;
+      if (back) {
+        const url = createBackBlobUrl(back);
+        setCustomBackUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return url;
+        });
+      } else {
+        // Custom back was deleted — reset to default
+        setCustomBackUrl(null);
+      }
+    });
+    return () => {
+      revoked = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.cardBack]);
+
+  const resolvedCardBack = settings.cardBack.startsWith('custom:')
+    ? customBackUrl
+    : cardBackImage;
+
   // ── Render ────────────────────────────────────────────────
 
   return (
@@ -248,7 +286,7 @@ export const App: React.FC = () => {
           <div className="screen-enter" key={selectedMode} style={{ display: 'contents' }}>
           {selectedMode === 'klondike' && (
             <KlondikeScreen
-              cardBackImage={cardBackImage}
+              cardBackImage={resolvedCardBack}
               themeColors={pixiThemeColors}
               modeStats={stats.klondike}
               drawCount={settings.drawCount}
@@ -267,7 +305,7 @@ export const App: React.FC = () => {
           )}
           {selectedMode === 'tripeaks' && (
             <TriPeaksScreen
-              cardBackImage={cardBackImage}
+              cardBackImage={resolvedCardBack}
               themeColors={pixiThemeColors}
               modeStats={stats.tripeaks}
               reducedMotion={settings.reducedMotion}
@@ -285,7 +323,7 @@ export const App: React.FC = () => {
           )}
           {selectedMode === 'golf' && (
             <GolfScreen
-              cardBackImage={cardBackImage}
+              cardBackImage={resolvedCardBack}
               themeColors={pixiThemeColors}
               modeStats={stats.golf}
               reducedMotion={settings.reducedMotion}
@@ -303,7 +341,7 @@ export const App: React.FC = () => {
           )}
           {selectedMode === 'pyramid' && (
             <PyramidScreen
-              cardBackImage={cardBackImage}
+              cardBackImage={resolvedCardBack}
               themeColors={pixiThemeColors}
               modeStats={stats.pyramid}
               reducedMotion={settings.reducedMotion}
@@ -321,7 +359,7 @@ export const App: React.FC = () => {
           )}
           {selectedMode === 'freecell' && (
             <FreeCellScreen
-              cardBackImage={cardBackImage}
+              cardBackImage={resolvedCardBack}
               themeColors={pixiThemeColors}
               modeStats={stats.freecell}
               reducedMotion={settings.reducedMotion}
@@ -339,7 +377,7 @@ export const App: React.FC = () => {
           )}
           {selectedMode === 'spider' && (
             <SpiderScreen
-              cardBackImage={cardBackImage}
+              cardBackImage={resolvedCardBack}
               themeColors={pixiThemeColors}
               modeStats={stats.spider}
               reducedMotion={settings.reducedMotion}

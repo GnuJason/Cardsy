@@ -170,7 +170,7 @@ export const WinCelebration: React.FC<WinCelebrationProps> = ({
             zIndex: i,
           }}
         >
-          <img src={cardImages[i]} alt="" loading="eager" />
+          <img src={cardImages[i]} alt="" loading="eager" width="80" height="112" />
         </div>
       ))}
 
@@ -178,7 +178,7 @@ export const WinCelebration: React.FC<WinCelebrationProps> = ({
       <div
         className={`${styles.finalPhoto} ${photoVisible ? styles.finalPhotoVisible : ''}`}
       >
-        <img src={finalPhoto} alt="Family photo" loading="eager" />
+        <img src={finalPhoto} alt="Family photo" loading="eager" width="300" height="420" />
       </div>
 
       <div className={styles.skipHint}>Tap anywhere to skip</div>

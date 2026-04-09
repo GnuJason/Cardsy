@@ -107,7 +107,7 @@
   .tabActive {
     padding: var(--space-2) var(--space-1);
     font-size: var(--font-size-xs);
-    min-height: 40px;
+    min-height: 44px;
   }
 
   .statRow {
