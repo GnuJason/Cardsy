@@ -1,7 +1,29 @@
-import { Application, Container } from 'pixi.js';
+import { Application, Assets, Cache, Container } from 'pixi.js';
 // CSP-safe polyfills: replaces new Function() with pre-built shader/UBO
 // sync functions so Pixi works under script-src 'self' (no unsafe-eval).
 import 'pixi.js/unsafe-eval';
+
+// ── Dev-only: guard against blob URLs leaking into Pixi's Assets/Cache ──
+if (import.meta.env.DEV) {
+  const origCacheGet = Cache.get.bind(Cache);
+  Cache.get = (key: string) => {
+    if (typeof key === 'string' && key.startsWith('blob:')) {
+      console.error('[Pixi][Guard] Blob URL passed into Cache.get — this will fail:', key);
+      console.trace();
+    }
+    return origCacheGet(key);
+  };
+
+  const origAssetsLoad = Assets.load.bind(Assets);
+  const guardedLoad = (id: any, ...rest: any[]) => {
+    if (typeof id === 'string' && id.startsWith('blob:')) {
+      console.error('[Pixi][Guard] Blob URL passed into Assets.load — use loadTextureFromUrl instead:', id);
+      console.trace();
+    }
+    return origAssetsLoad(id, ...rest);
+  };
+  (Assets as any).load = guardedLoad;
+}
 
 export interface PixiAppContext {
   app: Application;

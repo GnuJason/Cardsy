@@ -15,7 +15,6 @@ import {
   invalidateTextures,
   loadTextureFromUrl,
   makeCustomBackTexture,
-  textureFromUrl,
   type TextureCache,
 } from './rendering/CardRenderer';
 import { hitTestPile } from './interaction/HitDetection';
@@ -356,7 +355,14 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     fallbackBackTexture: Texture,
     cardSize: CardSize,
   ): Texture => {
-    const backImage = resolveGameplayBackImage(cardId, cardBackImage);
+    // Uniform mode: when a single card back is set (custom blob or built-in),
+    // generateBackTexture already produced the properly masked texture stored
+    // in backTextureRef (passed here as fallbackBackTexture).  All face-down
+    // cards share it — no per-card lookup needed.
+    if (cardBackImage) return fallbackBackTexture;
+
+    // Family photos mode: each card has its own back image.
+    const backImage = getCardBackImage(cardId);
     if (!backImage) return fallbackBackTexture;
 
     const cached = backTextureByUrlRef.current.get(backImage);
@@ -377,36 +383,13 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       return cached;
     }
 
-    // Raw texture — will be replaced with masked version once the
-    // async preload resolves (see mount effect).  This is a fallback for
-    // cards whose preload hasn't completed yet.
-    // textureFromUrl() avoids Pixi's Assets cache for blob: URLs.
-    let rawTexture: Texture;
-    try {
-      rawTexture = textureFromUrl(backImage);
-    } catch {
-      if (import.meta.env.DEV) {
-        console.warn('[Pixi] Null back texture detected, using fallback.');
-      }
-      return fallbackBackTexture;
+    // Texture not preloaded yet — return the procedural fallback.
+    // The async preloader in the mount effect will fill the cache and
+    // trigger a re-render.
+    if (import.meta.env.DEV) {
+      console.warn(`[Pixi] Back texture not preloaded for ${backImage}, using fallback.`);
     }
-    const ctx = appCtxRef.current;
-    if (ctx) {
-      try {
-        const masked = makeCustomBackTexture(ctx.app, cardSize, rawTexture, getTextureResolution());
-        backTextureByUrlRef.current.set(backImage, masked);
-        maskedBackTextureUrlsRef.current.add(backImage);
-        return masked;
-      } catch {
-        backTextureByUrlRef.current.set(backImage, rawTexture);
-        maskedBackTextureUrlsRef.current.delete(backImage);
-        return rawTexture;
-      }
-    }
-
-    backTextureByUrlRef.current.set(backImage, rawTexture);
-    maskedBackTextureUrlsRef.current.delete(backImage);
-    return rawTexture;
+    return fallbackBackTexture;
   };
 
   /** Re-render all per-card back textures through the rounded-rect mask. */

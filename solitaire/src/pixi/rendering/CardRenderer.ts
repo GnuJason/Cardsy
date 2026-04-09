@@ -1,4 +1,4 @@
-import { type Application, Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from 'pixi.js';
+import { type Application, Assets, Container, Graphics, ImageSource, Sprite, Text, TextStyle, Texture } from 'pixi.js';
 import {
   BLACK_CARD_COLOR,
   CARD_BACKGROUND,
@@ -8,10 +8,16 @@ import {
 import type { CardSize } from '../types';
 import { RANK_LABELS, SUITS, SUIT_SYMBOLS, suitColor, type Rank, type Suit } from '../../logic/types';
 
+/** Create a Texture from a loaded HTMLImageElement, bypassing Pixi's Cache. */
+function textureFromImage(img: HTMLImageElement): Texture {
+  const source = new ImageSource({ resource: img });
+  return new Texture({ source });
+}
+
 /**
  * Load an image URL into a Pixi Texture.
- * For blob: URLs we bypass Pixi's Assets cache (which can't resolve them)
- * and create the texture from an HTMLImageElement directly.
+ * For blob: URLs we bypass Pixi's Assets cache entirely (it can't resolve them).
+ * For normal URLs we use Assets.load which returns a Texture in Pixi 8.
  */
 export async function loadTextureFromUrl(url: string): Promise<Texture> {
   if (url.startsWith('blob:')) {
@@ -22,25 +28,10 @@ export async function loadTextureFromUrl(url: string): Promise<Texture> {
       img.onerror = () => reject(new Error('blob image load failed'));
       img.src = url;
     });
-    return Texture.from(img);
+    return textureFromImage(img);
   }
-  const loaded = await Assets.load(url);
-  return Texture.from(loaded);
-}
-
-/**
- * Synchronously create a Texture from a URL.
- * For blob: URLs, creates an HTMLImageElement source to avoid Pixi's Assets cache.
- * For normal URLs, delegates to Texture.from(string) which uses the Assets cache.
- */
-export function textureFromUrl(url: string): Texture {
-  if (url.startsWith('blob:')) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = url;
-    return Texture.from(img);
-  }
-  return Texture.from(url);
+  // Assets.load returns a Texture for image URLs in Pixi 8
+  return await Assets.load(url);
 }
 
 export type TextureCache = Map<string, Texture>;

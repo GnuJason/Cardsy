@@ -381,9 +381,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
-        {/* Install app */}
+        {/* Install / Download app */}
         {installState === 'available' && (
           <div className={styles.section}>
+            <div className={styles.label}>Download GrandmaGames</div>
             <button
               className={styles.installBtn}
               onClick={promptInstall}
@@ -395,10 +396,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         )}
         {installState === 'ios-safari' && (
           <div className={styles.section}>
+            <div className={styles.label}>Download GrandmaGames</div>
             <div className={styles.iosInstallHint}>
               To install, tap{' '}
               <span aria-label="Share" role="img">⬆</span>{' '}
               then <strong>Add to Home Screen</strong>.
+            </div>
+          </div>
+        )}
+        {installState === 'installed' && (
+          <div className={styles.section}>
+            <div className={styles.iosInstallHint}>
+              ✅ App installed
             </div>
           </div>
         )}
