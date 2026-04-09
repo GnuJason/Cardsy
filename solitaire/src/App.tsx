@@ -216,8 +216,9 @@ export const App: React.FC = () => {
     .filter(Boolean)
     .join(' ');
 
+  // cardBackImage: null = family photos (default), string = uniform built-in back
   const cardBackImage =
-    settings.cardBack !== 'default.png'
+    settings.cardBack !== 'default.png' && !settings.cardBack.startsWith('custom:')
       ? cardBackUrl(settings.cardBack)
       : null;
 
@@ -227,10 +228,10 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (!settings.cardBack.startsWith('custom:')) {
       // Revoke previous blob URL if switching away
-      if (customBackUrl) {
-        URL.revokeObjectURL(customBackUrl);
-        setCustomBackUrl(null);
-      }
+      setCustomBackUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
       return;
     }
     const id = settings.cardBack.slice('custom:'.length);
@@ -255,9 +256,26 @@ export const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.cardBack]);
 
+  // resolvedCardBack: null = per-card family photos, string = uniform back URL.
+  // During custom-back async load, falls through to null (family photos) so
+  // the game always renders immediately.
   const resolvedCardBack = settings.cardBack.startsWith('custom:')
-    ? customBackUrl
-    : cardBackImage;
+    ? customBackUrl   // null while loading → family photos fallback
+    : cardBackImage;  // null for 'default.png' → family photos
+
+  // ── Dev-only card-back audit ───────────────────────────────
+  if (import.meta.env.DEV) {
+    const audit = {
+      settingsCardBack: settings.cardBack,
+      customBackUrl,
+      cardBackImage,
+      resolvedCardBack,
+      willUseFamilyPhotos: resolvedCardBack === null,
+    };
+    if (settings.cardBack.startsWith('custom:') && !customBackUrl) {
+      console.warn('[CardBack Audit] Custom back selected but blob not loaded yet — using family photos fallback', audit);
+    }
+  }
 
   // ── Render ────────────────────────────────────────────────
 

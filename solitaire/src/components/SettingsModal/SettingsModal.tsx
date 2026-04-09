@@ -111,6 +111,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // ── PWA install prompt ──────────────────────────────────
   const { installState, promptInstall } = useInstallPrompt();
 
+  // ── Clear app cache ─────────────────────────────────────
+  const [cacheCleared, setCacheCleared] = useState(false);
+
+  const handleClearCache = useCallback(() => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const onMessage = (e: MessageEvent) => {
+        if (e.data?.type === 'CACHES_CLEARED') {
+          navigator.serviceWorker.removeEventListener('message', onMessage);
+          setCacheCleared(true);
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', onMessage);
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' });
+    } else {
+      // No SW controller — clear caches directly
+      if ('caches' in window) {
+        caches.keys().then((keys) =>
+          Promise.all(keys.map((k) => caches.delete(k)))
+        ).then(() => setCacheCleared(true));
+      }
+    }
+  }, []);
+
   const cardSizes: Array<{ value: UserSettings['cardScale']; label: string }> = [
     { value: 'small', label: 'Small' },
     { value: 'medium', label: 'Medium' },
@@ -373,6 +396,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Clear app cache */}
+        <div className={styles.section}>
+          {cacheCleared ? (
+            <div className={styles.iosInstallHint}>
+              Cache cleared. Please reload the app.
+            </div>
+          ) : (
+            <button
+              className={styles.clearCacheBtn}
+              onClick={handleClearCache}
+              aria-label="Clear app cache"
+            >
+              🗑 Clear App Cache
+            </button>
+          )}
+        </div>
 
         <button className={styles.closeBtn} onClick={onClose}>
           Done

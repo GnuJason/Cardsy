@@ -281,6 +281,29 @@
   background: var(--color-surface);
 }
 
+/* ── Clear cache button ── */
+
+.clearCacheBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-modal-text-muted);
+  min-height: 44px;
+  border: 1px solid var(--color-modal-text-muted);
+  cursor: pointer;
+  transition: background var(--duration-sm) var(--ease-out);
+}
+
+.clearCacheBtn:hover {
+  background: var(--color-surface-hover);
+}
+
 /* ── Responsive: phone ── */
 @media (max-width: 480px) {
   .title {

@@ -271,7 +271,11 @@ export function getDragActivationThreshold(pointerType: string): number {
 }
 
 export function resolveGameplayBackImage(cardId: string, cardBackImage: string | null): string | null {
-  return cardBackImage ?? getCardBackImage(cardId);
+  const resolved = cardBackImage ?? getCardBackImage(cardId);
+  if (!resolved && import.meta.env.DEV) {
+    console.warn(`[CardBack] No back image for ${cardId} — will use procedural fallback`);
+  }
+  return resolved;
 }
 
 function supportsDragMode(mode: GameMode): boolean {
