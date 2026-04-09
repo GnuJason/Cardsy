@@ -14,9 +14,9 @@ import { useEffect, useRef } from 'react';
 export function useDebouncedAutoSave(
   shouldSave: boolean,
   saveFn: () => void,
-  delay = 300,
+  delay: number = 300,
 ): void {
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<number | null>(null);
   const latestSaveFn = useRef(saveFn);
   const latestShouldSave = useRef(shouldSave);
 
@@ -27,25 +27,27 @@ export function useDebouncedAutoSave(
   useEffect(() => {
     if (!shouldSave) {
       // Clear any pending save when we leave saveable state
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = undefined;
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
       return;
     }
 
     // Restart debounce timer
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+    }
 
-    timerRef.current = setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
       latestSaveFn.current();
-      timerRef.current = undefined;
+      timerRef.current = null;
     }, delay);
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = undefined;
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [shouldSave, saveFn, delay]);
@@ -53,9 +55,9 @@ export function useDebouncedAutoSave(
   // Flush pending save on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = undefined;
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
       // Always flush if game was in progress
       if (latestShouldSave.current) {

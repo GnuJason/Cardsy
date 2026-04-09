@@ -25,7 +25,7 @@
   font-size: var(--font-size-sm);
   z-index: 2;
   pointer-events: none;
-  animation: hintFadeIn var(--duration-xl) var(--ease-out) 1s forwards;
+  animation: hintFadeIn var(--duration-xl) var(--ease-out) var(--duration-4xl) forwards;
 }
 
 @keyframes hintFadeIn {

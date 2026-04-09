@@ -43,6 +43,7 @@
   --font-size-6xl: 64px;
 
   /* ── Spacing ── */
+  --space-0: 2px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -89,6 +90,7 @@
   --duration-xl: 500ms;
   --duration-2xl: 600ms;
   --duration-3xl: 800ms;
+  --duration-4xl: 1000ms;
   --duration-scatter: 1800ms;
   --duration-converge: 1600ms;
 
@@ -109,6 +111,7 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 8px var(--color-gold);
   --shadow-celebrate: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3);
+  --shadow-inset-border: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 
   /* ── Modal cinematic ── */
   --modal-scale-from: 0.96;
