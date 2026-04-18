@@ -39,8 +39,7 @@ export function drawFromStock(state: TriPeaksGameState): TriPeaksGameState | nul
 
   const next = cloneState(state);
   const card = next.stock.pop()!;
-  card.faceUp = true;
-  next.waste.push(card);
+  next.waste.push({ ...card, faceUp: true });
   next.streak = 0; // drawing breaks the streak
   next.moves += 1;
   return next;

@@ -1,5 +1,6 @@
 import type { Card, FreeCellGameState } from '../types';
 import { createDeck, shuffle } from '../deck';
+import { createShuffleSeed } from '../random';
 import { COLUMN_COUNT, FREE_CELL_COUNT, FOUNDATION_COUNT } from './layout';
 
 /**
@@ -23,13 +24,15 @@ export function dealFreeCell(deck: Card[]): {
  * Create a fresh FreeCell game with a shuffled deck.
  */
 export function newFreeCellGame(): FreeCellGameState {
-  const deck = shuffle(createDeck());
+  const shuffleSeed = createShuffleSeed();
+  const deck = shuffle(createDeck(), shuffleSeed);
   const { columns } = dealFreeCell(deck);
 
   return {
     columns,
     freeCells: Array.from({ length: FREE_CELL_COUNT }, () => null),
     foundations: Array.from({ length: FOUNDATION_COUNT }, () => []),
+    shuffleSeed,
     moves: 0,
     elapsedSeconds: 0,
     status: 'playing',

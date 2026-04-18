@@ -1,4 +1,4 @@
-import React, { useState, useCallback, lazy, Suspense, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, lazy, Suspense, useMemo, useEffect, useRef } from 'react';
 import { useGameStats } from './hooks/useGameStats';
 import { useTheme } from './hooks/useTheme';
 import { useAchievements } from './hooks/useAchievements';
@@ -8,6 +8,7 @@ import { SettingsModal } from './components/SettingsModal/SettingsModal';
 import { StatsModal } from './components/StatsModal/StatsModal';
 import { AchievementsModal } from './components/AchievementsModal/AchievementsModal';
 import { AchievementToast } from './components/AchievementToast/AchievementToast';
+import { NoticeToast } from './components/NoticeToast/NoticeToast';
 import { ConfirmModal } from './components/ConfirmModal/ConfirmModal';
 import type { UserSettings, GameMode } from './logic/types';
 import { soundManager } from './services/sound';
@@ -28,7 +29,7 @@ import {
   getSavedFreeCellGame,
   getSavedSpiderGame,
 } from './services/storage';
-import { cardBackUrl, setFamilyDeckOverlay, clearFamilyDeckOverlay } from './config/cardArt';
+import { CARD_BACK_DEFAULT, cardBackUrl, setFamilyDeckOverlay, clearFamilyDeckOverlay } from './config/cardArt';
 import { themeToPixiColors } from './pixi/ThemeAdapter';
 
 // Lazy-load screen components for code splitting
@@ -55,6 +56,8 @@ const SpiderScreen = lazy(() =>
 migrateFromLegacy();
 
 export const App: React.FC = () => {
+  const missingCustomBackNotice = 'Using default card backs — upload custom backs anytime in Settings.';
+
   // ── Splash ────────────────────────────────────────────────
   const [showSplash, setShowSplash] = useState(!getSplashSeen());
 
@@ -92,6 +95,8 @@ export const App: React.FC = () => {
   const { unlocked, toastQueue, dismissToast, checkOnWin, checkOnGameStart } =
     useAchievements();
   const [showAchievements, setShowAchievements] = useState(false);
+  const [noticeToast, setNoticeToast] = useState<string | null>(null);
+  const missingCustomBackToastKeyRef = useRef<string | null>(null);
 
   // ── Handlers ──────────────────────────────────────────────
 
@@ -217,9 +222,9 @@ export const App: React.FC = () => {
     .filter(Boolean)
     .join(' ');
 
-  // cardBackImage: null = family photos (default), string = uniform built-in back
-  const cardBackImage =
-    settings.cardBack !== 'default.png' && !settings.cardBack.startsWith('custom:')
+  const useFamilyBacks = settings.cardBack === 'default.png';
+  const builtInCardBackImage =
+    !useFamilyBacks && !settings.cardBack.startsWith('custom:')
       ? cardBackUrl(settings.cardBack)
       : null;
 
@@ -227,28 +232,36 @@ export const App: React.FC = () => {
   const [customBackUrl, setCustomBackUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    const image = new Image();
+    image.src = CARD_BACK_DEFAULT;
+  }, []);
+
+  useEffect(() => {
     if (!settings.cardBack.startsWith('custom:')) {
       // Revoke previous blob URL if switching away
       setCustomBackUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
+        if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
         return null;
       });
       return;
     }
     const id = settings.cardBack.slice('custom:'.length);
     let revoked = false;
+    setCustomBackUrl(CARD_BACK_DEFAULT);
     getCustomBack(id).then((back) => {
       if (revoked) return;
       if (back) {
         const url = createBackBlobUrl(back);
         setCustomBackUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
+          if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
           return url;
         });
       } else {
-        // Custom back was deleted — reset to default so game always starts
-        setCustomBackUrl(null);
-        handleSettingsUpdate({ ...settings, cardBack: 'default.png' });
+        setCustomBackUrl(CARD_BACK_DEFAULT);
+        if (missingCustomBackToastKeyRef.current !== id) {
+          missingCustomBackToastKeyRef.current = id;
+          setNoticeToast(missingCustomBackNotice);
+        }
       }
     });
     return () => {
@@ -277,23 +290,21 @@ export const App: React.FC = () => {
   }, []);
 
   // resolvedCardBack: null = per-card family photos, string = uniform back URL.
-  // During custom-back async load, falls through to null (family photos) so
-  // the game always renders immediately.
   const resolvedCardBack = settings.cardBack.startsWith('custom:')
-    ? customBackUrl   // null while loading → family photos fallback
-    : cardBackImage;  // null for 'default.png' → family photos
+    ? customBackUrl ?? CARD_BACK_DEFAULT
+    : builtInCardBackImage;
 
   // ── Dev-only card-back audit ───────────────────────────────
   if (import.meta.env.DEV) {
     const audit = {
       settingsCardBack: settings.cardBack,
       customBackUrl,
-      cardBackImage,
+      builtInCardBackImage,
       resolvedCardBack,
       willUseFamilyPhotos: resolvedCardBack === null,
     };
-    if (settings.cardBack.startsWith('custom:') && !customBackUrl) {
-      console.warn('[CardBack Audit] Custom back selected but blob not loaded yet — using family photos fallback', audit);
+    if (settings.cardBack.startsWith('custom:') && customBackUrl === CARD_BACK_DEFAULT) {
+      console.warn('[CardBack Audit] Custom back unavailable — using shipped fallback', audit);
     }
   }
 
@@ -486,6 +497,10 @@ export const App: React.FC = () => {
       {/* Achievement toasts */}
       {toastQueue.length > 0 && (
         <AchievementToast toast={toastQueue[0]} onDismiss={dismissToast} />
+      )}
+
+      {noticeToast && (
+        <NoticeToast message={noticeToast} onDismiss={() => setNoticeToast(null)} />
       )}
 
       {/* ARIA live region for screen-reader announcements */}

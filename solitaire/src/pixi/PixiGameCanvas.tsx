@@ -40,7 +40,7 @@ import type {
   SpiderGameState,
   TriPeaksGameState,
 } from '../logic/types';
-import { getCardBackImage } from '../config/cardArt';
+import { CARD_BACK_DEFAULT, getCardBackImage } from '../config/cardArt';
 import { highContrastOverride } from './HighContrastOverride';
 import { KeyboardOverlay } from './KeyboardOverlay';
 import { SpritePool } from './rendering/SpritePool';
@@ -323,6 +323,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
   const lastCardSizeRef = useRef<string>('');
   const lastLayoutKeyRef = useRef<string>('');
   const textureCardSizeKeyRef = useRef<string>('');
+  const backTextureKeyRef = useRef<string>('');
+  const backTextureLoadIdRef = useRef(0);
 
   const [layoutState, setLayoutState] = useState<LayoutResult | null>(null);
 
@@ -411,6 +413,33 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
     maskedBackTextureUrlsRef.current = nextMasked;
   };
 
+  const refreshUniformBackTexture = (cardSize: CardSize, sourceUrl: string): void => {
+    const ctx = appCtxRef.current;
+    if (!ctx) return;
+
+    const resolution = getTextureResolution();
+    const nextKey = `${sourceUrl}|${cardSize.width}x${cardSize.height}@${resolution}`;
+    if (backTextureKeyRef.current === nextKey) return;
+
+    backTextureKeyRef.current = nextKey;
+    const loadId = ++backTextureLoadIdRef.current;
+
+    void generateBackTexture(ctx.app, cardSize, sourceUrl, resolution).then((texture) => {
+      if (loadId !== backTextureLoadIdRef.current) {
+        texture.destroy(true);
+        return;
+      }
+
+      const previous = backTextureRef.current;
+      backTextureRef.current = texture;
+      if (previous && previous !== texture) {
+        previous.destroy(true);
+      }
+
+      renderScene();
+    });
+  };
+
   const effectiveThemeColors = useMemo(
     () => (highContrast ? highContrastOverride(themeColors) : themeColors),
     [highContrast, themeColors],
@@ -462,6 +491,8 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
         debugLog('texture-regeneration', { reason: 'cardSize-change', cardSizeKey, resolution: res });
       }
     }
+
+    refreshUniformBackTexture(cardSize, cardBackImage ?? CARD_BACK_DEFAULT);
 
     if (debugRef.current.enabled && debugRef.current.textureLogs && cardSizeKey !== lastCardSizeRef.current) {
       debugLog('card-size', { mode, cardSize, viewport });
@@ -813,6 +844,10 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       }
       textureCacheRef.current = generateCardTextures(ctx.app, cardSize, toRenderColors(effectiveThemeColors), res);
       textureCardSizeKeyRef.current = `${cardSize.width}x${cardSize.height}@${viewport.dpi}`;
+      backTextureRef.current = await generateBackTexture(ctx.app, cardSize, CARD_BACK_DEFAULT, res);
+      backTextureKeyRef.current = `${CARD_BACK_DEFAULT}|${cardSize.width}x${cardSize.height}@${res}`;
+      resizeObserver.observe(host);
+      renderScene();
 
       if (!cardBackImage) {
         const backUrls = new Set<string>();
@@ -844,17 +879,10 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
         const viewport = getViewportInfo(host);
         const cs = computeCardSize(viewport, viewport.dpi, mode, cardScaleRef.current);
         maskBackTextures(cs);
+        renderScene();
+      } else if (cardBackImage !== CARD_BACK_DEFAULT) {
+        refreshUniformBackTexture(cardSize, cardBackImage);
       }
-
-      const generatedBackTexture = await generateBackTexture(ctx.app, cardSize, cardBackImage, res);
-      if (!active) {
-        generatedBackTexture.destroy(true);
-        return;
-      }
-      backTextureRef.current = generatedBackTexture;
-
-      resizeObserver.observe(host);
-      renderScene();
     })();
 
     return () => {
@@ -878,6 +906,7 @@ export const PixiGameCanvas: React.FC<PixiGameCanvasProps> = ({
       clearPlaceholders();
       textureCacheRef.current = null;
       textureCardSizeKeyRef.current = '';
+      backTextureKeyRef.current = '';
       backTextureRef.current = null;
       spriteMetaRef.current.clear();
       handlersBoundRef.current.clear();

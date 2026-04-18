@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardBackUrl } from '../src/config/cardArt';
+import { CARD_BACK_DEFAULT, cardBackUrl } from '../src/config/cardArt';
 
 describe('cardBackUrl', () => {
   it('accepts shipped filenames with spaces and tildes', () => {
@@ -13,9 +13,9 @@ describe('cardBackUrl', () => {
   });
 
   it('rejects traversal and path separator attempts', () => {
-    expect(cardBackUrl('../secret.png')).toBe('/cards/backs/default.png');
-    expect(cardBackUrl('nested/path.png')).toBe('/cards/backs/default.png');
-    expect(cardBackUrl('nested\\path.png')).toBe('/cards/backs/default.png');
-    expect(cardBackUrl('evil..name.png')).toBe('/cards/backs/default.png');
+    expect(cardBackUrl('../secret.png')).toBe(CARD_BACK_DEFAULT);
+    expect(cardBackUrl('nested/path.png')).toBe(CARD_BACK_DEFAULT);
+    expect(cardBackUrl('nested\\path.png')).toBe(CARD_BACK_DEFAULT);
+    expect(cardBackUrl('evil..name.png')).toBe(CARD_BACK_DEFAULT);
   });
 });

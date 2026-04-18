@@ -1,6 +1,7 @@
 import type { Card, Suit, Rank } from '../types';
 import type { SpiderDifficulty, SpiderGameState } from '../types';
 import { shuffle } from '../deck';
+import { createShuffleSeed } from '../random';
 import { COLUMN_COUNT, FOUNDATION_COUNT } from './layout';
 
 /**
@@ -66,9 +67,10 @@ export function dealSpider(deck: Card[]): {
   for (let col = 0; col < COLUMN_COUNT; col++) {
     const count = col < 4 ? 6 : 5;
     for (let row = 0; row < count; row++) {
-      const card = { ...deck[idx] };
-      card.faceUp = row === count - 1; // only top card face-up
-      columns[col].push(card);
+      columns[col].push({
+        ...deck[idx],
+        faceUp: row === count - 1,
+      });
       idx++;
     }
   }
@@ -81,13 +83,15 @@ export function dealSpider(deck: Card[]): {
  * Create a fresh Spider game with the given difficulty.
  */
 export function newSpiderGame(difficulty: SpiderDifficulty): SpiderGameState {
-  const deck = shuffle(createSpiderDeck(difficulty));
+  const shuffleSeed = createShuffleSeed();
+  const deck = shuffle(createSpiderDeck(difficulty), shuffleSeed);
   const { columns, stock } = dealSpider(deck);
 
   return {
     columns,
     stock,
     completedRuns: 0,
+    shuffleSeed,
     score: 500,
     moves: 0,
     elapsedSeconds: 0,

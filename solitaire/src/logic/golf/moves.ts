@@ -26,8 +26,7 @@ export function drawFromStock(state: GolfGameState): GolfGameState | null {
 
   const next = cloneState(state);
   const card = next.stock.pop()!;
-  card.faceUp = true;
-  next.waste.push(card);
+  next.waste.push({ ...card, faceUp: true });
   next.moves += 1;
   return next;
 }
@@ -57,8 +56,7 @@ export function playCard(
 
   // Remove the bottom card from tableau
   const card = next.tableau[colIndex].pop()!;
-  card.faceUp = true;
-  next.waste.push(card);
+  next.waste.push({ ...card, faceUp: true });
   next.cardsRemaining -= 1;
   next.moves += 1;
 

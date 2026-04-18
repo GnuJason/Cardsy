@@ -29,6 +29,23 @@ export function canPlaceOnFoundation(card: Card, foundation: Card[]): boolean {
   return card.suit === top.suit && card.rank === top.rank + 1;
 }
 
+export function isValidTableauRun(cards: Card[]): boolean {
+  if (cards.length === 0) return false;
+
+  for (let index = 0; index < cards.length; index += 1) {
+    const current = cards[index];
+    if (!current.faceUp) return false;
+
+    if (index === 0) continue;
+
+    const previous = cards[index - 1];
+    if (suitColor(previous.suit) === suitColor(current.suit)) return false;
+    if (previous.rank !== current.rank + 1) return false;
+  }
+
+  return true;
+}
+
 /**
  * Check if the game is won (all 4 foundations have 13 cards).
  */
@@ -47,6 +64,13 @@ export function findBestMove(
   fromTableauPileIndex?: number,
   cardIndex?: number,
 ): { zone: 'foundation'; pileIndex: number } | { zone: 'tableau'; pileIndex: number } | null {
+  if (fromTableauPileIndex !== undefined && cardIndex !== undefined) {
+    const movingStack = state.tableau[fromTableauPileIndex]?.slice(cardIndex) ?? [];
+    if (!isValidTableauRun(movingStack)) {
+      return null;
+    }
+  }
+
   // Only single cards can go to foundation via tap
   const isSingleCard = cardIndex === undefined || 
     (fromTableauPileIndex !== undefined && cardIndex === state.tableau[fromTableauPileIndex].length - 1);
@@ -96,6 +120,7 @@ export function hasAnyMoves(state: GameState): boolean {
     for (let cardIdx = 0; cardIdx < pile.length; cardIdx++) {
       const card = pile[cardIdx];
       if (!card.faceUp) continue;
+      if (!isValidTableauRun(pile.slice(cardIdx))) continue;
       if (findBestMove(card, state, pileIdx, cardIdx) !== null) return true;
     }
   }

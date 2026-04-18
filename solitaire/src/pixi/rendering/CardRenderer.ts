@@ -1,4 +1,5 @@
 import { type Application, Assets, Container, Graphics, ImageSource, Sprite, Text, TextStyle, Texture } from 'pixi.js';
+import { CARD_BACK_DEFAULT } from '../../config/cardArt';
 import {
   BLACK_CARD_COLOR,
   CARD_BACKGROUND,
@@ -141,13 +142,15 @@ function makeFrontCardTexture(
 
 function makeBackTexture(app: Application, cardSize: CardSize, borderColor?: number, resolution = 1): Texture {
   const container = new Container();
+  const inset = cardSize.width * 0.05;
+  const innerRadius = Math.max(4, cardSize.cornerRadius - cardSize.width * 0.02);
   const back = new Graphics()
     .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
     .fill({ color: 0x123d77 })
-    .stroke({ color: borderColor ?? 0xeaf2ff, width: 2 });
+    .stroke({ color: borderColor ?? 0xeaf2ff, width: Math.max(1, cardSize.width * 0.016) });
 
   const inner = new Graphics()
-    .roundRect(8, 8, cardSize.width - 16, cardSize.height - 16, Math.max(5, cardSize.cornerRadius - 4))
+    .roundRect(inset, inset, cardSize.width - inset * 2, cardSize.height - inset * 2, innerRadius)
     .fill({ color: 0x1d5eb5 });
 
   const emblem = new Text({
@@ -185,33 +188,41 @@ export function makeCustomBackTexture(
   const texW = photoTexture.width || cardSize.width;
   const texH = photoTexture.height || cardSize.height;
   const scale = Math.max(cardSize.width / texW, cardSize.height / texH);
-  photo.width = Math.round(texW * scale);
-  photo.height = Math.round(texH * scale);
+  photo.width = texW * scale;
+  photo.height = texH * scale;
   // Center the photo so overflow is clipped equally on both sides
-  photo.x = Math.round((cardSize.width - photo.width) / 2);
-  photo.y = Math.round((cardSize.height - photo.height) / 2);
+  photo.x = (cardSize.width - photo.width) / 2;
+  photo.y = (cardSize.height - photo.height) / 2;
   container.addChild(photo);
 
-  // Rounded-rect mask clips the photo to the card shape
+  // Apply a single rounded mask to the texture sprite itself.
   const mask = new Graphics()
     .roundRect(0, 0, cardSize.width, cardSize.height, cardSize.cornerRadius)
     .fill({ color: 0xffffff });
   container.addChild(mask);
-  container.mask = mask;
+  photo.mask = mask;
 
   return app.renderer.generateTexture({ target: container, resolution });
 }
 
 export async function generateBackTexture(app: Application, cardSize: CardSize, backImage?: string | null, resolution = 1): Promise<Texture> {
-  if (backImage) {
-    try {
-      const photoTex = await loadTextureFromUrl(backImage);
-      return makeCustomBackTexture(app, cardSize, photoTex, resolution);
-    } catch {
-      return makeBackTexture(app, cardSize, undefined, resolution);
+  const requestedUrl = backImage ?? CARD_BACK_DEFAULT;
+
+  try {
+    const photoTex = await loadTextureFromUrl(requestedUrl);
+    return makeCustomBackTexture(app, cardSize, photoTex, resolution);
+  } catch {
+    if (requestedUrl !== CARD_BACK_DEFAULT) {
+      try {
+        const fallbackTexture = await loadTextureFromUrl(CARD_BACK_DEFAULT);
+        return makeCustomBackTexture(app, cardSize, fallbackTexture, resolution);
+      } catch {
+        return makeBackTexture(app, cardSize, undefined, resolution);
+      }
     }
+
+    return makeBackTexture(app, cardSize, undefined, resolution);
   }
-  return makeBackTexture(app, cardSize, undefined, resolution);
 }
 
 export function generateCardTextures(app: Application, cardSize: CardSize, colors?: CardRenderColors, resolution = 1): TextureCache {

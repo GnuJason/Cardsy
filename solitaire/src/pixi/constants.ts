@@ -1,5 +1,29 @@
 import type { PixiLayoutConfig, PixiScalingConfig } from './types';
 
+export const CARD_WIDTH_RATIO = 0.12;
+export const CARD_HEIGHT_RATIO = 1.4;
+export const CARD_CORNER_RADIUS_RATIO = 0.06;
+export const CARD_FONT_SIZE_RATIO = 0.31;
+export const CARD_PIP_SIZE_RATIO = 0.42;
+
+export const CARD_LAYOUT_RATIOS = {
+  padding: 0.13,
+  topY: 0.15,
+  rowGap: 0.17,
+  colGap: 0.1,
+  wasteFan: 0.2,
+  tableauFan: 0.2,
+  freeCellFan: 0.18,
+  spiderFan: 0.16,
+  tripeaksWasteGap: 0.2,
+  pyramidWasteGap: 0.2,
+  viewportEdge: 0.17,
+  minFan: 0.06,
+  spiderFoundationGap: 0.08,
+  foundationBridge: 1.1,
+  foundationBridgeMax: 1.6,
+} as const;
+
 export const DEFAULT_SCALING_CONFIG: PixiScalingConfig = {
   minCardWidth: 60,
   maxCardWidth: 160,
@@ -13,10 +37,10 @@ export const CARD_SCALE_BOUNDS: Record<string, { min: number; max: number }> = {
 };
 
 export const DEFAULT_LAYOUT_CONFIG: PixiLayoutConfig = {
-  padding: 16,
-  topRowGap: 18,
-  columnGap: 12,
-  rowGap: 12,
+  padding: CARD_LAYOUT_RATIOS.padding,
+  topRowGap: CARD_LAYOUT_RATIOS.topY,
+  columnGap: CARD_LAYOUT_RATIOS.colGap,
+  rowGap: CARD_LAYOUT_RATIOS.rowGap,
 };
 
 export const RED_CARD_COLOR = 0xd00000;

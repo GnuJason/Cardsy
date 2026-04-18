@@ -63,6 +63,7 @@ export interface GameState {
   waste: Card[];
   tableau: Card[][]; // 7 piles
   foundations: Card[][]; // 4 piles, indexed by SUIT_INDEX
+  shuffleSeed?: number;
   score: number;
   moves: number;
   elapsedSeconds: number;
@@ -143,6 +144,7 @@ export interface TriPeaksGameState {
   pyramid: TriPeaksCard[];
   stock: Card[];
   waste: Card[];
+  shuffleSeed?: number;
   score: number;
   moves: number;
   streak: number; // consecutive plays without stock draw
@@ -174,6 +176,7 @@ export interface GolfGameState {
   tableau: Card[][];          // 7 columns, up to 5 cards each, all face-up
   stock: Card[];              // 16 cards initially, no recycle
   waste: Card[];              // 1 initial card
+  shuffleSeed?: number;
   cardsRemaining: number;     // 35 → 0 (this IS the score; lower is better)
   moves: number;
   elapsedSeconds: number;
@@ -199,6 +202,7 @@ export interface PyramidGameState {
   pyramid: PyramidCard[];       // 28 cards
   stock: Card[];                // 24 cards initially, no recycle
   waste: Card[];                // starts empty
+  shuffleSeed?: number;
   cardsRemaining: number;       // 28 → 0 (score; lower is better)
   moves: number;
   elapsedSeconds: number;
@@ -224,6 +228,7 @@ export interface FreeCellGameState {
   columns: Card[][];              // 8 columns, all face-up
   freeCells: (Card | null)[];     // 4 slots
   foundations: Card[][];           // 4 piles (by suit: ♥♦♣♠)
+  shuffleSeed?: number;
   moves: number;
   elapsedSeconds: number;
   status: FreeCellStatus;
@@ -251,6 +256,7 @@ export interface SpiderGameState {
   columns: Card[][];              // 10 columns
   stock: Card[];                  // 50 cards initially
   foundations: Card[][];           // 8 piles for completed runs
+  shuffleSeed?: number;
   completedRuns: number;          // 0→8
   score: number;                  // starts at 500, -1 per move
   moves: number;

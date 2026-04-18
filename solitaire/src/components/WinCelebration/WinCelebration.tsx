@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { getCardBackImage } from '../../config/cardArt';
+import { CARD_BACK_DEFAULT, getCardBackImage } from '../../config/cardArt';
 import { SUITS, RANKS } from '../../logic/types';
 import styles from './WinCelebration.module.css';
 
@@ -19,17 +19,20 @@ function allCardIds(): string[] {
   return ids;
 }
 
-/** Get a random card-back image URL from the per-card back mappings */
-function getRandomCardBack(): string {
+function pseudoRandom(index: number): number {
+  const seed = Math.imul(index + 1, 0x9e3779b1) >>> 0;
+  let mixed = Math.imul(seed ^ (seed >>> 16), 0x85ebca6b);
+  mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
+  return ((mixed ^ (mixed >>> 16)) >>> 0) / 4294967296;
+}
+
+function getDeterministicCardBack(): string {
   const ids = allCardIds();
-  // Shuffle and find one with an assigned image
-  const shuffled = ids.sort(() => Math.random() - 0.5);
-  for (const id of shuffled) {
+  for (const id of ids) {
     const img = getCardBackImage(id);
     if (img) return img;
   }
-  // Fallback
-  return '/cards/backs/20210620_131500.jpg';
+  return CARD_BACK_DEFAULT;
 }
 
 interface CardPosition {
@@ -46,12 +49,12 @@ function generateScatterPositions(count: number): CardPosition[] {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   for (let i = 0; i < count; i++) {
-    const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-    const radius = Math.min(vw, vh) * (0.3 + Math.random() * 0.35);
+    const angle = (i / count) * Math.PI * 2 + (pseudoRandom(i) - 0.5) * 0.5;
+    const radius = Math.min(vw, vh) * (0.3 + pseudoRandom(i + count) * 0.35);
     positions.push({
       x: Math.cos(angle) * radius,
       y: Math.sin(angle) * radius,
-      rotation: (Math.random() - 0.5) * 720,
+      rotation: (pseudoRandom(i + count * 2) - 0.5) * 720,
     });
   }
   return positions;
@@ -68,13 +71,13 @@ export const WinCelebration: React.FC<WinCelebrationProps> = ({
 
   const cardIds = useMemo(() => allCardIds(), []);
   const scatterPositions = useMemo(() => generateScatterPositions(52), []);
-  const finalPhoto = useMemo(() => getRandomCardBack(), []);
+  const finalPhoto = useMemo(() => getDeterministicCardBack(), []);
 
   // Get per-card back images
   const cardImages = useMemo(() => {
     return cardIds.map((id) => {
       const img = getCardBackImage(id);
-      return img || '/cards/backs/20210620_131500.jpg';
+      return img || CARD_BACK_DEFAULT;
     });
   }, [cardIds]);
 

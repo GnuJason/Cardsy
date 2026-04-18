@@ -1,5 +1,6 @@
 import type { Card, PyramidCard, PyramidGameState } from '../types';
 import { createDeck, shuffle } from '../deck';
+import { createShuffleSeed } from '../random';
 import { PYRAMID_SIZE } from './layout';
 
 /**
@@ -35,13 +36,15 @@ export function dealPyramid(deck: Card[]): {
  * Create a fresh Pyramid game with a shuffled deck.
  */
 export function newPyramidGame(): PyramidGameState {
-  const deck = shuffle(createDeck());
+  const shuffleSeed = createShuffleSeed();
+  const deck = shuffle(createDeck(), shuffleSeed);
   const { pyramid, stock, waste } = dealPyramid(deck);
 
   return {
     pyramid,
     stock,
     waste,
+    shuffleSeed,
     cardsRemaining: PYRAMID_SIZE,
     moves: 0,
     elapsedSeconds: 0,

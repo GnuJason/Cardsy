@@ -154,6 +154,16 @@ describe('moveTableauToTableau', () => {
     state.tableau[1] = [makeCard('diamonds', 10)]; // same color
     expect(moveTableauToTableau(state, 0, 0, 1)).toBeNull();
   });
+
+  it('returns null for an invalid multi-card run', () => {
+    const state = emptyState();
+    state.tableau[0] = [
+      makeCard('clubs', 10),
+      makeCard('spades', 9),
+    ];
+    state.tableau[1] = [makeCard('hearts', 11)];
+    expect(moveTableauToTableau(state, 0, 0, 1)).toBeNull();
+  });
 });
 
 describe('moveTableauToFoundation', () => {

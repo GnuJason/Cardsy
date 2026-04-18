@@ -3,7 +3,7 @@
  * Swap paths here to change card back / suit photos.
  */
 
-export const CARD_BACK_DEFAULT = '/cards/backs/default.png';
+export const CARD_BACK_DEFAULT = '/cards/backs/default.svg';
 
 // Optional per-suit photos (used as subtle background on card faces)
 export const SUIT_PHOTOS: Record<string, string | null> = {

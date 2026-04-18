@@ -1,5 +1,6 @@
 import type { GameMode, LayoutResult, PileLayout, ViewportInfo } from '../types';
 import type { CardSize } from './LayoutTypes';
+import { CARD_LAYOUT_RATIOS } from '../constants';
 
 function makePile(
   pileType: PileLayout['pileType'],
@@ -30,8 +31,8 @@ function computeFoundationStartX(
 ): number {
   const rightAlignedStart = viewportWidth - padding - (cardWidth * 4 + colGap * 3);
   const leftGroupEnd = padding + cardWidth * 2 + colGap;
-  const preferredGap = Math.round(cardWidth * 1.1);
-  const maxGap = Math.round(cardWidth * 1.6);
+  const preferredGap = Math.round(cardWidth * CARD_LAYOUT_RATIOS.foundationBridge);
+  const maxGap = Math.round(cardWidth * CARD_LAYOUT_RATIOS.foundationBridgeMax);
   const clampedGap = Math.min(maxGap, preferredGap);
   const compactStart = leftGroupEnd + clampedGap;
   if (compactStart + cardWidth * 4 + colGap * 3 <= viewportWidth - padding) {
@@ -46,15 +47,15 @@ export function computeLayout(
   cardSize: CardSize,
   pileCounts?: Map<string, number>,
 ): LayoutResult {
-  const padding = 16;
-  const topY = 18;
-  const rowGap = 20;
-  const colGap = 12;
+  const padding = Math.round(cardSize.width * CARD_LAYOUT_RATIOS.padding);
+  const topY = Math.round(cardSize.width * CARD_LAYOUT_RATIOS.topY);
+  const rowGap = Math.round(cardSize.width * CARD_LAYOUT_RATIOS.rowGap);
+  const colGap = Math.round(cardSize.width * CARD_LAYOUT_RATIOS.colGap);
   const piles: PileLayout[] = [];
 
   if (mode === 'klondike') {
     piles.push(makePile('stock', 0, padding, topY, 'none', 0, cardSize));
-    piles.push(makePile('waste', 0, padding + cardSize.width + colGap, topY, 'right', 24, cardSize));
+    piles.push(makePile('waste', 0, padding + cardSize.width + colGap, topY, 'right', Math.round(cardSize.width * CARD_LAYOUT_RATIOS.wasteFan), cardSize));
 
     const foundationStartX = computeFoundationStartX(viewport.width, cardSize.width, padding, colGap);
     for (let i = 0; i < 4; i += 1) {
@@ -63,7 +64,7 @@ export function computeLayout(
 
     const tableauY = topY + cardSize.height + rowGap;
     for (let i = 0; i < 7; i += 1) {
-      piles.push(makePile('tableau', i, padding + i * (cardSize.width + colGap), tableauY, 'down', Math.round(cardSize.height * 0.2), cardSize));
+      piles.push(makePile('tableau', i, padding + i * (cardSize.width + colGap), tableauY, 'down', Math.round(cardSize.height * CARD_LAYOUT_RATIOS.tableauFan), cardSize));
     }
   } else if (mode === 'freecell') {
     for (let i = 0; i < 4; i += 1) {
@@ -75,20 +76,16 @@ export function computeLayout(
     }
     const tableY = topY + cardSize.height + rowGap;
     for (let i = 0; i < 8; i += 1) {
-      piles.push(makePile('column', i, padding + i * (cardSize.width + colGap), tableY, 'down', Math.round(cardSize.height * 0.18), cardSize));
+      piles.push(makePile('column', i, padding + i * (cardSize.width + colGap), tableY, 'down', Math.round(cardSize.height * CARD_LAYOUT_RATIOS.freeCellFan), cardSize));
     }
   } else if (mode === 'spider') {
     piles.push(makePile('stock', 0, padding, topY, 'none', 0, cardSize));
     for (let i = 0; i < 8; i += 1) {
-      piles.push(makePile('foundation', i, viewport.width - padding - (i + 1) * (Math.round(cardSize.width * 0.5) + 4), topY, 'none', 0, {
-        ...cardSize,
-        width: Math.round(cardSize.width * 0.45),
-        height: Math.round(cardSize.height * 0.45),
-      }));
+      piles.push(makePile('foundation', i, viewport.width - padding - (i + 1) * (cardSize.width + Math.round(cardSize.width * CARD_LAYOUT_RATIOS.spiderFoundationGap)), topY, 'none', 0, cardSize));
     }
     const tableY = topY + cardSize.height + rowGap;
     for (let i = 0; i < 10; i += 1) {
-      piles.push(makePile('column', i, padding + i * (cardSize.width + 8), tableY, 'down', Math.round(cardSize.height * 0.16), cardSize));
+      piles.push(makePile('column', i, padding + i * (cardSize.width + colGap), tableY, 'down', Math.round(cardSize.height * CARD_LAYOUT_RATIOS.spiderFan), cardSize));
     }
   } else if (mode === 'tripeaks') {
     const half = Math.round(cardSize.width / 2);
@@ -104,7 +101,7 @@ export function computeLayout(
     }
     const bottomY = startY + Math.round(cardSize.height * 2.1);
     piles.push(makePile('stock', 0, startX + half, bottomY, 'none', 0, cardSize));
-    piles.push(makePile('waste', 0, startX + half + cardSize.width + 24, bottomY, 'none', 0, cardSize));
+    piles.push(makePile('waste', 0, startX + half + cardSize.width + Math.round(cardSize.width * CARD_LAYOUT_RATIOS.tripeaksWasteGap), bottomY, 'none', 0, cardSize));
   } else if (mode === 'pyramid') {
     const half = Math.round(cardSize.width / 2);
     const startX = Math.round((viewport.width - half * 7) / 2);
@@ -117,11 +114,11 @@ export function computeLayout(
     }
     const bottomY = startY + Math.round(cardSize.height * 2.7);
     piles.push(makePile('stock', 0, startX + half, bottomY, 'none', 0, cardSize));
-    piles.push(makePile('waste', 0, startX + half + cardSize.width + 24, bottomY, 'none', 0, cardSize));
+    piles.push(makePile('waste', 0, startX + half + cardSize.width + Math.round(cardSize.width * CARD_LAYOUT_RATIOS.pyramidWasteGap), bottomY, 'none', 0, cardSize));
   } else {
     const tableY = topY;
     for (let i = 0; i < 7; i += 1) {
-      piles.push(makePile('column', i, padding + i * (cardSize.width + colGap), tableY, 'down', Math.round(cardSize.height * 0.21), cardSize));
+      piles.push(makePile('column', i, padding + i * (cardSize.width + colGap), tableY, 'down', Math.round(cardSize.height * CARD_LAYOUT_RATIOS.tableauFan), cardSize));
     }
     const bottomY = tableY + Math.round(cardSize.height * 2.45);
     piles.push(makePile('stock', 0, padding, bottomY, 'none', 0, cardSize));
@@ -135,12 +132,12 @@ export function computeLayout(
     if (count <= 1) continue;
 
     const maxExtent = pile.fanDirection === 'down'
-      ? viewport.height - pile.y - cardSize.height - 20
-      : viewport.width - pile.x - cardSize.width - 20;
+      ? viewport.height - pile.y - cardSize.height - Math.round(cardSize.width * CARD_LAYOUT_RATIOS.viewportEdge)
+      : viewport.width - pile.x - cardSize.width - Math.round(cardSize.width * CARD_LAYOUT_RATIOS.viewportEdge);
     const neededExtent = pile.fanOffset * (count - 1);
     if (neededExtent > maxExtent && maxExtent > 0) {
       // Minimum fan offset must show a visible strip of each card
-      const minFan = Math.max(8, Math.round(cardSize.height * 0.06));
+      const minFan = Math.max(6, Math.round(cardSize.height * CARD_LAYOUT_RATIOS.minFan));
       pile.fanOffset = Math.max(minFan, Math.floor(maxExtent / (count - 1)));
     }
   }

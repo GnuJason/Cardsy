@@ -1,6 +1,6 @@
 import type { GameState } from './types';
 import { SUIT_INDEX } from './types';
-import { canPlaceOnTableau, canPlaceOnFoundation, isWon } from './rules';
+import { canPlaceOnTableau, canPlaceOnFoundation, isValidTableauRun, isWon } from './rules';
 import { scoreMove } from './scoring';
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -41,8 +41,7 @@ export function drawFromStock(state: GameState, count: 1 | 3 = 1): GameState {
   const toDraw = Math.min(count, next.stock.length);
   for (let i = 0; i < toDraw; i++) {
     const card = next.stock.pop()!;
-    card.faceUp = true;
-    next.waste.push(card);
+    next.waste.push({ ...card, faceUp: true });
   }
   return next;
 }
@@ -106,7 +105,7 @@ export function moveTableauToTableau(
   toPile: number,
 ): GameState | null {
   const sourceCards = state.tableau[fromPile].slice(cardIndex);
-  if (sourceCards.length === 0 || !sourceCards[0].faceUp) return null;
+  if (!isValidTableauRun(sourceCards)) return null;
   if (!canPlaceOnTableau(sourceCards[0], state.tableau[toPile])) return null;
 
   const next = cloneState(state);

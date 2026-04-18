@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canPlaceOnTableau, canPlaceOnFoundation, isWon, hasAnyMoves, canAutoComplete, findBestMove } from '../src/logic/rules';
+import { canPlaceOnTableau, canPlaceOnFoundation, isWon, hasAnyMoves, canAutoComplete, findBestMove, isValidTableauRun } from '../src/logic/rules';
 import type { Card, GameState } from '../src/logic/types';
 
 function makeCard(suit: Card['suit'], rank: Card['rank'], faceUp = true): Card {
@@ -76,6 +76,36 @@ describe('canPlaceOnFoundation', () => {
   });
 });
 
+describe('isValidTableauRun', () => {
+  it('accepts a descending alternating-color run', () => {
+    expect(
+      isValidTableauRun([
+        makeCard('clubs', 10),
+        makeCard('hearts', 9),
+        makeCard('spades', 8),
+      ]),
+    ).toBe(true);
+  });
+
+  it('rejects a run with matching colors', () => {
+    expect(
+      isValidTableauRun([
+        makeCard('clubs', 10),
+        makeCard('spades', 9),
+      ]),
+    ).toBe(false);
+  });
+
+  it('rejects a run that includes a face-down card', () => {
+    expect(
+      isValidTableauRun([
+        makeCard('clubs', 10),
+        makeCard('hearts', 9, false),
+      ]),
+    ).toBe(false);
+  });
+});
+
 describe('isWon', () => {
   it('returns false for empty foundations', () => {
     expect(isWon(emptyGameState())).toBe(false);
@@ -149,6 +179,17 @@ describe('findBestMove', () => {
     const state = emptyGameState();
     state.tableau[0] = [makeCard('spades', 10)]; // black 10
     const result = findBestMove(makeCard('clubs', 5), state); // black 5 — no match
+    expect(result).toBe(null);
+  });
+
+  it('ignores tableau targets when the source run is invalid', () => {
+    const state = emptyGameState();
+    state.tableau[0] = [
+      makeCard('hearts', 9),
+      makeCard('diamonds', 8),
+    ];
+    state.tableau[1] = [makeCard('clubs', 10)];
+    const result = findBestMove(state.tableau[0][0], state, 0, 0);
     expect(result).toBe(null);
   });
 });

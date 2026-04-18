@@ -1,5 +1,6 @@
 import type { Card, TriPeaksCard, TriPeaksGameState } from '../types';
 import { createDeck, shuffle } from '../deck';
+import { createShuffleSeed } from '../random';
 import { PYRAMID_SIZE, BOTTOM_ROW } from './layout';
 
 /**
@@ -39,13 +40,15 @@ export function dealTriPeaks(deck: Card[]): {
  * Create a fresh TriPeaks game with a shuffled deck.
  */
 export function newTriPeaksGame(): TriPeaksGameState {
-  const deck = shuffle(createDeck());
+  const shuffleSeed = createShuffleSeed();
+  const deck = shuffle(createDeck(), shuffleSeed);
   const { pyramid, stock, waste } = dealTriPeaks(deck);
 
   return {
     pyramid,
     stock,
     waste,
+    shuffleSeed,
     score: 0,
     moves: 0,
     streak: 0,

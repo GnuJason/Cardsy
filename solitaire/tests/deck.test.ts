@@ -46,12 +46,18 @@ describe('shuffle', () => {
     expect(deck.map((c) => c.id)).toEqual(originalOrder);
   });
 
-  it('produces a different order (probabilistic)', () => {
+  it('produces the same order for the same seed', () => {
     const deck = createDeck();
-    const shuffled = shuffle(deck);
-    // Extremely unlikely that a shuffle produces the exact same order
-    const sameOrder = deck.every((c, i) => c.id === shuffled[i].id);
-    expect(sameOrder).toBe(false);
+    const first = shuffle(deck, 123456789);
+    const second = shuffle(deck, 123456789);
+    expect(first.map((card) => card.id)).toEqual(second.map((card) => card.id));
+  });
+
+  it('produces a different order for a different seed', () => {
+    const deck = createDeck();
+    const first = shuffle(deck, 123456789);
+    const second = shuffle(deck, 987654321);
+    expect(first.map((card) => card.id)).not.toEqual(second.map((card) => card.id));
   });
 });
 
@@ -97,11 +103,12 @@ describe('dealKlondike', () => {
 
 describe('newGame', () => {
   it('returns a valid initial game layout', () => {
-    const { stock, waste, tableau, foundations } = newGame();
+    const { stock, waste, tableau, foundations, shuffleSeed } = newGame();
     expect(stock).toHaveLength(24);
     expect(waste).toHaveLength(0);
     expect(tableau).toHaveLength(7);
     expect(foundations).toHaveLength(4);
     expect(foundations.every((f) => f.length === 0)).toBe(true);
+    expect(typeof shuffleSeed).toBe('number');
   });
 });

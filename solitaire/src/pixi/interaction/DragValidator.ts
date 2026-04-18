@@ -4,7 +4,7 @@ import {
   moveFreeCellToColumn,
   moveFreeCellToFoundation,
 } from '../../logic/freecell/moves';
-import { canPlaceOnFoundation, canPlaceOnTableau } from '../../logic/rules';
+import { canPlaceOnFoundation, canPlaceOnTableau, isValidTableauRun } from '../../logic/rules';
 import { moveCards } from '../../logic/spider/moves';
 import { SUIT_INDEX } from '../../logic/types';
 import type {
@@ -57,6 +57,7 @@ function canDropKlondike(
 
     const movingCard = sourcePile[source.cardIndex];
     if (!movingCard.faceUp) return false;
+    if (!isValidTableauRun(sourcePile.slice(source.cardIndex))) return false;
 
     if (target.pileType === 'tableau') {
       if (target.pileIndex === source.pileIndex) return false;

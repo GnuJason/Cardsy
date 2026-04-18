@@ -1,4 +1,14 @@
-import { CARD_SCALE_BOUNDS, DEFAULT_SCALING_CONFIG, MODE_COLUMN_BASIS } from '../constants';
+import {
+  CARD_CORNER_RADIUS_RATIO,
+  CARD_FONT_SIZE_RATIO,
+  CARD_HEIGHT_RATIO,
+  CARD_LAYOUT_RATIOS,
+  CARD_PIP_SIZE_RATIO,
+  CARD_SCALE_BOUNDS,
+  CARD_WIDTH_RATIO,
+  DEFAULT_SCALING_CONFIG,
+  MODE_COLUMN_BASIS,
+} from '../constants';
 import type { CardSize, GameMode, ViewportInfo } from '../types';
 
 function dpiFactor(dpi: number): number {
@@ -15,8 +25,13 @@ export function computeCardSize(
   cardScale?: string,
 ): CardSize {
   const cols = MODE_COLUMN_BASIS[mode] ?? 7;
-  const gutter = cols + 1;
-  const candidate = Math.floor((viewport.width - gutter * 12) / cols);
+  const proportionalWidth = Math.floor(viewport.width * CARD_WIDTH_RATIO);
+  const columnGap = Math.round(proportionalWidth * CARD_LAYOUT_RATIOS.colGap);
+  const sidePadding = Math.round(proportionalWidth * CARD_LAYOUT_RATIOS.padding);
+  const availableByColumns = Math.floor(
+    (viewport.width - sidePadding * 2 - columnGap * Math.max(0, cols - 1)) / cols,
+  );
+  const candidate = Math.min(proportionalWidth, availableByColumns);
   const scaled = Math.floor(candidate * dpiFactor(dpi));
   const scaleBounds = CARD_SCALE_BOUNDS[cardScale ?? 'medium'];
   const minWidth = scaleBounds?.min ?? DEFAULT_SCALING_CONFIG.minCardWidth;
@@ -28,10 +43,10 @@ export function computeCardSize(
 
   return {
     width,
-    height: Math.round(width * 1.4),
-    fontSize: Math.max(18, Math.round(width * 0.31)),
-    pipSize: Math.max(24, Math.round(width * 0.42)),
-    cornerRadius: Math.max(8, Math.round(width * 0.11)),
+    height: Math.round(width * CARD_HEIGHT_RATIO),
+    fontSize: Math.max(18, Math.round(width * CARD_FONT_SIZE_RATIO)),
+    pipSize: Math.max(24, Math.round(width * CARD_PIP_SIZE_RATIO)),
+    cornerRadius: Math.max(6, Math.round(width * CARD_CORNER_RADIUS_RATIO)),
   };
 }
 

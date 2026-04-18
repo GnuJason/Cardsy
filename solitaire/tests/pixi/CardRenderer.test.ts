@@ -80,50 +80,41 @@ describe('Card face alignment math', () => {
 });
 
 describe('Custom back texture math', () => {
-  it('contain scale preserves aspect ratio for landscape photos', () => {
-    const pad = 2;
-    const availW = cardSize.width - pad * 2;
-    const availH = cardSize.height - pad * 2;
+  it('cover scale fills the full card width for landscape photos', () => {
     const texW = 640;
     const texH = 480; // landscape
-    const scale = Math.min(availW / texW, availH / texH);
-    const finalW = Math.round(texW * scale);
-    const finalH = Math.round(texH * scale);
-    expect(finalW).toBeLessThanOrEqual(availW);
-    expect(finalH).toBeLessThanOrEqual(availH);
-    // Aspect ratio preserved
+    const scale = Math.max(cardSize.width / texW, cardSize.height / texH);
+    const finalW = texW * scale;
+    const finalH = texH * scale;
+    expect(finalW).toBeGreaterThanOrEqual(cardSize.width);
+    expect(finalH).toBeGreaterThanOrEqual(cardSize.height);
     expect(Math.abs(finalW / finalH - texW / texH)).toBeLessThan(0.02);
   });
 
-  it('contain scale preserves aspect ratio for portrait photos', () => {
-    const pad = 2;
-    const availW = cardSize.width - pad * 2;
-    const availH = cardSize.height - pad * 2;
+  it('cover scale fills the full card height for portrait photos', () => {
     const texW = 480;
     const texH = 640; // portrait
-    const scale = Math.min(availW / texW, availH / texH);
-    const finalW = Math.round(texW * scale);
-    const finalH = Math.round(texH * scale);
-    expect(finalW).toBeLessThanOrEqual(availW);
-    expect(finalH).toBeLessThanOrEqual(availH);
+    const scale = Math.max(cardSize.width / texW, cardSize.height / texH);
+    const finalW = texW * scale;
+    const finalH = texH * scale;
+    expect(finalW).toBeGreaterThanOrEqual(cardSize.width);
+    expect(finalH).toBeGreaterThanOrEqual(cardSize.height);
     expect(Math.abs(finalW / finalH - texW / texH)).toBeLessThan(0.02);
   });
 
-  it('photo is centered within available area', () => {
-    const pad = 2;
-    const availW = cardSize.width - pad * 2;
-    const availH = cardSize.height - pad * 2;
+  it('photo is centered while overflow is cropped evenly', () => {
     const texW = 640;
     const texH = 480;
-    const scale = Math.min(availW / texW, availH / texH);
-    const photoW = Math.round(texW * scale);
-    const photoH = Math.round(texH * scale);
-    const photoX = pad + Math.round((availW - photoW) / 2);
-    const photoY = pad + Math.round((availH - photoH) / 2);
-    // Photo center should be near card center
+    const scale = Math.max(cardSize.width / texW, cardSize.height / texH);
+    const photoW = texW * scale;
+    const photoH = texH * scale;
+    const photoX = (cardSize.width - photoW) / 2;
+    const photoY = (cardSize.height - photoH) / 2;
     const photoCenterX = photoX + photoW / 2;
     const photoCenterY = photoY + photoH / 2;
-    expect(Math.abs(photoCenterX - cardSize.width / 2)).toBeLessThan(2);
-    expect(Math.abs(photoCenterY - cardSize.height / 2)).toBeLessThan(2);
+    expect(photoCenterX).toBe(cardSize.width / 2);
+    expect(photoCenterY).toBe(cardSize.height / 2);
+    expect(photoX).toBeLessThanOrEqual(0);
+    expect(photoY).toBeLessThanOrEqual(0);
   });
 });

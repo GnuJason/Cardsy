@@ -33,7 +33,7 @@ function cloneState(state: SpiderGameState): SpiderGameState {
 function flipTopCard(state: SpiderGameState, colIndex: number): void {
   const col = state.columns[colIndex];
   if (col.length > 0 && !col[col.length - 1].faceUp) {
-    col[col.length - 1].faceUp = true;
+    col[col.length - 1] = { ...col[col.length - 1], faceUp: true };
   }
 }
 
@@ -120,8 +120,7 @@ export function dealRow(state: SpiderGameState): SpiderGameState | null {
 
   for (let col = 0; col < COLUMN_COUNT; col++) {
     const card = next.stock.pop()!;
-    card.faceUp = true;
-    next.columns[col].push(card);
+    next.columns[col].push({ ...card, faceUp: true });
   }
 
   next.moves++;

@@ -36,8 +36,7 @@ export function drawFromStock(state: PyramidGameState): PyramidGameState | null 
 
   const next = cloneState(state);
   const card = next.stock.pop()!;
-  card.faceUp = true;
-  next.waste.push(card);
+  next.waste.push({ ...card, faceUp: true });
   next.moves += 1;
   next.selectedIndex = null;
 
@@ -61,7 +60,7 @@ export function removeKing(
   if (!isUncovered(pyramidIndex, state.pyramid)) return null;
 
   const next = cloneState(state);
-  next.pyramid[pyramidIndex].removed = true;
+  next.pyramid[pyramidIndex] = { ...next.pyramid[pyramidIndex], removed: true };
   next.cardsRemaining -= 1;
   next.moves += 1;
   next.selectedIndex = null;
@@ -112,8 +111,8 @@ export function removePyramidPair(
   if (!canPair(cardA, cardB)) return null;
 
   const next = cloneState(state);
-  next.pyramid[indexA].removed = true;
-  next.pyramid[indexB].removed = true;
+  next.pyramid[indexA] = { ...next.pyramid[indexA], removed: true };
+  next.pyramid[indexB] = { ...next.pyramid[indexB], removed: true };
   next.cardsRemaining -= 2;
   next.moves += 1;
   next.selectedIndex = null;
@@ -141,7 +140,7 @@ export function removePyramidWastePair(
   if (!canPair(pCard, wasteTop)) return null;
 
   const next = cloneState(state);
-  next.pyramid[pyramidIndex].removed = true;
+  next.pyramid[pyramidIndex] = { ...next.pyramid[pyramidIndex], removed: true };
   next.waste.pop();
   next.cardsRemaining -= 1;
   next.moves += 1;

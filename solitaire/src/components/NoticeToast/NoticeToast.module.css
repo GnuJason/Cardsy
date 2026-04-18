@@ -1,0 +1,49 @@
+.toast {
+  position: fixed;
+  top: calc(var(--space-4) + 76px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: min(540px, calc(100vw - var(--space-6) * 2));
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: rgba(16, 31, 49, 0.94);
+  color: #f5f8fb;
+  box-shadow: var(--shadow-md);
+  animation: slideDown var(--duration-lg) var(--ease-snap),
+             fadeOut var(--duration-lg) var(--ease-in-out) 3.2s forwards;
+  pointer-events: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 248, 251, 0.7);
+}
+
+.message {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.35;
+}

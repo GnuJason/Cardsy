@@ -1,5 +1,6 @@
 import type { Card } from './types';
 import { SUITS, RANKS, cardId } from './types';
+import { createSeededRandom, createShuffleSeed } from './random';
 
 /**
  * Create a standard 52-card deck, all face-down.
@@ -17,10 +18,11 @@ export function createDeck(): Card[] {
 /**
  * Fisher-Yates shuffle. Returns a new array.
  */
-export function shuffle(deck: Card[]): Card[] {
+export function shuffle(deck: Card[], seed = createShuffleSeed()): Card[] {
   const cards = [...deck];
+  const random = createSeededRandom(seed);
   for (let i = cards.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [cards[i], cards[j]] = [cards[j], cards[i]];
   }
   return cards;
@@ -43,9 +45,10 @@ export function dealKlondike(deck: Card[]): {
   for (let pile = 0; pile < 7; pile++) {
     const pileCards: Card[] = [];
     for (let row = 0; row <= pile; row++) {
-      const card = { ...cards[idx] };
-      card.faceUp = row === pile; // only the top card is face-up
-      pileCards.push(card);
+      pileCards.push({
+        ...cards[idx],
+        faceUp: row === pile,
+      });
       idx++;
     }
     tableau.push(pileCards);
@@ -65,8 +68,10 @@ export function newGame(): {
   waste: Card[];
   tableau: Card[][];
   foundations: Card[][];
+  shuffleSeed: number;
 } {
-  const deck = shuffle(createDeck());
+  const shuffleSeed = createShuffleSeed();
+  const deck = shuffle(createDeck(), shuffleSeed);
   const { tableau, stock } = dealKlondike(deck);
 
   return {
@@ -74,5 +79,6 @@ export function newGame(): {
     waste: [],
     tableau,
     foundations: [[], [], [], []], // hearts, diamonds, clubs, spades
+    shuffleSeed,
   };
 }

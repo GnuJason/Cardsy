@@ -1,6 +1,7 @@
 import type { Card } from '../types';
 import { createDeck, shuffle } from '../deck';
 import type { GolfGameState } from '../types';
+import { createShuffleSeed } from '../random';
 
 /** Number of columns in Golf tableau */
 export const GOLF_COLUMNS = 7;
@@ -45,13 +46,15 @@ export function dealGolf(deck: Card[]): {
  * Create a fresh Golf game with a shuffled deck.
  */
 export function newGolfGame(): GolfGameState {
-  const deck = shuffle(createDeck());
+  const shuffleSeed = createShuffleSeed();
+  const deck = shuffle(createDeck(), shuffleSeed);
   const { tableau, stock, waste } = dealGolf(deck);
 
   return {
     tableau,
     stock,
     waste,
+    shuffleSeed,
     cardsRemaining: GOLF_TABLEAU_SIZE,
     moves: 0,
     elapsedSeconds: 0,
