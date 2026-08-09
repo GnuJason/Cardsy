@@ -1,0 +1,1 @@
+../../../../packages/card-engine/src/scoring.ts

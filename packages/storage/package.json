@@ -1,0 +1,10 @@
+{
+  "name": "@grandmagame/storage",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "build": "tsc -b", "typecheck": "tsc -b", "test": "vitest run", "lint": "eslint src tests" },
+  "dependencies": { "@grandmagame/card-engine": "workspace:*", "@grandmagame/themes": "workspace:*" },
+  "devDependencies": { "typescript": "~5.9.3", "vitest": "^4.0.18", "eslint": "^9.39.1" }
+}

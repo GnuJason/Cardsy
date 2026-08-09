@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "outDir": "dist" },
+  "references": [{ "path": "../card-engine" }],
+  "include": ["src"]
+}
