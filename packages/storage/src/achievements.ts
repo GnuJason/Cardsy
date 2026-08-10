@@ -1,7 +1,7 @@
 /**
  * Achievement definitions and checking logic.
  */
-import type { AchievementDef, UnlockedAchievement, AllStats, GameMode, TriPeaksGameState } from './types';
+import type { AchievementDef, UnlockedAchievement, AllStats, GameMode, TriPeaksGameState } from './logic/types';
 
 // ── Definitions ─────────────────────────────────────────────
 

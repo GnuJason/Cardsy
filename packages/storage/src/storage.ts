@@ -11,9 +11,9 @@ import type {
   SavedSpiderGame,
   SpiderDifficulty,
   UnlockedAchievement,
-} from '../logic/types';
-import { DEFAULT_MODE_STATS } from '../logic/types';
-import { DEFAULT_THEME_ID } from '../config/themes';
+} from './logic/types';
+import { DEFAULT_MODE_STATS } from './logic/types';
+import { DEFAULT_THEME_ID } from '@grandmagame/themes';
 
 const KEYS = {
   bestScore: 'solitaire_best_score',

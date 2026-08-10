@@ -1,4 +1,11 @@
 :root {
+  /* ── Heirloom Parlor type & card geometry ── */
+  --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', Georgia, serif;
+  --font-body: 'Avenir Next', Avenir, Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'Segoe UI', sans-serif;
+  --card-w: clamp(58px, 9.4vw, 96px);
+  --card-h: calc(var(--card-w) * 1.4);
+  --fan-y: calc(var(--card-w) * 0.32);
+
   /* ── Colors ── */
   --color-felt: #1a6b3c;
   --color-felt-dark: #145530;

@@ -1,18 +1,21 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "noEmit": true
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "target": "ESNext",
+    "strict": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"]
   },
-  "files": [],
+  "include": ["src", "src/**/*"],
   "references": [
-    { "path": "../../packages/pixi-engine" },
     { "path": "../../packages/ui" },
+    { "path": "../../packages/pixi-engine" },
     { "path": "../../packages/storage" },
     { "path": "../../packages/themes" },
-    { "path": "../../packages/game-logic" },
-    { "path": "../../packages/card-engine" },
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "../../packages/card-engine" }
   ]
 }
