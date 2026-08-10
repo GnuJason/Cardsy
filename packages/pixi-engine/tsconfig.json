@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "composite": true, "outDir": "dist", "jsx": "react-jsx" },
-  "references": [{ "path": "../card-engine" }, { "path": "../themes" }],
+  "references": [],
   "include": ["src"]
 }

@@ -6,12 +6,12 @@
   },
   "files": [],
   "references": [
-    { "path": "../../packages/card-engine" },
-    { "path": "../../packages/game-logic" },
     { "path": "../../packages/pixi-engine" },
+    { "path": "../../packages/ui" },
     { "path": "../../packages/storage" },
     { "path": "../../packages/themes" },
-    { "path": "../../packages/ui" },
+    { "path": "../../packages/game-logic" },
+    { "path": "../../packages/card-engine" },
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ]

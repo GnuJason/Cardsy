@@ -5,8 +5,6 @@ import { useAchievements } from './hooks/useAchievements';
 import {
   AchievementToast,
   AchievementsModal,
-  ConfirmModal,
-  ModeSelector,
   NoticeToast,
   SettingsModal,
   SplashScreen,
@@ -21,15 +19,8 @@ import {
   setSplashSeen,
   getSettings,
   setSettings as saveSettings,
-  getGameMode,
-  setGameMode,
   migrateFromLegacy,
   getSavedKlondikeGame,
-  getSavedTriPeaksGame,
-  getSavedGolfGame,
-  getSavedPyramidGame,
-  getSavedFreeCellGame,
-  getSavedSpiderGame,
 } from '@grandmagame/storage';
 import { CARD_BACK_DEFAULT, cardBackUrl, setFamilyDeckOverlay, clearFamilyDeckOverlay } from '@grandmagame/themes';
 import { themeToPixiColors } from '@grandmagame/pixi-engine';
@@ -37,21 +28,6 @@ import { themeToPixiColors } from '@grandmagame/pixi-engine';
 // Lazy-load screen components for code splitting
 const KlondikeScreen = lazy(() =>
   import('./screens/KlondikeScreen').then((m) => ({ default: m.KlondikeScreen })),
-);
-const TriPeaksScreen = lazy(() =>
-  import('./screens/TriPeaksScreen').then((m) => ({ default: m.TriPeaksScreen })),
-);
-const GolfScreen = lazy(() =>
-  import('./screens/GolfScreen').then((m) => ({ default: m.GolfScreen })),
-);
-const PyramidScreen = lazy(() =>
-  import('./screens/PyramidScreen').then((m) => ({ default: m.PyramidScreen })),
-);
-const FreeCellScreen = lazy(() =>
-  import('./screens/FreeCellScreen').then((m) => ({ default: m.FreeCellScreen })),
-);
-const SpiderScreen = lazy(() =>
-  import('./screens/SpiderScreen').then((m) => ({ default: m.SpiderScreen })),
 );
 
 // Run one-time migration on module load
@@ -63,20 +39,8 @@ export const App: React.FC = () => {
   // ── Splash ────────────────────────────────────────────────
   const [showSplash, setShowSplash] = useState(!getSplashSeen());
 
-  // ── Mode selection ────────────────────────────────────────
-  const [selectedMode, setSelectedMode] = useState<GameMode | null>(() => {
-    if (!getSplashSeen()) return null;
-    return getGameMode();
-  });
-  const [showModeSelector, setShowModeSelector] = useState(() => {
-    // Always show mode selector after splash so player explicitly chooses
-    // new game vs continue, rather than auto-resuming a saved state.
-    if (getSplashSeen()) {
-      return true;
-    }
-    return false;
-  });
-  const [confirmModeSwitch, setConfirmModeSwitch] = useState(false);
+  // Temporary runtime isolation: the web app exposes Klondike only.
+  const selectedMode: GameMode = 'klondike';
 
   // ── Settings ──────────────────────────────────────────────
   const [settings, setSettingsState] = useState<UserSettings>(getSettings());
@@ -105,39 +69,11 @@ export const App: React.FC = () => {
   const handleSplashDismiss = useCallback(() => {
     setSplashSeen();
     setShowSplash(false);
-    setShowModeSelector(true);
     soundManager.play('buttonClick');
   }, []);
-
-  const handleModeSelect = useCallback(
-    (mode: GameMode) => {
-      setSelectedMode(mode);
-      setGameMode(mode);
-      setShowModeSelector(false);
-      soundManager.play('buttonClick');
-    },
-    [],
-  );
-
-  const handleContinue = useCallback(
-    (mode: GameMode) => {
-      setSelectedMode(mode);
-      setGameMode(mode);
-      setShowModeSelector(false);
-      soundManager.play('buttonClick');
-    },
-    [],
-  );
 
   const handleChangeMode = useCallback(() => {
-    setConfirmModeSwitch(true);
-  }, []);
-
-  const handleConfirmModeSwitch = useCallback(() => {
-    setConfirmModeSwitch(false);
-    setShowModeSelector(true);
-    setSelectedMode(null);
-    soundManager.play('buttonClick');
+    setNoticeToast('Klondike is the only game available in this build.');
   }, []);
 
   const handleSettingsUpdate = useCallback((newSettings: UserSettings) => {
@@ -173,46 +109,6 @@ export const App: React.FC = () => {
   const handleKlondikeWin = useCallback(
     (elapsed: number, usedUndo: boolean) => {
       checkOnWin(stats, 'klondike', elapsed, usedUndo, false, false);
-    },
-    [checkOnWin, stats],
-  );
-
-  // Achievement check on win — TriPeaks
-  const handleTriPeaksWin = useCallback(
-    (elapsed: number, usedStock: boolean, peaksClearedInStreak: boolean) => {
-      checkOnWin(stats, 'tripeaks', elapsed, false, usedStock, peaksClearedInStreak);
-    },
-    [checkOnWin, stats],
-  );
-
-  // Achievement check on win — Golf
-  const handleGolfWin = useCallback(
-    (elapsed: number) => {
-      checkOnWin(stats, 'golf', elapsed, false, false, false);
-    },
-    [checkOnWin, stats],
-  );
-
-  // Achievement check on win — Pyramid
-  const handlePyramidWin = useCallback(
-    (elapsed: number) => {
-      checkOnWin(stats, 'pyramid', elapsed, false, false, false);
-    },
-    [checkOnWin, stats],
-  );
-
-  // Achievement check on win — FreeCell
-  const handleFreeCellWin = useCallback(
-    (elapsed: number) => {
-      checkOnWin(stats, 'freecell', elapsed, false, false, false);
-    },
-    [checkOnWin, stats],
-  );
-
-  // Achievement check on win — Spider
-  const handleSpiderWin = useCallback(
-    (elapsed: number) => {
-      checkOnWin(stats, 'spider', elapsed, false, false, false);
     },
     [checkOnWin, stats],
   );
@@ -316,20 +212,7 @@ export const App: React.FC = () => {
     <div className={rootClass} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {showSplash && <SplashScreen onStart={handleSplashDismiss} />}
 
-      {showModeSelector && !showSplash && (
-        <ModeSelector
-          onSelect={handleModeSelect}
-          savedKlondike={getSavedKlondikeGame()}
-          savedTriPeaks={getSavedTriPeaksGame()}
-          savedGolf={getSavedGolfGame()}
-          savedPyramid={getSavedPyramidGame()}
-          savedFreeCell={getSavedFreeCellGame()}
-          savedSpider={getSavedSpiderGame()}
-          onContinue={handleContinue}
-        />
-      )}
-
-      {selectedMode && !showModeSelector && !showSplash && (
+      {!showSplash && (
         <Suspense
           fallback={
             <div className="loading-fallback">Loading…</div>
@@ -353,96 +236,6 @@ export const App: React.FC = () => {
               onShowStats={() => setShowStats(true)}
               onShowAchievements={() => setShowAchievements(true)}
               onWin={handleKlondikeWin}
-            />
-          )}
-          {selectedMode === 'tripeaks' && (
-            <TriPeaksScreen
-              cardBackImage={resolvedCardBack}
-              themeColors={pixiThemeColors}
-              modeStats={stats.tripeaks}
-              reducedMotion={settings.reducedMotion}
-              highContrast={settings.highContrast}
-              cardScale={settings.cardScale}
-              onRecordStart={() => handleRecordStart('tripeaks')}
-              onRecordWin={(score, time) => handleRecordWin('tripeaks', score, time)}
-              onRecordLoss={() => handleRecordLoss('tripeaks')}
-              onChangeMode={handleChangeMode}
-              onShowSettings={() => setShowSettings(true)}
-              onShowStats={() => setShowStats(true)}
-              onShowAchievements={() => setShowAchievements(true)}
-              onWin={handleTriPeaksWin}
-            />
-          )}
-          {selectedMode === 'golf' && (
-            <GolfScreen
-              cardBackImage={resolvedCardBack}
-              themeColors={pixiThemeColors}
-              modeStats={stats.golf}
-              reducedMotion={settings.reducedMotion}
-              highContrast={settings.highContrast}
-              cardScale={settings.cardScale}
-              onRecordStart={() => handleRecordStart('golf')}
-              onRecordWin={(score, time) => handleRecordWin('golf', score, time)}
-              onRecordLoss={() => handleRecordLoss('golf')}
-              onChangeMode={handleChangeMode}
-              onShowSettings={() => setShowSettings(true)}
-              onShowStats={() => setShowStats(true)}
-              onShowAchievements={() => setShowAchievements(true)}
-              onWin={handleGolfWin}
-            />
-          )}
-          {selectedMode === 'pyramid' && (
-            <PyramidScreen
-              cardBackImage={resolvedCardBack}
-              themeColors={pixiThemeColors}
-              modeStats={stats.pyramid}
-              reducedMotion={settings.reducedMotion}
-              highContrast={settings.highContrast}
-              cardScale={settings.cardScale}
-              onRecordStart={() => handleRecordStart('pyramid')}
-              onRecordWin={(score, time) => handleRecordWin('pyramid', score, time)}
-              onRecordLoss={() => handleRecordLoss('pyramid')}
-              onChangeMode={handleChangeMode}
-              onShowSettings={() => setShowSettings(true)}
-              onShowStats={() => setShowStats(true)}
-              onShowAchievements={() => setShowAchievements(true)}
-              onWin={handlePyramidWin}
-            />
-          )}
-          {selectedMode === 'freecell' && (
-            <FreeCellScreen
-              cardBackImage={resolvedCardBack}
-              themeColors={pixiThemeColors}
-              modeStats={stats.freecell}
-              reducedMotion={settings.reducedMotion}
-              highContrast={settings.highContrast}
-              cardScale={settings.cardScale}
-              onRecordStart={() => handleRecordStart('freecell')}
-              onRecordWin={(score, time) => handleRecordWin('freecell', score, time)}
-              onRecordLoss={() => handleRecordLoss('freecell')}
-              onChangeMode={handleChangeMode}
-              onShowSettings={() => setShowSettings(true)}
-              onShowStats={() => setShowStats(true)}
-              onShowAchievements={() => setShowAchievements(true)}
-              onWin={handleFreeCellWin}
-            />
-          )}
-          {selectedMode === 'spider' && (
-            <SpiderScreen
-              cardBackImage={resolvedCardBack}
-              themeColors={pixiThemeColors}
-              modeStats={stats.spider}
-              reducedMotion={settings.reducedMotion}
-              highContrast={settings.highContrast}
-              cardScale={settings.cardScale}
-              onRecordStart={() => handleRecordStart('spider')}
-              onRecordWin={(score, time) => handleRecordWin('spider', score, time)}
-              onRecordLoss={() => handleRecordLoss('spider')}
-              onChangeMode={handleChangeMode}
-              onShowSettings={() => setShowSettings(true)}
-              onShowStats={() => setShowStats(true)}
-              onShowAchievements={() => setShowAchievements(true)}
-              onWin={handleSpiderWin}
             />
           )}
           </div>
@@ -482,17 +275,6 @@ export const App: React.FC = () => {
         <AchievementsModal
           unlocked={unlocked}
           onClose={() => setShowAchievements(false)}
-        />
-      )}
-
-      {confirmModeSwitch && (
-        <ConfirmModal
-          title="Switch Game Mode?"
-          message="Switching modes will abandon your current game. Continue?"
-          confirmLabel="Switch"
-          cancelLabel="Stay"
-          onConfirm={handleConfirmModeSwitch}
-          onCancel={() => setConfirmModeSwitch(false)}
         />
       )}
 
