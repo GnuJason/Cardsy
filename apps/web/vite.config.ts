@@ -6,7 +6,13 @@ import { fileURLToPath, URL } from 'node:url'
 export default defineConfig({
   plugins: [react()],
   preview: {
-    allowedHosts: ['localhost', '127.0.0.1', 'grandmagame.onrender.com'],
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'grandmagame.onrender.com',
+      'www.grandmagames.org',
+      'grandmagames.org',
+    ],
   },
   resolve: {
     alias: {
