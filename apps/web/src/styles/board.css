@@ -4,7 +4,10 @@
 
 /* ── Screen shell ── */
 .kl-root {
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   font-family: var(--font-body);
@@ -21,6 +24,7 @@
   backdrop-filter: blur(6px);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
   z-index: 5;
+  font-size: calc(2vw + 10px);
 }
 
 .kl-title {
@@ -56,7 +60,7 @@
 
 .kl-stat-value {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 0.82em;
   font-weight: 700;
   color: #f7f1e3;
   font-variant-numeric: tabular-nums;
@@ -64,7 +68,7 @@
 }
 
 .kl-stat-label {
-  font-size: 10px;
+  font-size: 0.48em;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: rgba(231, 214, 173, 0.75);
@@ -89,7 +93,7 @@
   background: linear-gradient(180deg, rgba(38, 84, 58, 0.95), rgba(20, 52, 36, 0.95));
   color: #f4ead0;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 0.62em;
   font-weight: 600;
   letter-spacing: 0.02em;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -197,7 +201,8 @@
 .kl-tableau {
   display: grid;
   grid-template-columns: repeat(7, var(--card-w));
-  gap: clamp(8px, 1.6vw, 18px);
+  column-gap: 0;
+  row-gap: 2vh;
 }
 
 .kl-row-top { align-items: start; }
@@ -205,6 +210,7 @@
 .kl-tableau-col {
   position: relative;
   min-height: calc(var(--card-h) + 15 * var(--fan-y));
+  margin-inline: 1.5vw;
 }
 
 /* ── Card geometry ── */
@@ -453,7 +459,7 @@
 /* Waste fan */
 .kl-waste {
   position: relative;
-  width: calc(var(--card-w) + 36px);
+  width: calc(var(--card-w) + 2 * var(--waste-fan-offset));
   height: var(--card-h);
 }
 
@@ -537,13 +543,29 @@
 /* ── Responsive ── */
 @media (max-width: 700px) {
   :root {
-    --card-w: min(11.8vw, 66px);
-    --card-h: calc(var(--card-w) * 1.4);
-    --fan-y: calc(var(--card-w) * 0.30);
+    --card-width: calc(10vw);
+    --fan-y: calc(var(--card-width) * 0.30);
   }
 
   .kl-stats { display: none; }
   .kl-backs-label { display: none; }
+}
+
+@media (orientation: landscape) {
+  .kl-tableau {
+    grid-template-columns: repeat(7, var(--card-w));
+  }
+}
+
+@media (orientation: portrait) {
+  .kl-board {
+    align-items: flex-start;
+  }
+
+  .kl-row-top,
+  .kl-tableau {
+    min-width: max-content;
+  }
 }
 
 /* ── Card-back settings gallery ── */

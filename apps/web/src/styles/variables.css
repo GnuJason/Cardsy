@@ -2,9 +2,12 @@
   /* ── Heirloom Parlor type & card geometry ── */
   --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', Georgia, serif;
   --font-body: 'Avenir Next', Avenir, Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'Segoe UI', sans-serif;
-  --card-w: clamp(58px, 9.4vw, 96px);
-  --card-h: calc(var(--card-w) * 1.4);
-  --fan-y: calc(var(--card-w) * 0.32);
+  --card-width: calc(10vw);
+  --card-height: calc(var(--card-width) * 1.4);
+  --card-w: var(--card-width);
+  --card-h: var(--card-height);
+  --fan-y: calc(var(--card-width) * 0.32);
+  --waste-fan-offset: calc(var(--card-width) * 0.22);
 
   /* ── Colors ── */
   --color-felt: #1a6b3c;
@@ -74,9 +77,7 @@
   --radius-pill: 50px;
 
   /* ── Card Dimensions ── */
-  --card-width-pref: 80px;
-  --card-width: 80px;
-  --card-height: 112px;
+  --card-width-pref: var(--card-width);
   --card-radius: 8px;
   --card-font-size: 18px;
   --card-pip-size: 24px;
@@ -133,12 +134,16 @@
   --z-splash: 1000;
 }
 
+@media (min-width: 768px) {
+  :root {
+    --card-width: calc(8vw);
+  }
+}
+
 /* ── Large card size override ── */
 .card-size-large,
 .card-scale-large {
-  --card-width-pref: 100px;
-  --card-width: 100px;
-  --card-height: 140px;
+  --card-width-pref: calc(var(--card-width) * 1.2);
   --card-font-size: 22px;
   --card-pip-size: 30px;
   --fan-offset-down: 28px;
@@ -147,9 +152,7 @@
 /* ── Small card size override ── */
 .card-size-small,
 .card-scale-small {
-  --card-width-pref: 64px;
-  --card-width: 64px;
-  --card-height: 90px;
+  --card-width-pref: calc(var(--card-width) * 0.8);
   --card-font-size: 14px;
   --card-pip-size: 18px;
   --fan-offset-down: 18px;
@@ -157,9 +160,7 @@
 
 /* ── Extra-large card size override ── */
 .card-scale-xlarge {
-  --card-width-pref: 140px;
-  --card-width: 140px;
-  --card-height: 196px;
+  --card-width-pref: calc(var(--card-width) * 1.4);
   --card-font-size: 32px;
   --card-pip-size: 42px;
   --fan-offset-down: 36px;

@@ -121,7 +121,7 @@ export function PixiGameCanvas({
               key={card.id}
               aria-label={`Waste card ${RANK_LABELS[card.rank]} of ${card.suit}`}
               className="kl-card"
-              style={{ left: i * 18, zIndex: i + 1 }}
+              style={{ left: `calc(${i} * var(--waste-fan-offset))`, zIndex: i + 1 }}
               onClick={() => onGameEvent({ type: 'TAP_WASTE' })}
             >
               <CardFace card={card} />
