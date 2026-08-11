@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "target": "ESNext",
+    "strict": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src", "src/**/*"],
+  "references": [
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/pixi-engine" },
+    { "path": "../../packages/storage" },
+    { "path": "../../packages/themes" },
+    { "path": "../../packages/card-engine" }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@grandmagame/pixi-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "build": "tsc -b", "typecheck": "tsc -b", "test": "vitest run", "lint": "eslint src tests" },
+  "dependencies": { "@grandmagame/card-engine": "workspace:*", "@grandmagame/themes": "workspace:*", "pixi.js": "^8.13.2", "react": "^19.2.0" },
+  "devDependencies": { "@types/react": "^19.2.5", "typescript": "~5.9.3", "vitest": "^4.0.18", "eslint": "^9.39.1" }
+}

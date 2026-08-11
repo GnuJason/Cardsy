@@ -1,0 +1,169 @@
+:root {
+  /* ── Heirloom Parlor type & card geometry ── */
+  --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', Georgia, serif;
+  --font-body: 'Avenir Next', Avenir, Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'Segoe UI', sans-serif;
+  --card-width: calc(10vw);
+  --card-height: calc(var(--card-width) * 1.4);
+  --card-w: var(--card-width);
+  --card-h: var(--card-height);
+  --fan-y: calc(var(--card-width) * 0.32);
+  --waste-fan-offset: calc(var(--card-width) * 0.22);
+
+  /* ── Colors ── */
+  --color-felt: #1a6b3c;
+  --color-felt-dark: #145530;
+  --color-card-bg: #ffffff;
+  --color-card-border: #222222;
+  --color-card-red: #d00000;
+  --color-card-black: #000000;
+  --color-card-back: #2255aa;
+  --color-card-back-border: #1a4488;
+  --color-hud-bg: rgba(0, 0, 0, 0.6);
+  --color-hud-text: #ffffff;
+  --color-button-bg: #2c7a4b;
+  --color-button-hover: #35915a;
+  --color-button-text: #ffffff;
+  --color-modal-overlay: rgba(0, 0, 0, 0.7);
+  --color-modal-bg: #ffffff;
+  --color-modal-text: #333333;
+  --color-modal-text-muted: #555555;
+  --color-modal-text-subtle: #666666;
+  --color-modal-text-faint: #888888;
+  --color-gold: #ffd700;
+  --color-empty-pile: rgba(255, 255, 255, 0.15);
+  --color-surface: #f5f5f5;
+  --color-surface-hover: #e4e4e4;
+  --color-surface-active: #e8f5e9;
+  --color-secondary-bg: #e0e0e0;
+  --color-secondary-hover: #d0d0d0;
+  --color-secondary-text: #333333;
+
+  /* ── Typography ── */
+  --font-size-2xs: 10px;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 24px;
+  --font-size-4xl: 30px;
+  --font-size-5xl: 42px;
+  --font-size-6xl: 64px;
+
+  /* ── Spacing ── */
+  --space-0: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --gap-sm: 4px;
+  --gap-md: 8px;
+  --gap-lg: 16px;
+  --gap-xl: 24px;
+
+  /* ── Border Radius ── */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 50px;
+
+  /* ── Card Dimensions ── */
+  --card-width-pref: var(--card-width);
+  --card-radius: 8px;
+  --card-font-size: 18px;
+  --card-pip-size: 24px;
+
+  /* ── Tableau fan offset ── */
+  --fan-offset-down: 22px;
+  --fan-offset-up: 16px;
+
+  /* ── Animation ── */
+  --anim-duration: 0.25s;
+  --anim-easing: ease-out;
+
+  /* ── Duration tokens ── */
+  --duration-xs: 80ms;
+  --duration-sm: 120ms;
+  --duration-md: 200ms;
+  --duration-lg: 350ms;
+  --duration-xl: 500ms;
+  --duration-2xl: 600ms;
+  --duration-3xl: 800ms;
+  --duration-4xl: 1000ms;
+  --duration-scatter: 1800ms;
+  --duration-converge: 1600ms;
+
+  /* ── Easing tokens ── */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-snap: cubic-bezier(0.2, 1.4, 0.5, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Card hover ── */
+  --card-hover-lift: -3px;
+  --card-hover-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --card-shadow-rest: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+  /* ── Box-shadow tokens ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 8px var(--color-gold);
+  --shadow-celebrate: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3);
+  --shadow-inset-border: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+
+  /* ── Modal cinematic ── */
+  --modal-scale-from: 0.96;
+  --modal-backdrop-to: 0.7;
+
+  /* ── Z-index layers ── */
+  --z-card: 1;
+  --z-dragging: 100;
+  --z-hud: 200;
+  --z-celebration: 450;
+  --z-modal: 500;
+  --z-splash: 1000;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --card-width: calc(8vw);
+  }
+}
+
+/* ── Large card size override ── */
+.card-size-large,
+.card-scale-large {
+  --card-width-pref: calc(var(--card-width) * 1.2);
+  --card-font-size: 22px;
+  --card-pip-size: 30px;
+  --fan-offset-down: 28px;
+}
+
+/* ── Small card size override ── */
+.card-size-small,
+.card-scale-small {
+  --card-width-pref: calc(var(--card-width) * 0.8);
+  --card-font-size: 14px;
+  --card-pip-size: 18px;
+  --fan-offset-down: 18px;
+}
+
+/* ── Extra-large card size override ── */
+.card-scale-xlarge {
+  --card-width-pref: calc(var(--card-width) * 1.4);
+  --card-font-size: 32px;
+  --card-pip-size: 42px;
+  --fan-offset-down: 36px;
+}
+
+/* ── TriPeaks mode: theme system now handles felt color via useTheme hook ── */
