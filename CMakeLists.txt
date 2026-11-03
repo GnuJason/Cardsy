@@ -30,6 +30,10 @@ set_target_properties(cardsy-engine PROPERTIES AUTOMOC OFF)
 target_include_directories(cardsy-engine PUBLIC src)
 
 add_library(cardsy-ui STATIC
+    src/ui/BoardFocus.cpp
+    src/ui/BoardFocus.h
+    src/ui/BoardAccessibility.cpp
+    src/ui/BoardAccessibility.h
     src/ui/CardBackSettings.cpp
     src/ui/CardBackSettings.h
     src/ui/BoardLayout.cpp
@@ -58,7 +62,7 @@ if(BUILD_TESTING)
     )
 
     foreach(test_name IN ITEMS BoardLayoutTest GameBoardTest CardBackSettingsTest PersonalizationTest
-            DragInteractionTest)
+            DragInteractionTest KeyboardNavigationTest KeyboardGameplayTest BoardAccessibilityTest)
         add_executable(${test_name} tests/${test_name}.cpp)
         target_link_libraries(${test_name} PRIVATE cardsy-ui Qt6::Test)
         add_test(NAME ${test_name} COMMAND ${test_name})

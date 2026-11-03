@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BoardLayout.h"
+#include "BoardFocus.h"
 #include "engine/Game.h"
 
 #include <QImage>
@@ -41,6 +42,10 @@ public:
     bool canUndo() const { return game_.canUndo(); }
     std::optional<BoardSelection> selection() const { return selection_; }
     std::optional<BoardDrag> drag() const { return drag_; }
+    BoardFocus keyboardFocus() const { return keyboardFocus_; }
+    std::optional<BoardElement> focusedElement() const;
+    std::optional<QRectF> focusedRectangle() const;
+    QString focusedItemDescription() const;
     QString feedback() const { return feedback_; }
     BoardLayout boardLayout() const;
     [[nodiscard]] MoveResult loadState(const GameState &state);
@@ -52,10 +57,13 @@ public slots:
     void newGame();
     void clearSelection();
     void cancelDrag();
+    void activateFocusedItem();
 
 signals:
     void stateChanged();
     void feedbackChanged(const QString &message);
+    void boardFocusChanged();
+    void focusVisibilityRequested(const QRectF &rectangle);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -66,6 +74,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void moveEvent(QMoveEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
     void leaveEvent(QEvent *event) override;
     bool event(QEvent *event) override;
 
@@ -80,13 +89,20 @@ private:
     std::optional<BoardSelection> selection_;
     std::optional<PointerPress> press_;
     std::optional<BoardDrag> drag_;
+    BoardFocus keyboardFocus_;
+    bool keyboardActivation_ = false;
+    QString accessibleValue_;
     QString feedback_;
     QImage cardBackImage_;
 
     void initialize();
     void updateMinimumHeight();
     void setFeedback(const QString &message);
-    void finish(MoveResult result);
+    void setBoardFocus(BoardFocus focus, bool ensureVisible);
+    void requestFocusVisibility();
+    void refreshAccessibility();
+    QString describeElement(const BoardElement &element) const;
+    void finish(MoveResult result, std::optional<BoardFocus> focus = std::nullopt);
     void selectSource(const BoardElement &element);
     void moveTo(const BoardElement &element);
     std::optional<BoardSelection> sourceFor(const BoardElement &element) const;

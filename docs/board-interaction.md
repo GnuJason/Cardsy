@@ -29,6 +29,52 @@ Ctrl+N, Ctrl+Z and Ctrl+Q on Linux). Undo is disabled when unavailable. The GUI
 uses the engine's default draw configuration; no draw-mode settings are provided.
 Engine `Won` status produces a small status-bar message rather than a dialog.
 
+## Keyboard navigation
+
+The board is one normal Qt focusable widget with logical items inside it.
+Tab/Shift+Tab are passed to Qt's normal focus chain, not used to cycle cards.
+If the main window has no other tab stops, the standard chain may return to the
+board; menus remain reachable using platform menu access (such as Alt+G/F10)
+and the existing action shortcuts.
+
+| Key | Action |
+|---|---|
+| Left / Right | Neighboring pile in the same row; stop at row edges |
+| Down from upper row | First exposed card of the aligned tableau column |
+| Down in tableau | Next face-up card, stopping at its accessible top |
+| Up in tableau | Previous face-up card; from the first exposed card, upper row |
+| Enter / Space | Draw/recycle stock, select source, or attempt selected source to focused destination |
+| Escape | Clear move selection and drag; keep logical focus |
+
+Upper-row order is Stock, Waste, Clubs, Diamonds, Hearts, Spades. Its layout
+columns are 1, 2, 4, 5, 6, 7. Tableau column 3 moves upward to Waste because
+there is no upper pile in its spacer column. Left/Right between tableau columns
+enters each column at its first face-up card (or empty target); Down reaches
+individual cards within that visible sequence. Hidden cards are never keyboard
+sources. Holding Enter/Space does not repeat activation.
+
+Initial and post-New-Game logical focus is Stock. Resize preserves logical
+identity. After mutations, tableau focus follows its face-up card when possible;
+if that card becomes hidden/unavailable, it falls back to the first face-up card
+in that column. Waste/foundation focus identifies the pile and reads its current
+top. Undo reconciles focus against the restored state.
+
+Keyboard movement requests normal scroll-area visibility, so deep focused cards
+are brought into view without using the pointer. Pointer presses update logical
+focus to the clicked pile/card; hover does not. Keyboard arrows or activation
+cancel any transient drag before proceeding. Keyboard, click and drag use the
+same move selection and typed engine dispatch.
+
+Logical focus has a black/white double outline. Move selection is a separate
+dark-backed gold dashed enclosure, which may span several cards. They can be
+on different items. Canceled drags retain prior move selection but leave logical
+focus on the source that was pressed.
+
+Shortcuts remain platform Qt New/Undo/Open/Quit bindings (normally Ctrl+N,
+Ctrl+Z, Ctrl+O and Ctrl+Q on Linux). Quit falls back to Ctrl+Q if the platform
+plugin supplies no standard binding. Enter, Space and Escape have no competing
+application actions.
+
 ## Drag behavior
 
 The platform's Qt drag-distance threshold separates a click from a drag. A
@@ -78,7 +124,7 @@ The board dispatches `DrawStock`, `RecycleWaste`, `TableauToTableau`,
 `FoundationToTableau`. It does not duplicate placement, sequence, recycling or
 victory rules. `loadState` forwards to validated `Game::loadState`; corrupt
 controlled states are rejected without changing the existing board.
-Click and drag share one source/target-to-move translation. Drag state contains
+Keyboard, click and drag share one source/target-to-move translation. Drag state contains
 only logical identity/indices, pointer coordinates and transient geometry; it
 does not own cards or a second GameState.
 
@@ -107,14 +153,12 @@ that font lacks a suit glyph. Qt handles logical coordinates and HiDPI scaling.
 
 ## Accessibility and deferred work
 
-The board has an accessible name/description, click focus and a visible focus
-border. Selection uses a dashed enclosing border, not color alone. Suit/rank
-text distinguishes cards independently of red/black color. Native actions have
-meaningful labels and keyboard shortcuts; Escape cancels selection.
-
-Full keyboard card navigation, per-card screen-reader semantics, broader
-preferences and packaging remain deferred. The custom-painted
-board is not yet a complete screen-reader-accessible card interface.
+The board exposes useful Qt-accessible current-item, selected-source and status
+context, plus native activation. Suit/rank text distinguishes cards independently
+of color. Native actions retain meaningful labels and shortcuts. See
+[accessibility scope](accessibility.md) for what is actually exposed/tested.
+Virtual per-card screen-reader children and richer announcements remain deferred;
+this is not a claim of complete screen-reader support.
 
 ## Validation scope
 
@@ -125,3 +169,6 @@ Drag tests cover the native threshold, preview/cancellation, all five movement
 intents, exact undo restoration, scrolling/resizing, keyboard interruptions and
 unchanged personal/default backs. The 52-photo mode remains deferred.
 The engine and its Phase 2 test sources remain unchanged.
+Keyboard tests cover navigation, every move intent, exact undo, winning moves,
+focus reconciliation, Tab behavior, scrolling, pointer interoperability and
+personalization. Qt accessibility interfaces are queried directly in tests.

@@ -8,6 +8,8 @@ with Linux, macOS and Windows portability intended long term.
 - A playable native graphical Klondike board with generated cards and backs.
 - Click-to-select and drag-and-drop source/destination interaction, stock drawing
   and recycling.
+- Keyboard board navigation with arrows, Enter/Space selection and activation,
+  visible logical focus and basic Qt accessibility context.
 - Native New Game, Undo and Quit actions, plus small win/status feedback.
 - One user-selected personal photo card back, processed and stored locally.
   The private copy survives restarts; Use Default Card Back removes that copy
@@ -27,8 +29,8 @@ resource limits and private storage behavior.
 
 - Native preferences and desktop integration.
 
-Full keyboard card navigation, broader preferences and distribution packages are
-not implemented. The 52-photo deck remains deferred.
+Richer per-card screen-reader semantics, broader preferences and distribution
+packages are not implemented. The 52-photo deck remains deferred.
 
 ## Build and run
 

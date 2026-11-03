@@ -1,5 +1,7 @@
 #include "GameBoard.h"
+#include "BoardAccessibility.h"
 
+#include <QAccessible>
 #include <QApplication>
 #include <QCursor>
 #include <QFocusEvent>
@@ -10,6 +12,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QResizeEvent>
+#include <QScopedValueRollback>
 #include <QtMath>
 
 #include <algorithm>
@@ -34,6 +37,33 @@ QString suitText(Suit suit, const QFont &font)
     const QChar symbol(symbols[index]);
     return QFontMetrics(font).inFont(symbol) ? QString(symbol)
                                            : QString::fromLatin1(fallback[index]);
+}
+
+QString suitName(Suit suit)
+{
+    switch (suit) {
+    case Suit::Clubs: return GameBoard::tr("Clubs");
+    case Suit::Diamonds: return GameBoard::tr("Diamonds");
+    case Suit::Hearts: return GameBoard::tr("Hearts");
+    case Suit::Spades: return GameBoard::tr("Spades");
+    }
+    return {};
+}
+
+QString cardName(const Card &card)
+{
+    if (!card.faceUp) {
+        return GameBoard::tr("face-down card");
+    }
+    QString rank;
+    switch (card.rank) {
+    case Rank::Ace: rank = GameBoard::tr("Ace"); break;
+    case Rank::Jack: rank = GameBoard::tr("Jack"); break;
+    case Rank::Queen: rank = GameBoard::tr("Queen"); break;
+    case Rank::King: rank = GameBoard::tr("King"); break;
+    default: rank = QString::number(static_cast<unsigned>(card.rank)); break;
+    }
+    return GameBoard::tr("%1 of %2, face up").arg(rank, suitName(card.suit));
 }
 
 void drawCard(QPainter &painter, QRectF rectangle, const Card &card, const QImage &back)
@@ -135,22 +165,142 @@ GameBoard::GameBoard(std::uint32_t seed, QWidget *parent)
 
 void GameBoard::initialize()
 {
+    installBoardAccessibility();
     setObjectName(QStringLiteral("gameBoard"));
-    setAccessibleName(tr("Klondike board"));
-    setAccessibleDescription(tr("Click a face-up card, then its destination. "
-                                "Or drag a face-up card or sequence to its destination. "
-                                "Click stock to draw. Escape cancels selection or dragging."));
+    setAccessibleName(tr("Klondike Solitaire board"));
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
     setMinimumWidth(MinimumBoardWidth);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     updateMinimumHeight();
     feedback_ = tr("Select a face-up card, then choose a destination.");
+    refreshAccessibility();
 }
 
 BoardLayout GameBoard::boardLayout() const
 {
     return calculateBoardLayout(game_.state(), size());
+}
+
+std::optional<BoardElement> GameBoard::focusedElement() const
+{
+    return resolveBoardFocus(game_.state(), boardLayout(), keyboardFocus_);
+}
+
+std::optional<QRectF> GameBoard::focusedRectangle() const
+{
+    const auto element = focusedElement();
+    if (!element) {
+        return std::nullopt;
+    }
+    auto rectangle = element->rectangle;
+    if (element->pile == PileType::Tableau && element->cardIndex) {
+        for (const auto &next : boardLayout().elements) {
+            if (next.pile == element->pile && next.pileIndex == element->pileIndex
+                && next.cardIndex == *element->cardIndex + 1) {
+                rectangle.setHeight(next.rectangle.top() - rectangle.top());
+                break;
+            }
+        }
+    }
+    return rectangle;
+}
+
+QString GameBoard::describeElement(const BoardElement &element) const
+{
+    const auto &state = game_.state();
+    const auto *card = cardFor(element);
+    switch (element.pile) {
+    case PileType::Stock:
+        return state.stock.empty()
+            ? tr("Stock empty. Enter or Space requests waste recycling.")
+            : tr("Stock: %1 face-down cards. Enter or Space draws cards.").arg(state.stock.size());
+    case PileType::Waste:
+        return card ? tr("Waste: %1. %2 cards; only the top card is accessible.")
+                          .arg(cardName(*card)).arg(state.waste.size())
+                    : tr("Waste: empty.");
+    case PileType::Foundation:
+        return card ? tr("Foundation %1: %2. %3 cards.")
+                          .arg(suitName(static_cast<Suit>(element.pileIndex)), cardName(*card))
+                          .arg(state.foundations[element.pileIndex].size())
+                    : tr("Foundation %1: empty.").arg(suitName(static_cast<Suit>(element.pileIndex)));
+    case PileType::Tableau: {
+        if (!card) {
+            return tr("Tableau column %1: empty.").arg(element.pileIndex + 1);
+        }
+        const auto &pile = state.tableau[element.pileIndex];
+        const auto hidden = std::count_if(pile.begin(), pile.end(), [](const Card &item) {
+            return !item.faceUp;
+        });
+        return tr("Tableau column %1, card %2 of %3: %4. %5 cards in this visible sequence; "
+                  "%6 hidden cards.")
+            .arg(element.pileIndex + 1).arg(*element.cardIndex + 1).arg(pile.size())
+            .arg(cardName(*card)).arg(pile.size() - *element.cardIndex).arg(hidden);
+    }
+    }
+    return {};
+}
+
+QString GameBoard::focusedItemDescription() const
+{
+    const auto element = focusedElement();
+    return element ? describeElement(*element) : tr("Solitaire playing area.");
+}
+
+void GameBoard::refreshAccessibility()
+{
+    const auto current = focusedItemDescription();
+    const auto selected = selection_
+        ? tr("Selected source: %1").arg(describeElement(
+              {selection_->pile, selection_->pileIndex, selection_->cardIndex, {}}))
+        : tr("No move source selected.");
+    const auto description = tr("Solitaire playing area. Left/Right moves between piles. "
+                                "Up/Down moves between rows or face-up tableau cards. "
+                                "Enter or Space activates; Escape cancels selection or dragging. "
+                                "Tab leaves board navigation. Focus: %1 %2 Status: %3")
+                                 .arg(current, selected, feedback_);
+    if (accessibleDescription() != description) {
+        setAccessibleDescription(description);
+    }
+    if (accessibleValue_ != current) {
+        accessibleValue_ = current;
+        QAccessibleValueChangeEvent event(this, current);
+        QAccessible::updateAccessibility(&event);
+    }
+}
+
+void GameBoard::requestFocusVisibility()
+{
+    if (const auto rectangle = focusedRectangle()) {
+        emit focusVisibilityRequested(*rectangle);
+    }
+}
+
+void GameBoard::setBoardFocus(BoardFocus focus, bool ensureVisible)
+{
+    const auto next = reconcileBoardFocus(game_.state(), focus);
+    const bool changed = !(next == keyboardFocus_);
+    keyboardFocus_ = next;
+    refreshAccessibility();
+    if (changed) {
+        update();
+        emit boardFocusChanged();
+        if (hasFocus()) {
+            QAccessibleEvent event(this, QAccessible::Focus);
+            QAccessible::updateAccessibility(&event);
+        }
+    }
+    if (ensureVisible) {
+        requestFocusVisibility();
+    }
+}
+
+void GameBoard::activateFocusedItem()
+{
+    cancelDrag();
+    QScopedValueRollback<bool> activation(keyboardActivation_, true);
+    setBoardFocus(keyboardFocus_, true);
+    click(focusedElement());
 }
 
 void GameBoard::setCardBackImage(const QImage &image)
@@ -170,10 +320,11 @@ void GameBoard::updateMinimumHeight()
 void GameBoard::setFeedback(const QString &message)
 {
     feedback_ = message;
+    refreshAccessibility();
     emit feedbackChanged(feedback_);
 }
 
-void GameBoard::finish(MoveResult result)
+void GameBoard::finish(MoveResult result, std::optional<BoardFocus> focus)
 {
     if (!result) {
         setFeedback(errorText(result.error));
@@ -182,6 +333,7 @@ void GameBoard::finish(MoveResult result)
     cancelDrag();
     selection_.reset();
     updateMinimumHeight();
+    setBoardFocus(focus.value_or(keyboardFocus_), keyboardActivation_);
     setFeedback(game_.state().status == GameStatus::Won
                     ? tr("You won! Start a new game, or undo to keep playing.")
                     : tr("Select a face-up card, then choose a destination."));
@@ -202,13 +354,16 @@ void GameBoard::undo()
     cancelDrag();
     if (game_.canUndo()) {
         finish(game_.undo());
+        requestFocusVisibility();
     }
 }
 
 void GameBoard::newGame()
 {
     cancelDrag();
-    finish(game_.newGame(game_.state().config));
+    const auto result = game_.newGame(game_.state().config);
+    finish(result, BoardFocus{});
+    requestFocusVisibility();
 }
 
 void GameBoard::clearSelection()
@@ -383,6 +538,12 @@ void GameBoard::mousePressEvent(QMouseEvent *event)
     cancelDrag();
     setFocus(Qt::MouseFocusReason);
     const auto element = boardLayout().hitTest(event->position());
+    if (element) {
+        const auto *card = cardFor(*element);
+        setBoardFocus({element->pile, element->pileIndex,
+                       element->pile == PileType::Tableau && card && card->faceUp
+                           ? std::optional<CardId>{card->id()} : std::nullopt}, false);
+    }
     press_ = PointerPress{element, event->position(), false};
     if (element) {
         if (const auto source = sourceFor(*element)) {
@@ -449,6 +610,23 @@ void GameBoard::keyPressEvent(QKeyEvent *event)
         event->accept();
         return;
     }
+    if (!(event->modifiers() & ~Qt::KeypadModifier)) {
+        const auto key = static_cast<Qt::Key>(event->key());
+        if (key == Qt::Key_Left || key == Qt::Key_Right
+            || key == Qt::Key_Up || key == Qt::Key_Down) {
+            cancelDrag();
+            setBoardFocus(navigateBoardFocus(game_.state(), keyboardFocus_, key), true);
+            event->accept();
+            return;
+        }
+        if (key == Qt::Key_Return || key == Qt::Key_Enter || key == Qt::Key_Space) {
+            if (!event->isAutoRepeat()) {
+                activateFocusedItem();
+            }
+            event->accept();
+            return;
+        }
+    }
     QWidget::keyPressEvent(event);
 }
 
@@ -457,6 +635,9 @@ void GameBoard::resizeEvent(QResizeEvent *event)
     cancelDrag();
     QWidget::resizeEvent(event);
     updateMinimumHeight();
+    if (hasFocus()) {
+        requestFocusVisibility();
+    }
 }
 
 void GameBoard::moveEvent(QMoveEvent *event)
@@ -469,6 +650,16 @@ void GameBoard::focusOutEvent(QFocusEvent *event)
 {
     cancelDrag();
     QWidget::focusOutEvent(event);
+}
+
+void GameBoard::focusInEvent(QFocusEvent *event)
+{
+    QWidget::focusInEvent(event);
+    refreshAccessibility();
+    if (event->reason() != Qt::MouseFocusReason) {
+        requestFocusVisibility();
+    }
+    update();
 }
 
 void GameBoard::leaveEvent(QEvent *event)
@@ -500,6 +691,8 @@ void GameBoard::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
     painter.fillRect(rect(), QColor(25, 85, 55));
     const auto layout = boardLayout();
+    const auto focused = hasFocus() ? focusedElement() : std::nullopt;
+    const auto focusRectangle = hasFocus() ? focusedRectangle() : std::nullopt;
     QRectF selected;
     for (const auto &element : layout.elements) {
         auto labelFont = font();
@@ -548,9 +741,19 @@ void GameBoard::paintEvent(QPaintEvent *)
             && *element.cardIndex >= selection_->cardIndex) {
             selected = selected.isNull() ? element.rectangle : selected.united(element.rectangle);
         }
+        if (focused && focusRectangle && focused->pile == element.pile
+            && focused->pileIndex == element.pileIndex && focused->cardIndex == element.cardIndex) {
+            painter.setBrush(Qt::NoBrush);
+            painter.setPen(QPen(Qt::black, 4));
+            painter.drawRoundedRect(focusRectangle->adjusted(-6, -6, 6, 6), 7, 7);
+            painter.setPen(QPen(Qt::white, 2));
+            painter.drawRoundedRect(focusRectangle->adjusted(-4, -4, 4, 4), 6, 6);
+        }
     }
     if (!selected.isNull()) {
         painter.setBrush(Qt::NoBrush);
+        painter.setPen(QPen(Qt::black, 5));
+        painter.drawRoundedRect(selected.adjusted(2, 2, -2, -2), 7, 7);
         painter.setPen(QPen(QColor(255, 225, 125), 3, Qt::DashLine));
         painter.drawRoundedRect(selected.adjusted(2, 2, -2, -2), 7, 7);
     }

@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QStatusBar>
 #include <QStandardPaths>
+#include <QtMath>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -36,6 +37,7 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     cardBackSettings_ = settings;
     board_->setCardBackImage(settings->image());
     setWindowTitle(QStringLiteral("Cardsy"));
+    setAccessibleName(tr("Cardsy Solitaire"));
     setMinimumSize(760, 600);
     resize(1000, 760);
 
@@ -46,8 +48,15 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     scroll->setWidget(board_);
     setCentralWidget(scroll);
     setFocusProxy(board_);
+    connect(board_, &cardsy::ui::GameBoard::focusVisibilityRequested, scroll,
+            [scroll](const QRectF &rectangle) {
+        scroll->ensureVisible(qRound(rectangle.center().x()), qRound(rectangle.center().y()),
+                              qCeil(rectangle.width() / 2) + 8, qCeil(rectangle.height() / 2) + 8);
+    });
 
     auto *menu = menuBar()->addMenu(tr("&Game"));
+    menu->setObjectName(QStringLiteral("gameMenu"));
+    menu->setAccessibleName(tr("Game"));
     auto *newGameAction = menu->addAction(tr("&New Game"));
     newGameAction->setObjectName(QStringLiteral("newGameAction"));
     newGameAction->setShortcut(QKeySequence::New);
@@ -59,6 +68,8 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     undoAction_->setEnabled(board_->canUndo());
     connect(undoAction_, &QAction::triggered, board_, &cardsy::ui::GameBoard::undo);
     auto *backs = menu->addMenu(tr("Card &Back"));
+    backs->setObjectName(QStringLiteral("cardBackMenu"));
+    backs->setAccessibleName(tr("Card Back"));
     auto *choosePhotoAction = backs->addAction(tr("&Choose Photo..."));
     choosePhotoAction->setObjectName(QStringLiteral("choosePhotoAction"));
     choosePhotoAction->setShortcut(QKeySequence::Open);
@@ -68,39 +79,51 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     connect(defaultBackAction, &QAction::triggered, this, [this] {
         const auto result = cardBackSettings_->useDefault();
         if (!result) {
-            statusBar()->showMessage(result.message);
+            showStatusMessage(result.message);
         }
     });
     connect(settings, &cardsy::ui::CardBackSettings::changed, this, [this] {
         board_->setCardBackImage(cardBackSettings_->image());
-        statusBar()->showMessage(cardBackSettings_->isCustom()
+        showStatusMessage(cardBackSettings_->isCustom()
             ? tr("Personal photo card back applied locally.")
             : tr("Using the default card back."));
     });
     menu->addSeparator();
     auto *quitAction = menu->addAction(tr("&Quit"));
     quitAction->setObjectName(QStringLiteral("quitAction"));
-    quitAction->setShortcut(QKeySequence::Quit);
+    const QKeySequence quitShortcut(QKeySequence::Quit);
+    quitAction->setShortcut(quitShortcut.isEmpty()
+        ? QKeySequence(QKeyCombination(Qt::ControlModifier, Qt::Key_Q)) : quitShortcut);
     connect(quitAction, &QAction::triggered, this, &QWidget::close);
 
     statusBar()->setSizeGripEnabled(false);
-    statusBar()->showMessage(settings->startupWarning().isEmpty()
+    statusBar()->setAccessibleName(tr("Game status"));
+    showStatusMessage(settings->startupWarning().isEmpty()
         ? board_->feedback() : settings->startupWarning());
     connect(board_, &cardsy::ui::GameBoard::feedbackChanged, this, [this](const QString &message) {
-        statusBar()->showMessage(message);
+        showStatusMessage(message);
     });
     connect(board_, &cardsy::ui::GameBoard::stateChanged, this, [this] {
         undoAction_->setEnabled(board_->canUndo());
     });
+    board_->setFocus(Qt::OtherFocusReason);
 }
 
 cardsy::ui::CardBackResult MainWindow::installCardBack(const QString &fileName)
 {
     const auto result = cardBackSettings_->installImage(fileName);
     if (!result) {
-        statusBar()->showMessage(result.message);
+        showStatusMessage(result.message);
     }
     return result;
+}
+
+void MainWindow::showStatusMessage(const QString &message)
+{
+    statusBar()->showMessage(message);
+    if (statusBar()->accessibleDescription() != message) {
+        statusBar()->setAccessibleDescription(message);
+    }
 }
 
 void MainWindow::choosePhoto()

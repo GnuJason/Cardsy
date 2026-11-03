@@ -30,4 +30,5 @@ private:
 
     void initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSettings *settings);
     void choosePhoto();
+    void showStatusMessage(const QString &message);
 };
