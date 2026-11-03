@@ -9,6 +9,9 @@
 - Click a tableau or foundation destination to submit a typed engine move.
   Only a single selected tableau top has a representable foundation intent;
   selecting a longer suffix never silently moves a different top card.
+- Alternatively, press a face-up tableau card/sequence, waste top or foundation
+  top and drag it onto a tableau or foundation destination. Stock remains
+  click-only.
 - Clicking the selected source again, pressing Escape, or clicking board
   background clears selection. Clicking another face-up card in the same column
   or clicking waste replaces selection.
@@ -25,6 +28,35 @@ New Game, Undo and Quit use the platform's standard Qt shortcuts (normally
 Ctrl+N, Ctrl+Z and Ctrl+Q on Linux). Undo is disabled when unavailable. The GUI
 uses the engine's default draw configuration; no draw-mode settings are provided.
 Engine `Won` status produces a small status-bar message rather than a dialog.
+
+## Drag behavior
+
+The platform's Qt drag-distance threshold separates a click from a drag. A
+stationary press or movement below that threshold completes the existing click
+interaction on release. Moving stock or an empty/hidden source does not drag or
+accidentally execute a stock click.
+
+Dragging changes no cards until release. The source remains ghosted in its
+original location while the card/sequence follows the pointer, preserving its
+order and fan. A dashed destination outline means "attempt this pile", not
+"the UI has declared this move legal". The engine accepts or rejects the same
+typed intent used by click interaction.
+
+Successful drops clear both drag and selection; Undo restores the exact prior
+game state without restoring a drag. Rejected drops snap back by repainting the
+unchanged state. Releasing over blank table, a gap, stock/waste, the original
+pile, an unsupported destination or outside the board cancels without adding
+undo history.
+
+Pressing or dragging a different source does not alter an existing click
+selection. Canceled/rejected gestures restore that previous selection (or none,
+if none existed). Escape cancels both selection and dragging. Resizing, losing
+focus, hiding/deactivating the board, replacing state, Undo, New Game and opening
+the photo picker cancel transient pointer interaction so a later release cannot
+submit a stale move.
+
+Open/closed native hand cursors distinguish a draggable source from an active
+drag. No cursor assets or animation framework are used.
 
 ## Ownership and boundaries
 
@@ -46,6 +78,9 @@ The board dispatches `DrawStock`, `RecycleWaste`, `TableauToTableau`,
 `FoundationToTableau`. It does not duplicate placement, sequence, recycling or
 victory rules. `loadState` forwards to validated `Game::loadState`; corrupt
 controlled states are rejected without changing the existing board.
+Click and drag share one source/target-to-move translation. Drag state contains
+only logical identity/indices, pointer coordinates and transient geometry; it
+does not own cards or a second GameState.
 
 ## Layout and rendering
 
@@ -59,6 +94,10 @@ space for face-up cards and a visible strip for face-down cards. If a column
 cannot fit at those bounds, the board grows within a native scroll area.
 Vertical scrolling keeps the deepest cards reachable rather than clipping them
 or shrinking labels indefinitely.
+Manual scrolling remains available. Dragging after scrolling and scrolling the
+content during a drag use widget-local coordinates and fresh destination hit
+testing. Edge-triggered auto-scroll is intentionally deferred. Resizing cancels
+an active drag; a fresh gesture uses the new layout.
 
 QPainter draws generated card faces, suit/rank text, rounded outlines, geometric
 backs and empty slots. An optional cached personal image replaces hidden-card
@@ -73,8 +112,8 @@ border. Selection uses a dashed enclosing border, not color alone. Suit/rank
 text distinguishes cards independently of red/black color. Native actions have
 meaningful labels and keyboard shortcuts; Escape cancels selection.
 
-Full keyboard card navigation, per-card screen-reader semantics, drag-and-drop,
-broader preferences and packaging remain deferred. The custom-painted
+Full keyboard card navigation, per-card screen-reader semantics, broader
+preferences and packaging remain deferred. The custom-painted
 board is not yet a complete screen-reader-accessible card interface.
 
 ## Validation scope
@@ -82,4 +121,7 @@ board is not yet a complete screen-reader-accessible card interface.
 Native tests cover state-to-layout mapping, exposed-card hit testing, empty
 targets, deep fan limits, representative sizes, source selection, every move
 dispatch kind, engine rejection, undo, new games, win feedback and scrolling.
+Drag tests cover the native threshold, preview/cancellation, all five movement
+intents, exact undo restoration, scrolling/resizing, keyboard interruptions and
+unchanged personal/default backs. The 52-photo mode remains deferred.
 The engine and its Phase 2 test sources remain unchanged.

@@ -105,6 +105,7 @@ cardsy::ui::CardBackResult MainWindow::installCardBack(const QString &fileName)
 
 void MainWindow::choosePhoto()
 {
+    board_->cancelDrag();
     auto directory = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     if (directory.isEmpty() || !QDir(directory).exists()) {
         directory = QDir::homePath();

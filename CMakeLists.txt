@@ -57,7 +57,8 @@ if(BUILD_TESTING)
         TIMEOUT 15
     )
 
-    foreach(test_name IN ITEMS BoardLayoutTest GameBoardTest CardBackSettingsTest PersonalizationTest)
+    foreach(test_name IN ITEMS BoardLayoutTest GameBoardTest CardBackSettingsTest PersonalizationTest
+            DragInteractionTest)
         add_executable(${test_name} tests/${test_name}.cpp)
         target_link_libraries(${test_name} PRIVATE cardsy-ui Qt6::Test)
         add_test(NAME ${test_name} COMMAND ${test_name})
