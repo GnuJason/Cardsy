@@ -1,1 +1,0 @@
-../cardArt.ts

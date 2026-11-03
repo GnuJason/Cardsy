@@ -1,7 +1,11 @@
+/build/
+/build-*/
+/CMakeUserPresets.json
+
+# Local leftovers from the archived web application's development environment.
 node_modules/
 dist/
 .turbo/
-*.tsbuildinfonode_modules/
-dist/
+*.tsbuildinfo
 .DS_Store
 *.local

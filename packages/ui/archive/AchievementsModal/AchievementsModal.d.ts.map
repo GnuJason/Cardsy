@@ -1,1 +1,0 @@
-{"version":3,"file":"AchievementsModal.d.ts","sourceRoot":"","sources":["AchievementsModal.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAC1B,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,mBAAmB,CAAC;AAK7D,UAAU,sBAAsB;IAC9B,QAAQ,EAAE,mBAAmB,EAAE,CAAC;IAChC,OAAO,EAAE,MAAM,IAAI,CAAC;CACrB;AAED,eAAO,MAAM,iBAAiB,EAAE,KAAK,CAAC,EAAE,CAAC,sBAAsB,CA2D9D,CAAC"}

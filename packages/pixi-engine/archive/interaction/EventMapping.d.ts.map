@@ -1,1 +1,0 @@
-{"version":3,"file":"EventMapping.d.ts","sourceRoot":"","sources":["EventMapping.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,mBAAmB,CAAC;AAClD,OAAO,KAAK,EAAE,QAAQ,EAAE,aAAa,EAAE,MAAM,UAAU,CAAC;AAExD,wBAAgB,aAAa,CAC3B,IAAI,EAAE,QAAQ,EACd,QAAQ,EAAE,QAAQ,EAClB,SAAS,EAAE,MAAM,EACjB,SAAS,EAAE,MAAM,GAChB,aAAa,GAAG,IAAI,CAsCtB"}
