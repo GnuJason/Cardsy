@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: CC0-1.0
+[Desktop Entry]
+Type=Application
+Name=@CARDSY_DISPLAY_NAME@
+GenericName=Solitaire
+Comment=Play Klondike solitaire with local personal photo card backs
+Exec=cardsy
+Icon=@CARDSY_APPLICATION_ID@
+Terminal=false
+Categories=Game;CardGame;
+Keywords=Solitaire;Klondike;Cards;
+StartupNotify=true

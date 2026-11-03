@@ -1,6 +1,8 @@
 #include "CardBackSettings.h"
+#include "app/ApplicationIdentity.h"
 
 #include <QBuffer>
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -126,6 +128,10 @@ CardBackResult readImage(const QString &fileName, QImage &normalized, bool manag
 CardBackSettings::CardBackSettings(QObject *parent)
     : CardBackSettings(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation), parent)
 {
+    if (QCoreApplication::applicationName() == QString::fromLatin1(build::ApplicationId)
+        && QCoreApplication::organizationName().isEmpty() && !QFileInfo(directory_).exists()) {
+        migrateDevelopmentBack();
+    }
 }
 
 CardBackSettings::CardBackSettings(const QString &dataDirectory, QObject *parent)
@@ -153,6 +159,34 @@ QString CardBackSettings::fileFilter()
         extensions << QStringLiteral("*.jpg") << QStringLiteral("*.jpeg");
     }
     return tr("Local images (%1)").arg(extensions.join(QLatin1Char(' ')));
+}
+
+void CardBackSettings::migrateDevelopmentBack()
+{
+    const auto legacyDirectory = app::developmentDataDirectory();
+    if (directory_.isEmpty() || !QDir::isAbsolutePath(directory_) || legacyDirectory.isEmpty()) {
+        return;
+    }
+    const auto legacyPath = QDir(legacyDirectory).filePath(QStringLiteral("card-back.png"));
+    const QFileInfo legacy(legacyPath);
+    if (!legacy.exists() && !legacy.isSymLink()) {
+        return;
+    }
+    QImage candidate;
+    if (QFileInfo(legacyDirectory).isSymLink() || !readImage(legacyPath, candidate, true)) {
+        startupWarning_ = tr("The development card back is invalid or unavailable. "
+                             "Using the default; the old private copy was left untouched.");
+        return;
+    }
+    if (!persistImage(candidate)) {
+        startupWarning_ = tr("The development card back could not be migrated. "
+                             "Using the default; the old private copy was left untouched.");
+        return;
+    }
+    if (!QFile::remove(legacyPath)) {
+        startupWarning_ = tr("The card back was migrated, but its old development copy "
+                             "could not be removed.");
+    }
 }
 
 void CardBackSettings::restore()
@@ -206,6 +240,11 @@ CardBackResult CardBackSettings::installImage(const QString &fileName)
     if (!decoded) {
         return decoded;
     }
+    return persistImage(candidate);
+}
+
+CardBackResult CardBackSettings::persistImage(const QImage &candidate)
+{
     if (!prepareDirectory()) {
         return failure(CardBackError::StorageFailed);
     }
@@ -226,6 +265,11 @@ CardBackResult CardBackSettings::installImage(const QString &fileName)
 CardBackResult CardBackSettings::useDefault()
 {
     if (directory_.isEmpty() || !QDir::isAbsolutePath(directory_)) {
+        return failure(CardBackError::StorageFailed);
+    }
+    const QFileInfo directory(directory_);
+    if (directory.isSymLink() || (directory.exists() && !directory.isDir())
+        || (!directory.exists() && !prepareDirectory())) {
         return failure(CardBackError::StorageFailed);
     }
     const QFileInfo saved(managedPath());

@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "CardBackSettings.h"
 #include "GameBoard.h"
+#include "app/ApplicationIdentity.h"
 
 #include <QAction>
 #include <QDir>
@@ -36,8 +37,8 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     board_ = board;
     cardBackSettings_ = settings;
     board_->setCardBackImage(settings->image());
-    setWindowTitle(QStringLiteral("Cardsy"));
-    setAccessibleName(tr("Cardsy Solitaire"));
+    setWindowTitle(QString::fromLatin1(cardsy::build::DisplayName));
+    setAccessibleName(tr("%1 Solitaire").arg(QString::fromLatin1(cardsy::build::DisplayName)));
     setMinimumSize(760, 600);
     resize(1000, 760);
 

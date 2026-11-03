@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<component type="desktop-application">
+  <id>@CARDSY_APPLICATION_ID@</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <!-- Software licensing is unresolved; project_license is intentionally omitted. -->
+  <name>@CARDSY_DISPLAY_NAME@</name>
+  <summary>Play Klondike solitaire with local personal photo card backs</summary>
+  <description>
+    <p>Cardsy is a native desktop Klondike solitaire game that works offline.
+    Play with click-to-select, drag-and-drop, or keyboard controls, with undo
+    and a generated default card back.</p>
+    <p>Choose one personal image as a card back. Images are processed and stored
+    locally, and the original image is not modified. Return to the default
+    back without changing the current game.</p>
+  </description>
+  <developer id="io.github.gnujason">
+    <name>GnuJason</name>
+  </developer>
+  <launchable type="desktop-id">@CARDSY_APPLICATION_ID@.desktop</launchable>
+  <icon type="stock">@CARDSY_APPLICATION_ID@</icon>
+  <url type="homepage">@CARDSY_HOMEPAGE@</url>
+  <provides>
+    <binary>cardsy</binary>
+  </provides>
+  <categories>
+    <category>Game</category>
+    <category>CardGame</category>
+  </categories>
+  <keywords>
+    <keyword>solitaire</keyword>
+    <keyword>klondike</keyword>
+    <keyword>cards</keyword>
+  </keywords>
+  <content_rating type="oars-1.1"/>
+</component>

@@ -46,17 +46,19 @@ Tests exercise minimum/normal/large boards and 2x rendering.
 
 ## Private storage and application identity
 
-The application and organization names are both `Cardsy`. No reverse-DNS or
-AppStream identity is introduced here.
+The centralized application ID/name is `io.github.gnujason.cardsy`, with display
+name `Cardsy` and an empty organization-name path segment.
 
 Qt `QStandardPaths::AppDataLocation` determines the per-user location. On the
 current Linux setup the default is:
 
 ```text
-~/.local/share/Cardsy/Cardsy/card-back.png
+~/.local/share/io.github.gnujason.cardsy/card-back.png
 ```
 
 Qt honors the platform's data-location rules, including `XDG_DATA_HOME`.
+The former development namespace has a small validated, atomic managed-copy
+migration; see [desktop identity](desktop-installation.md#user-data-and-development-migration).
 The original path and original bytes are not retained as configuration.
 The normalized managed PNG is itself the complete persisted preference:
 valid file present means custom; absent means default. There is no separate

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC0-1.0
+     Original Cardsy artwork, created for this project. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect x="8" y="8" width="240" height="240" rx="50" fill="#14233b"/>
+  <g transform="rotate(-12 101 128)">
+    <rect x="36" y="38" width="130" height="178" rx="15" fill="#6cb8c0" stroke="#0b172b" stroke-width="7"/>
+    <rect x="48" y="50" width="106" height="154" rx="8" fill="none" stroke="#d7f0ef" stroke-width="5"/>
+  </g>
+  <g transform="rotate(8 155 133)">
+    <rect x="93" y="44" width="124" height="178" rx="15" fill="#fffbef" stroke="#0b172b" stroke-width="7"/>
+    <path d="M155 103 C141 84 119 89 119 108 C119 123 140 140 155 153 C170 140 191 123 191 108 C191 89 169 84 155 103 Z" fill="#b72e4b"/>
+    <path d="M111 64 L120 76 L111 88 L102 76 Z M199 178 L208 190 L199 202 L190 190 Z" fill="#b72e4b"/>
+  </g>
+</svg>

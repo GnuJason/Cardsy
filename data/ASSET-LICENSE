@@ -1,0 +1,11 @@
+SPDX-License-Identifier: CC0-1.0
+
+The original Cardsy icon artwork in data/icons/ (SVG and derived PNG files),
+the desktop entry template, and the AppStream metadata template are dedicated
+to the public domain under CC0 1.0 Universal:
+
+https://creativecommons.org/publicdomain/zero/1.0/
+
+This dedication applies only to those original artwork and metadata assets.
+It does not license the Cardsy software source code. The project's software
+license remains unresolved and is a blocker for public distribution.

@@ -1,0 +1,70 @@
+set(build_directory "@CMAKE_CURRENT_BINARY_DIR@")
+set(stage "${build_directory}/install-test-root")
+set(custom "${build_directory}/install-test-prefix")
+set(application_id "@CARDSY_APPLICATION_ID@")
+
+file(REMOVE_RECURSE "${stage}" "${custom}")
+file(MAKE_DIRECTORY "${stage}")
+
+set(configuration)
+if(CARDSY_TEST_CONFIG)
+    list(APPEND configuration --config "${CARDSY_TEST_CONFIG}")
+endif()
+
+execute_process(
+    COMMAND "@CMAKE_COMMAND@" -E env "DESTDIR=${stage}"
+        "@CMAKE_COMMAND@" --install "${build_directory}" --prefix /usr ${configuration}
+    RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "DESTDIR install failed: ${output}\n${error}")
+endif()
+
+execute_process(
+    COMMAND "@CMAKE_COMMAND@" --install "${build_directory}" --prefix "${custom}" ${configuration}
+    RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Custom-prefix install failed: ${output}\n${error}")
+endif()
+
+set(expected
+    "@CMAKE_INSTALL_BINDIR@/cardsy"
+    "@CMAKE_INSTALL_DATADIR@/applications/${application_id}.desktop"
+    "@CMAKE_INSTALL_DATADIR@/metainfo/${application_id}.metainfo.xml"
+    "@CMAKE_INSTALL_DATADIR@/icons/hicolor/scalable/apps/${application_id}.svg"
+    "@CMAKE_INSTALL_DATADIR@/icons/hicolor/16x16/apps/${application_id}.png"
+    "@CMAKE_INSTALL_DATADIR@/icons/hicolor/48x48/apps/${application_id}.png"
+    "@CMAKE_INSTALL_DATADIR@/icons/hicolor/256x256/apps/${application_id}.png"
+    "@CMAKE_INSTALL_DATADIR@/licenses/${application_id}/ASSET-LICENSE")
+list(SORT expected)
+
+foreach(prefix IN ITEMS "${stage}/usr" "${custom}")
+    file(GLOB_RECURSE actual LIST_DIRECTORIES false RELATIVE "${prefix}" "${prefix}/*")
+    list(SORT actual)
+    if(NOT actual STREQUAL expected)
+        message(FATAL_ERROR "Unexpected installed payload.\nExpected: ${expected}\nActual: ${actual}")
+    endif()
+    set(binary "${prefix}/@CMAKE_INSTALL_BINDIR@/cardsy")
+    execute_process(COMMAND "@CMAKE_COMMAND@" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY
+        QT_QPA_PLATFORM=not-a-platform "${binary}" --version
+        RESULT_VARIABLE result OUTPUT_VARIABLE version ERROR_VARIABLE error)
+    if(NOT result EQUAL 0 OR NOT version STREQUAL "@CARDSY_DISPLAY_NAME@ @CARDSY_VERSION@\n")
+        message(FATAL_ERROR "Installed --version failed: ${version} ${error}")
+    endif()
+    file(STRINGS "${binary}" binary_strings)
+    foreach(private_path IN ITEMS "@CMAKE_SOURCE_DIR@" "@CMAKE_BINARY_DIR@" "$ENV{HOME}")
+        if(private_path AND NOT private_path STREQUAL "/")
+            string(FIND "${binary_strings}" "${private_path}" found)
+            if(NOT found EQUAL -1)
+                message(FATAL_ERROR "Installed executable contains a private developer/source path")
+            endif()
+        endif()
+    endforeach()
+    if(EXISTS "@CARDSY_READELF@")
+        execute_process(COMMAND "@CARDSY_READELF@" -d "${binary}"
+            RESULT_VARIABLE result OUTPUT_VARIABLE dynamic ERROR_VARIABLE error)
+        if(NOT result EQUAL 0 OR dynamic MATCHES "RPATH|RUNPATH")
+            message(FATAL_ERROR "Unexpected installed dynamic path: ${dynamic} ${error}")
+        endif()
+    endif()
+endforeach()
+message(STATUS "Exact installed payload verified for DESTDIR and a custom prefix")

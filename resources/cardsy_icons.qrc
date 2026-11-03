@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="/cardsy/icons">
+    <file alias="cardsy-16.png">../data/icons/16/cardsy.png</file>
+    <file alias="cardsy-48.png">../data/icons/48/cardsy.png</file>
+    <file alias="cardsy-256.png">../data/icons/256/cardsy.png</file>
+  </qresource>
+</RCC>

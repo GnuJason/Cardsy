@@ -50,6 +50,8 @@ private:
 
     void restore();
     bool prepareDirectory();
+    CardBackResult persistImage(const QImage &image);
+    void migrateDevelopmentBack();
 };
 
 }
