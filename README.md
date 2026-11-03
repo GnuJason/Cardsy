@@ -6,15 +6,22 @@ with Linux, macOS and Windows portability intended long term.
 ## Currently implemented
 
 - A resizable native Cardsy placeholder window.
-- A C++ / Qt 6 Widgets / CMake foundation and a Qt Test smoke test.
+- A UI-independent C++17 Klondike engine: dealing, legal moves, draw 1/draw 3,
+  recycling, win detection, complete-state undo and invariant validation.
+- A C++ / Qt 6 Widgets / CMake foundation, native behavioral tests and a GUI
+  smoke test.
+
+The window remains a placeholder: gameplay is currently tested through the
+engine, not playable in the GUI. See [engine behavior and historical test
+traceability](docs/engine-behavior.md) for the model contract.
 
 ## Planned for Cardsy 1.0
 
-- Classic Klondike Solitaire.
+- A playable native graphical board for classic Klondike Solitaire.
 - User-selected personal photo card backs, kept locally, with a default-back reset.
 - Native preferences and desktop integration.
 
-No gameplay, photo handling or distribution packages are implemented yet.
+No graphical gameplay, photo handling or distribution packages are implemented yet.
 
 ## Build and run
 
@@ -31,7 +38,9 @@ ctest --test-dir build --output-on-failure
 ./build/cardsy
 ```
 
-Tests use Qt's offscreen platform so they can run without a display server.
+The GUI smoke test uses Qt's offscreen platform; engine tests need no GUI or
+display server. The engine library uses only the C++ standard library and does
+not link Qt. Tests require Qt Test.
 Running `cardsy` normally opens a graphical desktop window and requires a working
 Qt platform plugin and display session. `-DBUILD_TESTING=OFF` excludes Qt Test.
 

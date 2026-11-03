@@ -7,14 +7,34 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+elseif(MSVC)
+    add_compile_options(/W4)
+endif()
+
 find_package(Qt6 6.2 REQUIRED COMPONENTS Widgets)
+
+add_library(cardsy-engine STATIC
+    src/engine/Card.h
+    src/engine/Deck.cpp
+    src/engine/Deck.h
+    src/engine/Game.cpp
+    src/engine/Game.h
+    src/engine/GameState.cpp
+    src/engine/GameState.h
+    src/engine/Rules.cpp
+    src/engine/Rules.h
+)
+set_target_properties(cardsy-engine PROPERTIES AUTOMOC OFF)
+target_include_directories(cardsy-engine PUBLIC src)
 
 add_executable(cardsy
     src/main.cpp
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
 )
-target_link_libraries(cardsy PRIVATE Qt6::Widgets)
+target_link_libraries(cardsy PRIVATE Qt6::Widgets cardsy-engine)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -31,4 +51,13 @@ if(BUILD_TESTING)
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         TIMEOUT 15
     )
+
+    foreach(test_name IN ITEMS
+            CardDeckTest DealTest TableauRulesTest FoundationRulesTest
+            StockWasteTest UndoTest GameStateInvariantTest WinTest)
+        add_executable(${test_name} tests/engine/${test_name}.cpp)
+        target_link_libraries(${test_name} PRIVATE cardsy-engine Qt6::Test)
+        add_test(NAME ${test_name} COMMAND ${test_name})
+        set_tests_properties(${test_name} PROPERTIES TIMEOUT 30)
+    endforeach()
 endif()
