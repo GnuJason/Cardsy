@@ -5,23 +5,24 @@ with Linux, macOS and Windows portability intended long term.
 
 ## Currently implemented
 
-- A resizable native Cardsy placeholder window.
+- A playable native graphical Klondike board with generated cards and backs.
+- Click-to-select source/destination interaction, stock drawing and recycling.
+- Native New Game, Undo and Quit actions, plus small win/status feedback.
 - A UI-independent C++17 Klondike engine: dealing, legal moves, draw 1/draw 3,
   recycling, win detection, complete-state undo and invariant validation.
-- A C++ / Qt 6 Widgets / CMake foundation, native behavioral tests and a GUI
-  smoke test.
+- A C++ / Qt 6 Widgets / CMake foundation with native engine, geometry and GUI
+  integration tests.
 
-The window remains a placeholder: gameplay is currently tested through the
-engine, not playable in the GUI. See [engine behavior and historical test
-traceability](docs/engine-behavior.md) for the model contract.
+See [engine behavior and historical test traceability](docs/engine-behavior.md)
+for the model contract and [board interaction](docs/board-interaction.md) for
+controls, resizing and current accessibility limits.
 
 ## Planned for Cardsy 1.0
 
-- A playable native graphical board for classic Klondike Solitaire.
 - User-selected personal photo card backs, kept locally, with a default-back reset.
 - Native preferences and desktop integration.
 
-No graphical gameplay, photo handling or distribution packages are implemented yet.
+Drag-and-drop, personal photos and distribution packages are not implemented.
 
 ## Build and run
 
@@ -38,9 +39,9 @@ ctest --test-dir build --output-on-failure
 ./build/cardsy
 ```
 
-The GUI smoke test uses Qt's offscreen platform; engine tests need no GUI or
-display server. The engine library uses only the C++ standard library and does
-not link Qt. Tests require Qt Test.
+GUI tests use Qt's offscreen platform; engine tests need no GUI or display
+server. The engine library uses only the C++ standard library and does not link
+Qt. Tests require Qt Test.
 Running `cardsy` normally opens a graphical desktop window and requires a working
 Qt platform plugin and display session. `-DBUILD_TESTING=OFF` excludes Qt Test.
 

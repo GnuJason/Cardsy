@@ -29,28 +29,41 @@ add_library(cardsy-engine STATIC
 set_target_properties(cardsy-engine PROPERTIES AUTOMOC OFF)
 target_include_directories(cardsy-engine PUBLIC src)
 
-add_executable(cardsy
-    src/main.cpp
+add_library(cardsy-ui STATIC
+    src/ui/BoardLayout.cpp
+    src/ui/BoardLayout.h
+    src/ui/GameBoard.cpp
+    src/ui/GameBoard.h
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
 )
-target_link_libraries(cardsy PRIVATE Qt6::Widgets cardsy-engine)
+target_link_libraries(cardsy-ui PUBLIC Qt6::Widgets cardsy-engine)
+
+add_executable(cardsy src/main.cpp)
+target_link_libraries(cardsy PRIVATE cardsy-ui)
 
 include(CTest)
 if(BUILD_TESTING)
     find_package(Qt6 6.2 REQUIRED COMPONENTS Test)
     add_executable(cardsy-smoke-test
         tests/MainWindowTest.cpp
-        src/ui/MainWindow.cpp
-        src/ui/MainWindow.h
     )
-    target_include_directories(cardsy-smoke-test PRIVATE src)
-    target_link_libraries(cardsy-smoke-test PRIVATE Qt6::Widgets Qt6::Test)
+    target_link_libraries(cardsy-smoke-test PRIVATE cardsy-ui Qt6::Test)
     add_test(NAME cardsy-window-smoke COMMAND cardsy-smoke-test)
     set_tests_properties(cardsy-window-smoke PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         TIMEOUT 15
     )
+
+    foreach(test_name IN ITEMS BoardLayoutTest GameBoardTest)
+        add_executable(${test_name} tests/${test_name}.cpp)
+        target_link_libraries(${test_name} PRIVATE cardsy-ui Qt6::Test)
+        add_test(NAME ${test_name} COMMAND ${test_name})
+        set_tests_properties(${test_name} PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            TIMEOUT 30
+        )
+    endforeach()
 
     foreach(test_name IN ITEMS
             CardDeckTest DealTest TableauRulesTest FoundationRulesTest
