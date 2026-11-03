@@ -1,4 +1,5 @@
 #include "BoardTestSupport.h"
+#include "ui/CardBackSettings.h"
 #include "ui/GameBoard.h"
 #include "ui/MainWindow.h"
 
@@ -6,6 +7,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStatusBar>
+#include <QTemporaryDir>
 #include <QTest>
 
 using namespace cardsy;
@@ -19,7 +21,9 @@ class MainWindowTest : public QObject
 private slots:
     void opensResizesAndCloses()
     {
-        MainWindow window(42);
+        QTemporaryDir directory;
+        CardBackSettings settings(directory.path());
+        MainWindow window(settings, 42);
         QCOMPARE(window.windowTitle(), QStringLiteral("Cardsy"));
         QVERIFY(window.gameBoard());
         QVERIFY(validate(window.gameBoard()->gameState()).empty());
@@ -40,7 +44,9 @@ private slots:
 
     void nativeActionsAndShortcuts()
     {
-        MainWindow window(42);
+        QTemporaryDir directory;
+        CardBackSettings settings(directory.path());
+        MainWindow window(settings, 42);
         window.show();
         QVERIFY(QTest::qWaitForWindowActive(&window));
         auto *board = window.gameBoard();
@@ -80,7 +86,9 @@ private slots:
 
     void deepColumnRemainsReachableThroughScrolling()
     {
-        MainWindow window(42);
+        QTemporaryDir directory;
+        CardBackSettings settings(directory.path());
+        MainWindow window(settings, 42);
         window.resize(760, 600);
         auto *board = window.gameBoard();
         const auto state = deepFixture();

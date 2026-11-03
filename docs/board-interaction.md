@@ -17,6 +17,8 @@
   from another tableau column.
 - Game > New Game starts a fresh deal and clears undo/selection.
 - Game > Undo restores the previous engine state and clears selection.
+- Game > Card Back offers Choose Photo... and Use Default Card Back without
+  changing the current game. See [personal card backs](personal-card-backs.md).
 - Game > Quit closes the application normally.
 
 New Game, Undo and Quit use the platform's standard Qt shortcuts (normally
@@ -59,8 +61,9 @@ Vertical scrolling keeps the deepest cards reachable rather than clipping them
 or shrinking labels indefinitely.
 
 QPainter draws generated card faces, suit/rank text, rounded outlines, geometric
-backs and empty slots. There are no image resources, bundled fonts or graphics
-frameworks. Unicode suits use the system font; C/D/H/S are fallback labels when
+backs and empty slots. An optional cached personal image replaces hidden-card
+backs. There are no bundled image resources, fonts or graphics frameworks.
+Unicode suits use the system font; C/D/H/S are fallback labels when
 that font lacks a suit glyph. Qt handles logical coordinates and HiDPI scaling.
 
 ## Accessibility and deferred work
@@ -71,7 +74,7 @@ text distinguishes cards independently of red/black color. Native actions have
 meaningful labels and keyboard shortcuts; Escape cancels selection.
 
 Full keyboard card navigation, per-card screen-reader semantics, drag-and-drop,
-custom photo backs, preferences and packaging remain deferred. The custom-painted
+broader preferences and packaging remain deferred. The custom-painted
 board is not yet a complete screen-reader-accessible card interface.
 
 ## Validation scope

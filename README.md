@@ -8,6 +8,9 @@ with Linux, macOS and Windows portability intended long term.
 - A playable native graphical Klondike board with generated cards and backs.
 - Click-to-select source/destination interaction, stock drawing and recycling.
 - Native New Game, Undo and Quit actions, plus small win/status feedback.
+- One user-selected personal photo card back, processed and stored locally.
+  The private copy survives restarts; Use Default Card Back removes that copy
+  without deleting the original or changing the current game.
 - A UI-independent C++17 Klondike engine: dealing, legal moves, draw 1/draw 3,
   recycling, win detection, complete-state undo and invariant validation.
 - A C++ / Qt 6 Widgets / CMake foundation with native engine, geometry and GUI
@@ -16,13 +19,14 @@ with Linux, macOS and Windows portability intended long term.
 See [engine behavior and historical test traceability](docs/engine-behavior.md)
 for the model contract and [board interaction](docs/board-interaction.md) for
 controls, resizing and current accessibility limits.
+See [personal card-back policy](docs/personal-card-backs.md) for accepted images,
+resource limits and private storage behavior.
 
 ## Planned for Cardsy 1.0
 
-- User-selected personal photo card backs, kept locally, with a default-back reset.
 - Native preferences and desktop integration.
 
-Drag-and-drop, personal photos and distribution packages are not implemented.
+Drag-and-drop, broader preferences and distribution packages are not implemented.
 
 ## Build and run
 

@@ -3,6 +3,7 @@
 #include "BoardLayout.h"
 #include "engine/Game.h"
 
+#include <QImage>
 #include <QString>
 #include <QWidget>
 
@@ -32,6 +33,8 @@ public:
     QString feedback() const { return feedback_; }
     BoardLayout boardLayout() const;
     [[nodiscard]] MoveResult loadState(const GameState &state);
+    void setCardBackImage(const QImage &image);
+    const QImage &cardBackImage() const { return cardBackImage_; }
 
 public slots:
     void undo();
@@ -52,6 +55,7 @@ private:
     Game game_;
     std::optional<BoardSelection> selection_;
     QString feedback_;
+    QImage cardBackImage_;
 
     void initialize();
     void updateMinimumHeight();

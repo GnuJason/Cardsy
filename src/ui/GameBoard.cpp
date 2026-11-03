@@ -4,9 +4,11 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QResizeEvent>
 #include <QtMath>
 
+#include <algorithm>
 #include <array>
 
 namespace cardsy::ui {
@@ -30,12 +32,28 @@ QString suitText(Suit suit, const QFont &font)
                                            : QString::fromLatin1(fallback[index]);
 }
 
-void drawCard(QPainter &painter, QRectF rectangle, const Card &card)
+void drawCard(QPainter &painter, QRectF rectangle, const Card &card, const QImage &back)
 {
     painter.setPen(QPen(QColor(35, 40, 35), 1));
     painter.setBrush(card.faceUp ? QColor(255, 253, 245) : QColor(35, 64, 112));
     painter.drawRoundedRect(rectangle, 7, 7);
     if (!card.faceUp) {
+        if (!back.isNull()) {
+            painter.save();
+            QPainterPath clip;
+            clip.addRoundedRect(rectangle.adjusted(1, 1, -1, -1), 6, 6);
+            painter.setClipPath(clip);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
+            const auto scale = std::max(rectangle.width() / back.width(),
+                                        rectangle.height() / back.height());
+            const QSizeF sourceSize(rectangle.width() / scale, rectangle.height() / scale);
+            painter.drawImage(rectangle, back,
+                               QRectF((back.width() - sourceSize.width()) / 2,
+                                       (back.height() - sourceSize.height()) / 2,
+                                       sourceSize.width(), sourceSize.height()));
+            painter.restore();
+            return;
+        }
         const auto inner = rectangle.adjusted(6, 6, -6, -6);
         painter.setPen(QPen(QColor(190, 210, 235), 1));
         painter.setBrush(Qt::NoBrush);
@@ -127,6 +145,12 @@ void GameBoard::initialize()
 BoardLayout GameBoard::boardLayout() const
 {
     return calculateBoardLayout(game_.state(), size());
+}
+
+void GameBoard::setCardBackImage(const QImage &image)
+{
+    cardBackImage_ = image;
+    update();
 }
 
 void GameBoard::updateMinimumHeight()
@@ -322,7 +346,7 @@ void GameBoard::paintEvent(QPaintEvent *)
         }
         const auto *card = cardFor(element);
         if (card) {
-            drawCard(painter, element.rectangle, *card);
+            drawCard(painter, element.rectangle, *card, cardBackImage_);
         } else {
             painter.setBrush(QColor(20, 70, 45));
             painter.setPen(QPen(QColor(175, 205, 180), 1.5, Qt::DashLine));
