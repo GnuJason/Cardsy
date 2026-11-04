@@ -3,7 +3,7 @@
 <component type="desktop-application">
   <id>@CARDSY_APPLICATION_ID@</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <!-- Software licensing is unresolved; project_license is intentionally omitted. -->
+  <project_license>@CARDSY_SOFTWARE_LICENSE@</project_license>
   <name>@CARDSY_DISPLAY_NAME@</name>
   <summary>Play Klondike solitaire with local personal photo card backs</summary>
   <description>

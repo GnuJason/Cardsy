@@ -7,5 +7,6 @@ to the public domain under CC0 1.0 Universal:
 https://creativecommons.org/publicdomain/zero/1.0/
 
 This dedication applies only to those original artwork and metadata assets.
-It does not license the Cardsy software source code. The project's software
-license remains unresolved and is a blocker for public distribution.
+It does not license the Cardsy software source code. Other Cardsy-authored
+project files use GPL-3.0-or-later as specified in the root LICENSING.md;
+the official GPL version 3 text is in the root COPYING file.

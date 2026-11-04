@@ -6,6 +6,7 @@ inline constexpr char ApplicationId[] = "@CARDSY_APPLICATION_ID@";
 inline constexpr char DisplayName[] = "@CARDSY_DISPLAY_NAME@";
 inline constexpr char TargetVersion[] = "@PROJECT_VERSION@";
 inline constexpr char Version[] = "@CARDSY_VERSION@";
+inline constexpr char SoftwareLicense[] = "@CARDSY_SOFTWARE_LICENSE@";
 inline constexpr char OrganizationDomain[] = "@CARDSY_ORGANIZATION_DOMAIN@";
 inline constexpr char Homepage[] = "@CARDSY_HOMEPAGE@";
 

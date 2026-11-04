@@ -84,14 +84,9 @@ being committed. Derived IDs cannot drift independently of suit/rank.
 
 ## Historical behavioral traceability
 
-Reference: local `archive/grandmagames-web` at
-`f6023745bac9f4354ed3c44e88ef50bbbd255739`, inspected with `git show`.
-No historical source or assets were restored.
-
-The five old suites were `deck.test.ts`, `draw3.test.ts`, `moves.test.ts`,
-`rules.test.ts` and `scoring.test.ts` under `packages/card-engine/tests/`.
-The React reducer in `apps/web/src/hooks/useGameState.ts` supplied undo/new-game
-context. Classification covers behavioral groups rather than matching test counts.
+This table records comparisons made during native engine development.
+The native tests are authoritative; no external checkout is required.
+Classification covers behavioral groups rather than matching test counts.
 
 | Old behavioral area | Native status | Native evidence / decision |
 |---|---|---|
@@ -133,5 +128,6 @@ context. Classification covers behavioral groups rather than matching test count
 - `WinTest`: controlled full victory, invalid arrangements and win/undo transitions.
 
 Tests use full 52-card states, not partial boards mistaken for valid games.
-The existing GUI smoke test remains separate and unchanged. Licensing remains
-unresolved; this work does not authorize distribution or release.
+The GUI smoke test remains separate. Source licensing is defined in
+[the project license scope](../LICENSING.md); this behavior document does not
+declare a public release.

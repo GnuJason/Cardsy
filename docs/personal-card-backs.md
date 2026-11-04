@@ -94,4 +94,5 @@ guaranteed deletion is claimed.
 
 Tests generate synthetic images in temporary directories, including orientation
 and oversized-header fixtures. No personal photographs or binary image fixtures
-are committed. Project licensing remains unresolved for public distribution.
+are committed. Project licensing is defined in
+[the project license scope](../LICENSING.md), independently of user image rights.

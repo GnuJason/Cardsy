@@ -69,6 +69,7 @@ share/metainfo/io.github.gnujason.cardsy.metainfo.xml
 share/icons/hicolor/{16x16,48x48,256x256}/apps/io.github.gnujason.cardsy.png
 share/icons/hicolor/scalable/apps/io.github.gnujason.cardsy.svg
 share/licenses/io.github.gnujason.cardsy/ASSET-LICENSE
+share/licenses/io.github.gnujason.cardsy/COPYING
 ```
 
 The executable always installs; Linux desktop metadata/icon-theme files are
@@ -110,11 +111,14 @@ runtime/migration suites.
 
 ## Licensing and metadata validation
 
-**RELEASE BLOCKER: project software license unresolved.**
-No project license was invented. The metainfo deliberately omits
-`project_license`. New original icon artwork, desktop metadata and AppStream
-metadata are CC0-1.0 under [ASSET-LICENSE](../data/ASSET-LICENSE); that does not
-license the program.
+The software's owner-selected license is GPL-3.0-or-later, with the official
+text in [COPYING](../COPYING) and explicit [scope](../LICENSING.md).
+Metainfo `project_license` accurately reports that expression. Original icon
+artwork, desktop metadata and AppStream metadata independently remain CC0-1.0
+under [ASSET-LICENSE](../data/ASSET-LICENSE).
+
+The exact Linux payload is now nine files: the Phase 7 executable, desktop,
+metainfo, four icons and asset dedication, plus the official GPL COPYING file.
 
 Use the system validators:
 
@@ -125,5 +129,5 @@ appstreamcli validate --no-net --pedantic build/io.github.gnujason.cardsy.metain
 
 The development metainfo has no release history; report any corresponding
 pedantic hint rather than inventing a public release. Validator success does
-not resolve software licensing or establish Factory submission readiness.
+not establish Factory submission readiness or replace dedicated-machine QA.
 No RPM, OBS configuration or release archive is produced by this installation work.

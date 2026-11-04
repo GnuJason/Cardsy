@@ -14,3 +14,5 @@ is an artwork-maintenance step, not a build or runtime dependency.
 
 This original artwork is CC0-1.0 under [ASSET-LICENSE](../ASSET-LICENSE).
 That asset license does not resolve or imply a software license.
+Software and this provenance prose use GPL-3.0-or-later under
+[the project license scope](../../LICENSING.md).

@@ -3,7 +3,7 @@
 Run on the dedicated machine, not through assumed remote access. Record failures
 before changing packages or source. This is local development QA, not an RPM or
 Factory installation.
-Use this checklist once the reviewed Phase 7 revision is available in the
+Use this checklist once the reviewed Phase 8 revision is available in the
 checkout; the public main branch does not acquire uncommitted local work.
 
 ## 1. Environment and source
@@ -56,11 +56,13 @@ appstreamcli validate --no-net --pedantic \
   "$stage/usr/share/metainfo/io.github.gnujason.cardsy.metainfo.xml"
 ```
 
-- [ ] Compare all eight files with [installation contract](desktop-installation.md).
+- [ ] Compare all nine files with [installation contract](desktop-installation.md),
+      including the GPL COPYING file and separate CC0 asset dedication.
 - [ ] Confirm system libraries, no build-tree RPATH and no private developer paths.
 - [ ] No tests, private card back, user settings or temporary fixtures are staged.
 - [ ] Record validator hints; missing development release history is not fixed by
-      fabricating a release. Software licensing remains a distribution blocker.
+      fabricating a release. Verify `project_license=GPL-3.0-or-later` and
+      independent `metadata_license=CC0-1.0`.
 
 ## 4. Isolated desktop launch
 

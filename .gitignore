@@ -2,7 +2,7 @@
 /build-*/
 /CMakeUserPresets.json
 
-# Local leftovers from the archived web application's development environment.
+# Keep accidental dependency/build output out of source snapshots.
 node_modules/
 dist/
 .turbo/

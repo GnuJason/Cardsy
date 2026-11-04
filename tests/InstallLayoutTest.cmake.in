@@ -34,7 +34,8 @@ set(expected
     "@CMAKE_INSTALL_DATADIR@/icons/hicolor/16x16/apps/${application_id}.png"
     "@CMAKE_INSTALL_DATADIR@/icons/hicolor/48x48/apps/${application_id}.png"
     "@CMAKE_INSTALL_DATADIR@/icons/hicolor/256x256/apps/${application_id}.png"
-    "@CMAKE_INSTALL_DATADIR@/licenses/${application_id}/ASSET-LICENSE")
+    "@CMAKE_INSTALL_DATADIR@/licenses/${application_id}/ASSET-LICENSE"
+    "@CMAKE_INSTALL_DATADIR@/licenses/${application_id}/COPYING")
 list(SORT expected)
 
 foreach(prefix IN ITEMS "${stage}/usr" "${custom}")

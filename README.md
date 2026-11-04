@@ -46,6 +46,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ./build/cardsy
 ./build/cardsy --version
+./build/cardsy --help
 ```
 
 GUI tests use Qt's offscreen platform; engine tests need no GUI or display
@@ -71,6 +72,14 @@ Personalization now uses Qt's per-user application data location under
 safely when the new namespace is first initialized; installed files never
 contain user images or preferences.
 
-**RELEASE BLOCKER: project software license unresolved.**
-The newly created icon and desktop/AppStream metadata are CC0-1.0 only; that does
-not license the software. No RPM, public release or Factory availability is claimed.
+Authoritative upstream: <https://github.com/GnuJason/Cardsy>.
+
+## Licensing and release readiness
+
+Cardsy software, build/test files and project documentation use
+**GPL-3.0-or-later**; see [COPYING](COPYING) and [license scope](LICENSING.md).
+The original icon artwork and desktop/AppStream metadata independently use
+CC0-1.0. User photos are not project assets or distribution content.
+
+Dedicated Tumbleweed QA remains pending. No RPM, public release or Factory
+availability is claimed.

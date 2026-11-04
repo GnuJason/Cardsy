@@ -5,6 +5,7 @@ project(Cardsy VERSION 1.0.0 LANGUAGES CXX)
 set(CARDSY_APPLICATION_ID "io.github.gnujason.cardsy")
 set(CARDSY_DISPLAY_NAME "Cardsy")
 set(CARDSY_VERSION "${PROJECT_VERSION}-dev")
+set(CARDSY_SOFTWARE_LICENSE "GPL-3.0-or-later")
 set(CARDSY_ORGANIZATION_DOMAIN "gnujason.github.io")
 set(CARDSY_HOMEPAGE "https://github.com/GnuJason/Cardsy")
 
@@ -66,6 +67,8 @@ target_link_libraries(cardsy PRIVATE cardsy-ui)
 
 include(GNUInstallDirs)
 install(TARGETS cardsy RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES COPYING
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/${CARDSY_APPLICATION_ID}")
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     configure_file(data/cardsy.desktop.in "${CARDSY_APPLICATION_ID}.desktop" @ONLY)
     configure_file(data/cardsy.metainfo.xml.in "${CARDSY_APPLICATION_ID}.metainfo.xml" @ONLY)

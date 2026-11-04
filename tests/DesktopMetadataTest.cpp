@@ -40,13 +40,12 @@ private slots:
                  QString::fromLatin1(cardsy::build::ApplicationId) + QStringLiteral(".desktop"));
     }
 
-    void metainfoMatchesDesktopWithoutInventingSoftwareLicense()
+    void metainfoMatchesDesktopAndSelectedSoftwareLicense()
     {
         QFile file(QString::fromLocal8Bit(CARDSY_TEST_METAINFO));
         QVERIFY(file.open(QIODevice::ReadOnly));
         QXmlStreamReader reader(&file);
-        QString id, launchable, metadataLicense, name, homepage;
-        bool projectLicense = false;
+        QString id, launchable, metadataLicense, projectLicense, name, homepage;
         bool developer = false;
         bool desktopType = false;
         while (!reader.atEnd()) {
@@ -64,7 +63,7 @@ private slots:
             } else if (reader.name() == QStringLiteral("metadata_license")) {
                 metadataLicense = reader.readElementText();
             } else if (reader.name() == QStringLiteral("project_license")) {
-                projectLicense = true;
+                projectLicense = reader.readElementText();
             } else if (reader.name() == QStringLiteral("name") && name.isEmpty()) {
                 name = reader.readElementText();
             } else if (reader.name() == QStringLiteral("developer")) {
@@ -81,7 +80,8 @@ private slots:
         QCOMPARE(launchable, id + QStringLiteral(".desktop"));
         QCOMPARE(metadataLicense, QStringLiteral("CC0-1.0"));
         QCOMPARE(homepage, QString::fromLatin1(cardsy::build::Homepage));
-        QVERIFY(!projectLicense);
+        QCOMPARE(projectLicense, QString::fromLatin1(cardsy::build::SoftwareLicense));
+        QCOMPARE(projectLicense, QStringLiteral("GPL-3.0-or-later"));
     }
 };
 
