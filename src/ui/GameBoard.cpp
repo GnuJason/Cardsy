@@ -1,5 +1,6 @@
 #include "GameBoard.h"
 #include "BoardAccessibility.h"
+#include "CardBackPainting.h"
 
 #include <QAccessible>
 #include <QApplication>
@@ -10,7 +11,6 @@
 #include <QMouseEvent>
 #include <QMoveEvent>
 #include <QPainter>
-#include <QPainterPath>
 #include <QResizeEvent>
 #include <QScopedValueRollback>
 #include <QtMath>
@@ -68,39 +68,13 @@ QString cardName(const Card &card)
 
 void drawCard(QPainter &painter, QRectF rectangle, const Card &card, const QImage &back)
 {
-    painter.setPen(QPen(QColor(35, 40, 35), 1));
-    painter.setBrush(card.faceUp ? QColor(255, 253, 245) : QColor(35, 64, 112));
-    painter.drawRoundedRect(rectangle, 7, 7);
     if (!card.faceUp) {
-        if (!back.isNull()) {
-            painter.save();
-            QPainterPath clip;
-            clip.addRoundedRect(rectangle.adjusted(1, 1, -1, -1), 6, 6);
-            painter.setClipPath(clip);
-            painter.setRenderHint(QPainter::SmoothPixmapTransform);
-            const auto scale = std::max(rectangle.width() / back.width(),
-                                        rectangle.height() / back.height());
-            const QSizeF sourceSize(rectangle.width() / scale, rectangle.height() / scale);
-            painter.drawImage(rectangle, back,
-                               QRectF((back.width() - sourceSize.width()) / 2,
-                                       (back.height() - sourceSize.height()) / 2,
-                                       sourceSize.width(), sourceSize.height()));
-            painter.restore();
-            return;
-        }
-        const auto inner = rectangle.adjusted(6, 6, -6, -6);
-        painter.setPen(QPen(QColor(190, 210, 235), 1));
-        painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(inner, 4, 4);
-        painter.save();
-        painter.setClipRect(inner.adjusted(3, 3, -3, -3));
-        for (qreal offset = -inner.height(); offset < inner.width(); offset += 14) {
-            painter.drawLine(QPointF(inner.left() + offset, inner.bottom()),
-                              QPointF(inner.left() + offset + inner.height(), inner.top()));
-        }
-        painter.restore();
+        paintCardBack(painter, rectangle, back);
         return;
     }
+    painter.setPen(QPen(QColor(35, 40, 35), 1));
+    painter.setBrush(QColor(255, 253, 245));
+    painter.drawRoundedRect(rectangle, 7, 7);
     auto labelFont = painter.font();
     labelFont.setPixelSize(cardLabelPixelSize(rectangle.width()));
     labelFont.setBold(true);
@@ -307,6 +281,24 @@ void GameBoard::setCardBackImage(const QImage &image)
 {
     cardBackImage_ = image;
     update();
+}
+
+void GameBoard::setIndividualCardBack(CardId id, const QImage &image)
+{
+    const auto index = static_cast<unsigned>(id);
+    if (index >= individualCardBacks_.size()) {
+        qWarning("Cardsy rejected an invalid card-back identity.");
+        return;
+    }
+    individualCardBacks_[index] = image;
+    update();
+}
+
+const QImage &GameBoard::cardBackImage(CardId id) const
+{
+    const auto index = static_cast<unsigned>(id);
+    return index < individualCardBacks_.size() && !individualCardBacks_[index].isNull()
+        ? individualCardBacks_[index] : cardBackImage_;
 }
 
 void GameBoard::updateMinimumHeight()
@@ -720,7 +712,7 @@ void GameBoard::paintEvent(QPaintEvent *)
             if (draggedElement(element)) {
                 painter.setOpacity(0.25);
             }
-            drawCard(painter, element.rectangle, *card, cardBackImage_);
+            drawCard(painter, element.rectangle, *card, cardBackImage(card->id()));
             painter.restore();
         } else {
             painter.setBrush(QColor(20, 70, 45));
@@ -771,7 +763,7 @@ void GameBoard::paintEvent(QPaintEvent *)
                     translation = drag_->position - drag_->pointerOffset - element.rectangle.topLeft();
                 }
                 drawCard(painter, element.rectangle.translated(*translation),
-                          *cardFor(element), cardBackImage_);
+                          *cardFor(element), cardBackImage(cardFor(element)->id()));
             }
         }
         painter.restore();

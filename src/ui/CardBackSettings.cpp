@@ -43,7 +43,7 @@ CardBackResult failure(CardBackError error)
     return {error, CardBackSettings::tr("Unable to change the card back.")};
 }
 
-CardBackResult readImage(const QString &fileName, QImage &normalized, bool managed = false)
+CardBackResult decodeImage(const QString &fileName, QImage &normalized, bool managed)
 {
     QFileInfo info(fileName);
     if (fileName.isEmpty() || !info.isFile() || !info.isReadable()
@@ -123,6 +123,14 @@ CardBackResult readImage(const QString &fileName, QImage &normalized, bool manag
     return {};
 }
 
+}
+
+CardBackResult CardBackSettings::readImage(const QString &fileName, QImage &normalized, bool managed)
+{
+    if (QImageReader::allocationLimit() <= 0 || QImageReader::allocationLimit() > 64) {
+        QImageReader::setAllocationLimit(64);
+    }
+    return decodeImage(fileName, normalized, managed);
 }
 
 CardBackSettings::CardBackSettings(QObject *parent)

@@ -1,11 +1,14 @@
 #include "MainWindow.h"
 #include "CardBackSettings.h"
+#include "CardBackDialog.h"
+#include "IndividualCardBacks.h"
 #include "GameBoard.h"
 #include "app/ApplicationIdentity.h"
 
 #include <QAction>
 #include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QKeySequence>
 #include <QMenu>
 #include <QMenuBar>
@@ -37,6 +40,16 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     board_ = board;
     cardBackSettings_ = settings;
     board_->setCardBackImage(settings->image());
+    individualCardBacks_ = new cardsy::ui::IndividualCardBacks(
+        settings->managedPath().isEmpty() ? QString{} : QFileInfo(settings->managedPath()).path(), this);
+    for (unsigned index = 0; index < 52; ++index) {
+        const auto id = static_cast<cardsy::CardId>(index);
+        board_->setIndividualCardBack(id, individualCardBacks_->image(id));
+    }
+    connect(individualCardBacks_, &cardsy::ui::IndividualCardBacks::changed, board_,
+            [this](cardsy::CardId id) {
+        board_->setIndividualCardBack(id, individualCardBacks_->image(id));
+    });
     setWindowTitle(QString::fromLatin1(cardsy::build::DisplayName));
     setAccessibleName(tr("%1 Solitaire").arg(QString::fromLatin1(cardsy::build::DisplayName)));
     setMinimumSize(760, 600);
@@ -82,6 +95,20 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
         if (!result) {
             showStatusMessage(result.message);
         }
+    });
+    backs->addSeparator();
+    auto *manageBacks = backs->addAction(tr("&Custom Card Backs..."));
+    manageBacks->setObjectName(QStringLiteral("customCardBacksAction"));
+    connect(manageBacks, &QAction::triggered, this, [this] {
+        board_->cancelDrag();
+        if (!cardBackDialog_) {
+            cardBackDialog_ = new cardsy::ui::CardBackDialog(
+                *individualCardBacks_, *cardBackSettings_, this);
+            cardBackDialog_->setAttribute(Qt::WA_DeleteOnClose);
+        }
+        cardBackDialog_->show();
+        cardBackDialog_->raise();
+        cardBackDialog_->activateWindow();
     });
     connect(settings, &cardsy::ui::CardBackSettings::changed, this, [this] {
         board_->setCardBackImage(cardBackSettings_->image());

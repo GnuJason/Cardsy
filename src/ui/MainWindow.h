@@ -1,12 +1,15 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QPointer>
 
 #include <cstdint>
 
 class QAction;
 namespace cardsy::ui {
 class CardBackSettings;
+class CardBackDialog;
+class IndividualCardBacks;
 struct CardBackResult;
 class GameBoard;
 }
@@ -21,12 +24,15 @@ public:
 
     cardsy::ui::GameBoard *gameBoard() const { return board_; }
     cardsy::ui::CardBackSettings *cardBackSettings() const { return cardBackSettings_; }
+    cardsy::ui::IndividualCardBacks *individualCardBacks() const { return individualCardBacks_; }
     [[nodiscard]] cardsy::ui::CardBackResult installCardBack(const QString &fileName);
 
 private:
     cardsy::ui::GameBoard *board_ = nullptr;
     QAction *undoAction_ = nullptr;
     cardsy::ui::CardBackSettings *cardBackSettings_ = nullptr;
+    cardsy::ui::IndividualCardBacks *individualCardBacks_ = nullptr;
+    QPointer<cardsy::ui::CardBackDialog> cardBackDialog_;
 
     void initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSettings *settings);
     void choosePhoto();

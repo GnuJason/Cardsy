@@ -52,6 +52,13 @@ add_library(cardsy-ui STATIC
     src/ui/BoardAccessibility.h
     src/ui/CardBackSettings.cpp
     src/ui/CardBackSettings.h
+    src/ui/CardBackIdentity.h
+    src/ui/CardBackPainting.cpp
+    src/ui/CardBackPainting.h
+    src/ui/IndividualCardBacks.cpp
+    src/ui/IndividualCardBacks.h
+    src/ui/CardBackDialog.cpp
+    src/ui/CardBackDialog.h
     src/ui/BoardLayout.cpp
     src/ui/BoardLayout.h
     src/ui/GameBoard.cpp
@@ -102,6 +109,7 @@ if(BUILD_TESTING)
     )
 
     foreach(test_name IN ITEMS BoardLayoutTest GameBoardTest CardBackSettingsTest PersonalizationTest
+            IndividualCardBacksTest IndividualBackRenderingTest CardBackDialogTest
             DragInteractionTest KeyboardNavigationTest KeyboardGameplayTest BoardAccessibilityTest)
         add_executable(${test_name} tests/${test_name}.cpp)
         target_link_libraries(${test_name} PRIVATE cardsy-ui Qt6::Test)

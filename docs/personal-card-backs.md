@@ -1,10 +1,42 @@
 # Personal card backs
 
 Game > Card Back > Choose Photo... (normally Ctrl+O on Linux) opens a local Qt
-file picker. Choose one PNG or JPEG image; every hidden card uses it.
+file picker. Choose one PNG or JPEG image as the universal back for hidden cards
+without individual overrides.
 Game > Card Back > Use Default Card Back restores the generated native pattern.
 Canceling the picker changes nothing. Failed selections report a concise status
 message and retain the current back.
+
+## Individual images for all 52 cards
+
+Open **Game > Card Back > Custom Card Backs...**. The nonmodal manager has one
+tab per suit and thirteen entries per tab. Select an entry with the mouse or
+keyboard, then use **Choose Image...** or **Replace Image...**. The thumbnail
+and larger selected-card preview update immediately. Entries show Custom,
+Default, or Unavailable; failures are reported inside the manager.
+
+- **Reset This Card** removes only the selected assignment.
+- **Reset This Suit** asks before removing that suit's thirteen assignments.
+- **Reset All Card Backs** gives an explicit irreversible-reset warning before
+  removing all individual assignments.
+- Canceling the chooser or either confirmation changes nothing.
+
+The original source images, universal back, current game, undo history and other
+user data are untouched by these resets. Resetting the universal photo through
+**Use Default Card Back** does not remove individual overrides.
+
+An unassigned or unavailable individual image uses the existing universal back:
+the original generated pattern unless a universal photo is configured. To
+restore the original pattern everywhere, reset all individual backs and use
+**Use Default Card Back**.
+
+PNG and JPEG are supported when their Qt readers are installed. File contents,
+not extensions, determine validity. The same bounded validation, orientation,
+normalization and rounded clipping described below apply to individual images.
+No new libraries, Qt modules, codecs or packages are required. Tiny images may
+look soft after normalization; images of at least 600 x 840 are recommended.
+There is no background import queue: a single selection is processed
+synchronously with the existing input and allocation limits.
 
 Personalization never replaces the board or touches `cardsy-engine`. The current
 deal, seed, selection and undo history are unchanged. Undo only affects game
@@ -40,7 +72,7 @@ onto white. A fresh pixel image is created: source text/EXIF metadata is not
 copied. Tests verify source PNG text is absent and JPEG orientation is baked in.
 This is not a claim of forensic metadata erasure or secure deletion.
 
-One decoded image is cached outside painting. Painting reuses it with smooth
+The universal decoded image is cached outside painting. Painting reuses it with smooth
 scaling and rounded clipping; no per-card decoding or file access occurs.
 Tests exercise minimum/normal/large boards and 2x rendering.
 
@@ -80,6 +112,50 @@ the current customization remains active and the failure is reported. The
 user-selected source is never overwritten or deleted. Selecting the managed
 copy itself as a new source is rejected.
 
+### Individual storage and cache
+
+Strategy B (managed copies) extends the existing image-as-preference mechanism;
+no separate QSettings, JSON, or database mapping is introduced. Each existing
+numeric engine `CardId` maps through one canonical conversion to a readable
+rank/suit key: `AC` through `KC`, `AD` through `KD`, `AH` through `KH`, and `AS`
+through `KS`. Ten uses `10`; Jack, Queen and King use `J`, `Q`, `K`.
+Face-up state, shuffle position and pile location do not affect the key.
+
+Within `QStandardPaths::AppDataLocation`, individual managed copies live at
+`card-backs/<key>.png`. This reserved 52-name namespace is the persisted mapping;
+only these known paths are read or reset. Unknown files are ignored, never
+deleted. Source names and source paths are not persisted. The existing
+`card-back.png` and its development migration remain unchanged.
+
+Each import validates first and atomically saves a private normalized PNG with
+owner-only file permissions using `QSaveFile`, without direct-write fallback.
+The new subdirectory is owner-only. Existing directory permissions are respected.
+Failures retain the previous image and assignment. Managed directory/file
+symlinks are refused. Only a selected card's known regular private file can be
+removed on reset; no recursive removal, source deletion or directory cleanup
+occurs. Corrupt copies remain available for explicit replacement/reset.
+Suit/global resets are per-file operations, not cross-file transactions:
+if one removal fails, successful removals remain applied and an explicit
+partial-failure message identifies that some assignments were kept.
+
+At most 52 normalized images are cached (about 100 MiB of decoded pixels for
+a fully customized deck). Qt implicit image sharing avoids duplicating the
+cache in the board. Painting uses only cached pixels, with center-cover cropping,
+the same rounded clipping, border and smooth scaling as the universal back.
+Face-up painting, hidden-card state and move validation are unchanged.
+
+`QFileSystemWatcher` (already in Qt Core) notices managed-file removal,
+replacement or corruption and refreshes affected entries outside painting.
+Directory notifications compare metadata before decoding unchanged entries.
+Failures fall back without modal gameplay interruptions; the manager shows the
+unavailable state. Filesystem notifications depend on platform support; a
+restart revalidates every assignment if notifications are unavailable.
+Concurrent multi-instance editing is not synchronized transactionally.
+
+Everything stays in writable per-user data, never the installation directory.
+Linux/openSUSE desktop packaging and installed assets need no changes.
+Bulk import is not implemented.
+
 ## Startup and privacy
 
 A new settings object loads a valid normalized managed PNG. Missing copies
@@ -96,3 +172,29 @@ Tests generate synthetic images in temporary directories, including orientation
 and oversized-header fixtures. No personal photographs or binary image fixtures
 are committed. Project licensing is defined in
 [the project license scope](../LICENSING.md), independently of user image rights.
+
+## Validation and manual desktop checklist
+
+The normal CMake build and CTest command include `IndividualCardBacksTest`,
+`IndividualBackRenderingTest` and `CardBackDialogTest`. These cover all keys,
+all 52 independent assignments, reconstruction, scoped resets, validation and
+storage failures, symlinks, live file loss/corruption, cached repainting,
+unchanged faces/game state, menu entry, chooser selection/cancel/error feedback,
+confirmations and smaller-window layouts. Existing image-policy and gameplay
+tests remain in place.
+
+On the target Linux desktop, with a disposable user-data profile:
+
+- Launch, start a new game, draw/recycle, move/flip cards and undo normally.
+- Confirm the original default back with no assignments.
+- Assign different images to two hidden cards, including a path with spaces and
+  non-ASCII characters; confirm only those backs change.
+- Close/relaunch, confirm persistence, then replace one image and confirm its
+  thumbnail and board back change immediately.
+- Reset a card, cancel/accept a suit reset, cancel/accept reset-all; confirm
+  scope and universal-back preservation.
+- Move an original source image; confirm the managed copy still works. Remove
+  or corrupt a managed copy; confirm safe fallback without repeated dialogs.
+- Test the manager at smaller sizes and larger desktop fonts/display scaling,
+  keyboard navigation and a full 52-image deck; check responsiveness during
+  normal gameplay. Native Wayland/X11 visual QA is distinct from offscreen tests.

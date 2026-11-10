@@ -9,6 +9,7 @@
 #include <QWidget>
 
 #include <cstdint>
+#include <array>
 #include <optional>
 
 namespace cardsy::ui {
@@ -51,6 +52,8 @@ public:
     [[nodiscard]] MoveResult loadState(const GameState &state);
     void setCardBackImage(const QImage &image);
     const QImage &cardBackImage() const { return cardBackImage_; }
+    void setIndividualCardBack(CardId id, const QImage &image);
+    const QImage &cardBackImage(CardId id) const;
 
 public slots:
     void undo();
@@ -94,6 +97,7 @@ private:
     QString accessibleValue_;
     QString feedback_;
     QImage cardBackImage_;
+    std::array<QImage, 52> individualCardBacks_;
 
     void initialize();
     void updateMinimumHeight();

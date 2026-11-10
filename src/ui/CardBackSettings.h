@@ -36,6 +36,8 @@ public:
     QString managedPath() const;
     QString startupWarning() const { return startupWarning_; }
     static QString fileFilter();
+    [[nodiscard]] static CardBackResult readImage(const QString &fileName, QImage &normalized,
+                                                 bool managed = false);
 
     [[nodiscard]] CardBackResult installImage(const QString &fileName);
     [[nodiscard]] CardBackResult useDefault();

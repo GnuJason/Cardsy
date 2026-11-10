@@ -16,6 +16,8 @@ with Linux, macOS and Windows portability intended long term.
 - One user-selected personal photo card back, processed and stored locally.
   The private copy survives restarts; Use Default Card Back removes that copy
   without deleting the original or changing the current game.
+- Independent custom images for all 52 cards, managed by suit through
+  Game > Card Back > Custom Card Backs, with previews and scoped resets.
 - A UI-independent C++17 Klondike engine: dealing, legal moves, draw 1/draw 3,
   recycling, win detection, complete-state undo and invariant validation.
 - A C++ / Qt 6 Widgets / CMake foundation with native engine, geometry and GUI
@@ -30,7 +32,7 @@ See [personal card-back policy](docs/personal-card-backs.md) for accepted images
 resource limits and private storage behavior.
 
 Richer per-card screen-reader semantics, broader preferences and distribution
-packages are not implemented. The 52-photo deck remains deferred.
+packages are not implemented.
 
 ## Build and run
 
