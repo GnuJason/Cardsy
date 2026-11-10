@@ -183,7 +183,8 @@ private slots:
         reset->trigger();
         QVERIFY(window.gameBoard()->cardBackImage().isNull());
         QVERIFY(window.gameBoard()->gameState() == state);
-        QVERIFY(!QFileInfo::exists(restarted.managedPath()));
+        QVERIFY(QFileInfo::exists(restarted.managedPath()));
+        QVERIFY(restarted.isCustom());
     }
 
     void filePickerCancelChangesNothing()

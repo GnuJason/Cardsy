@@ -1,46 +1,44 @@
 #pragma once
 
-#include "engine/Card.h"
+#include "CardBackCollection.h"
 
 #include <QDialog>
 
-#include <array>
-
+class QComboBox;
 class QLabel;
 class QListWidget;
 class QPushButton;
-class QTabWidget;
+class QStackedWidget;
 
 namespace cardsy::ui {
-
-class CardBackSettings;
-struct CardBackResult;
-class IndividualCardBacks;
 
 class CardBackDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    CardBackDialog(IndividualCardBacks &backs, CardBackSettings &defaults,
-                   QWidget *parent = nullptr);
+    CardBackDialog(CardBackCollection &backs, CardBackSettings &single, QWidget *parent = nullptr);
 
 private:
-    IndividualCardBacks &backs_;
-    CardBackSettings &defaults_;
-    QTabWidget *tabs_;
-    std::array<QListWidget *, 4> lists_{};
+    CardBackCollection &backs_;
+    CardBackSettings &single_;
+    QComboBox *mode_;
+    QStackedWidget *sections_;
+    QListWidget *list_;
     QLabel *preview_;
-    QLabel *selection_;
+    QLabel *count_;
     QLabel *feedback_;
     QPushButton *choose_;
-    QPushButton *reset_;
+    QPushButton *removeSingle_;
+    QPushButton *remove_;
+    QPushButton *clear_;
 
-    CardId selectedId() const;
-    void refreshCard(CardId id);
-    void refreshSelection();
+    void refreshMode();
+    void refreshCollection();
+    void refreshSingle();
     void showResult(const CardBackResult &result);
-    void chooseImage();
+    void chooseSingle();
+    void addImages();
 };
 
 }

@@ -110,8 +110,12 @@ export PATH="$stage/usr/bin:$PATH"
 - [ ] Choose that file; all hidden cards change without altering the current deal.
 - [ ] New Game retains the back; Undo remains game-only.
 - [ ] Close, rename the source test file, restart; customization persists.
-- [ ] Use Default removes only `$XDG_DATA_HOME/io.github.gnujason.cardsy/card-back.png`,
-      leaves the source test file intact and does not reset the game.
+- [ ] Use Default keeps the single managed image and collection, leaves source
+      files intact and does not reset the game.
+- [ ] Custom Card Backs supports multi-image import, confirmed collection clear
+      and all three modes. Collection changes apply on the next New Game;
+      active-game images remain fixed. Follow the
+      [collection checklist](personal-card-backs.md#validation-and-native-desktop-checklist).
 - [ ] Repeat startup/gameplay/personalization offline.
 - [ ] If a screen reader is already available, record actual behavior separately
       from [the tested Qt baseline](accessibility.md); do not claim untested support.

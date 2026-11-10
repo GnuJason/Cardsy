@@ -1,7 +1,7 @@
 #include "MainWindow.h"
 #include "CardBackSettings.h"
 #include "CardBackDialog.h"
-#include "IndividualCardBacks.h"
+#include "CardBackCollection.h"
 #include "GameBoard.h"
 #include "app/ApplicationIdentity.h"
 
@@ -40,16 +40,9 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     board_ = board;
     cardBackSettings_ = settings;
     board_->setCardBackImage(settings->image());
-    individualCardBacks_ = new cardsy::ui::IndividualCardBacks(
+    cardBackCollection_ = new cardsy::ui::CardBackCollection(
         settings->managedPath().isEmpty() ? QString{} : QFileInfo(settings->managedPath()).path(), this);
-    for (unsigned index = 0; index < 52; ++index) {
-        const auto id = static_cast<cardsy::CardId>(index);
-        board_->setIndividualCardBack(id, individualCardBacks_->image(id));
-    }
-    connect(individualCardBacks_, &cardsy::ui::IndividualCardBacks::changed, board_,
-            [this](cardsy::CardId id) {
-        board_->setIndividualCardBack(id, individualCardBacks_->image(id));
-    });
+    board_->setCardBackCollection(cardBackCollection_);
     setWindowTitle(QString::fromLatin1(cardsy::build::DisplayName));
     setAccessibleName(tr("%1 Solitaire").arg(QString::fromLatin1(cardsy::build::DisplayName)));
     setMinimumSize(760, 600);
@@ -91,7 +84,7 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     auto *defaultBackAction = backs->addAction(tr("Use &Default Card Back"));
     defaultBackAction->setObjectName(QStringLiteral("defaultCardBackAction"));
     connect(defaultBackAction, &QAction::triggered, this, [this] {
-        const auto result = cardBackSettings_->useDefault();
+        const auto result = cardBackCollection_->setMode(cardsy::ui::CardBackMode::Default);
         if (!result) {
             showStatusMessage(result.message);
         }
@@ -103,7 +96,7 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
         board_->cancelDrag();
         if (!cardBackDialog_) {
             cardBackDialog_ = new cardsy::ui::CardBackDialog(
-                *individualCardBacks_, *cardBackSettings_, this);
+                *cardBackCollection_, *cardBackSettings_, this);
             cardBackDialog_->setAttribute(Qt::WA_DeleteOnClose);
         }
         cardBackDialog_->show();
@@ -112,7 +105,9 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
     });
     connect(settings, &cardsy::ui::CardBackSettings::changed, this, [this] {
         board_->setCardBackImage(cardBackSettings_->image());
-        showStatusMessage(cardBackSettings_->isCustom()
+        const auto result = cardBackCollection_->setMode(cardBackSettings_->isCustom()
+            ? cardsy::ui::CardBackMode::SingleImage : cardsy::ui::CardBackMode::Default);
+        showStatusMessage(!result ? result.message : cardBackSettings_->isCustom()
             ? tr("Personal photo card back applied locally.")
             : tr("Using the default card back."));
     });
@@ -126,8 +121,9 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
 
     statusBar()->setSizeGripEnabled(false);
     statusBar()->setAccessibleName(tr("Game status"));
-    showStatusMessage(settings->startupWarning().isEmpty()
-        ? board_->feedback() : settings->startupWarning());
+    const auto warnings = (settings->startupWarning() + QLatin1Char(' ')
+        + cardBackCollection_->startupWarning()).trimmed();
+    showStatusMessage(warnings.isEmpty() ? board_->feedback() : warnings);
     connect(board_, &cardsy::ui::GameBoard::feedbackChanged, this, [this](const QString &message) {
         showStatusMessage(message);
     });
@@ -139,7 +135,10 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
 
 cardsy::ui::CardBackResult MainWindow::installCardBack(const QString &fileName)
 {
-    const auto result = cardBackSettings_->installImage(fileName);
+    auto result = cardBackSettings_->installImage(fileName);
+    if (result) {
+        result = cardBackCollection_->setMode(cardsy::ui::CardBackMode::SingleImage);
+    }
     if (!result) {
         showStatusMessage(result.message);
     }

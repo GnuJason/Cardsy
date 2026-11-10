@@ -283,22 +283,43 @@ void GameBoard::setCardBackImage(const QImage &image)
     update();
 }
 
-void GameBoard::setIndividualCardBack(CardId id, const QImage &image)
+void GameBoard::setCardBackCollection(CardBackCollection *collection)
 {
-    const auto index = static_cast<unsigned>(id);
-    if (index >= individualCardBacks_.size()) {
-        qWarning("Cardsy rejected an invalid card-back identity.");
-        return;
+    if (collection_) {
+        disconnect(collection_, nullptr, this, nullptr);
     }
-    individualCardBacks_[index] = image;
+    collection_ = collection;
+    if (collection_) {
+        connect(collection_, &CardBackCollection::modeChanged, this, [this] { update(); });
+    }
+    randomizeCardBacks();
     update();
+}
+
+void GameBoard::randomizeCardBacks()
+{
+    gameCardBacks_ = {};
+    if (collection_) {
+        gameCardBacks_ = collection_->beginGame(*QRandomGenerator::global());
+    }
+    emit cardBacksRandomized();
+}
+
+const QImage &GameBoard::cardBackImage() const
+{
+    static const QImage empty;
+    return !collection_ || collection_->mode() == CardBackMode::SingleImage
+        ? cardBackImage_ : empty;
 }
 
 const QImage &GameBoard::cardBackImage(CardId id) const
 {
+    if (!collection_ || collection_->mode() != CardBackMode::RandomCollection) {
+        return cardBackImage();
+    }
+    static const QImage empty;
     const auto index = static_cast<unsigned>(id);
-    return index < individualCardBacks_.size() && !individualCardBacks_[index].isNull()
-        ? individualCardBacks_[index] : cardBackImage_;
+    return index < gameCardBacks_.images.size() ? gameCardBacks_.images[index] : empty;
 }
 
 void GameBoard::updateMinimumHeight()
@@ -354,6 +375,9 @@ void GameBoard::newGame()
 {
     cancelDrag();
     const auto result = game_.newGame(game_.state().config);
+    if (result) {
+        randomizeCardBacks();
+    }
     finish(result, BoardFocus{});
     requestFocusVisibility();
 }

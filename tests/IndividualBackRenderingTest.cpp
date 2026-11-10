@@ -1,9 +1,11 @@
 #include "BoardTestSupport.h"
 #include "ImageTestSupport.h"
+#include "ui/CardBackDialog.h"
 #include "ui/GameBoard.h"
-#include "ui/IndividualCardBacks.h"
 #include "ui/MainWindow.h"
 
+#include <QAction>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -24,121 +26,168 @@ class IndividualBackRenderingTest : public QObject
         return image;
     }
 
+    static void clickStock(GameBoard &board)
+    {
+        const auto layout = board.boardLayout();
+        QTest::mouseClick(&board, Qt::LeftButton, Qt::NoModifier,
+                          exposedPoint(layout, topElement(layout, PileType::Stock)));
+    }
+
 private slots:
-    void onlyAssignedHiddenCardsChangeAndGameRemainsUnchanged()
+    void modesChangeOnlyHiddenRenderingAndPreserveGameplay()
     {
         QTemporaryDir directory;
-        CardBackSettings defaults(directory.path());
-        MainWindow window(defaults, 42);
-        window.show();
-        QVERIFY(QTest::qWaitForWindowExposed(&window));
-        auto &board = *window.gameBoard();
-        auto &backs = *window.individualCardBacks();
-        const auto state = board.gameState();
-        const auto before = render(board);
-        const auto id = state.stock.back().id();
-        const auto otherId = state.tableau[1].front().id();
         const auto source = directory.filePath(QStringLiteral("source.png"));
         QImage solid({100, 140}, QImage::Format_RGB32);
         solid.fill(Qt::magenta);
         writeBytes(source, encodeImage(solid));
-        QVERIFY(backs.assign(id, source));
-        solid.fill(Qt::cyan);
-        writeBytes(source, encodeImage(solid));
-        QVERIFY(backs.assign(otherId, source));
-        // Assign every face-up card too: their faces must not change.
-        for (const auto &pile : state.tableau) {
-            QVERIFY(backs.assign(pile.back().id(), source));
-        }
-        const auto after = render(board);
+        CardBackSettings single(directory.filePath(QStringLiteral("private")));
+        MainWindow window(single, 42);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto &board = *window.gameBoard();
+        auto &backs = *window.cardBackCollection();
+        const auto state = board.gameState();
+        const auto before = render(board);
+        QCOMPARE(backs.importImages({source}).imported, 1);
+        QVERIFY(backs.setMode(CardBackMode::RandomCollection));
+        // Imports affect the next deal, never fill previously unassigned cards mid-game.
+        QCOMPARE(render(board), before);
+        board.newGame();
+        const auto newState = board.gameState();
+        QVERIFY(!board.canUndo());
+        const auto withCollection = render(board);
+        QVERIFY(backs.setMode(CardBackMode::Default));
+        const auto defaultRender = render(board);
         const auto layout = board.boardLayout();
         for (const auto &element : layout.elements) {
             if (!element.cardIndex) {
                 continue;
             }
             const auto &card = element.pile == PileType::Stock
-                ? state.stock[*element.cardIndex]
-                : state.tableau[element.pileIndex][*element.cardIndex];
-            const auto point = exposedPoint(layout, element);
-            if (!card.faceUp && (card.id() == id || card.id() == otherId)) {
-                QCOMPARE(after.pixelColor(point), QColor(card.id() == id ? Qt::magenta : Qt::cyan));
-            } else if (card.faceUp) {
+                ? newState.stock[*element.cardIndex]
+                : newState.tableau[element.pileIndex][*element.cardIndex];
+            if (card.faceUp) {
                 const auto area = element.rectangle.toAlignedRect().adjusted(3, 3, -3, -3);
-                QCOMPARE(after.copy(area), before.copy(area));
+                QCOMPARE(withCollection.copy(area), defaultRender.copy(area));
             } else {
-                QCOMPARE(after.pixelColor(point), before.pixelColor(point));
+                QCOMPARE(withCollection.pixelColor(exposedPoint(layout, element)), QColor(Qt::magenta));
             }
         }
-        QVERIFY(board.gameState() == state);
-        QVERIFY(!board.canUndo());
-        for (const auto size : {QSize(760, 600), QSize(1440, 1000)}) {
-            window.resize(size);
-            QCoreApplication::processEvents();
-            const auto highDpi = render(board, 2);
-            const auto center = topElement(board.boardLayout(), PileType::Stock).rectangle.center();
-            QCOMPARE(highDpi.pixelColor((center * 2).toPoint()), QColor(Qt::magenta));
+        QVERIFY(board.gameState() == newState);
+        QVERIFY(window.installCardBack(source));
+        QCOMPARE(backs.mode(), CardBackMode::SingleImage);
+        for (unsigned index = 0; index < 52; ++index) {
+            QCOMPARE(board.cardBackImage(static_cast<CardId>(index)), single.image());
         }
-        QVERIFY(backs.resetAll());
-        window.resize(1000, 760);
-        QCoreApplication::processEvents();
-        QCOMPARE(render(board), before);
+        window.findChild<QAction *>(QStringLiteral("defaultCardBackAction"))->trigger();
+        QVERIFY(board.cardBackImage().isNull());
+        QVERIFY(single.isCustom());
+        QVERIFY(QFileInfo::exists(single.managedPath()));
+        QVERIFY(board.gameState() == newState);
+        QVERIFY(state.shuffleSeed == 42U);
     }
 
-    void repaintUsesCacheAndFileLossUpdatesBoardWithoutRestart()
+    void assignmentsStayFixedAcrossMovesUndoResizeSettingsAndRemoval()
     {
         QTemporaryDir directory;
-        CardBackSettings defaults(directory.path());
-        MainWindow window(defaults, 42);
-        auto &board = *window.gameBoard();
-        auto &backs = *window.individualCardBacks();
-        const auto id = board.gameState().stock.back().id();
         const auto source = directory.filePath(QStringLiteral("source.png"));
         writeBytes(source, encodeImage(syntheticImage()));
-        QVERIFY(backs.assign(id, source));
-        QCoreApplication::processEvents();
-        const auto cached = board.cardBackImage(id).cacheKey();
-        QVERIFY(QFile::remove(source));
-        QVERIFY(QFile::remove(backs.managedPath(id)));
-        // No event delivery: repaints must still use decoded pixels, not read the file.
-        for (int repeat = 0; repeat < 10; ++repeat) {
-            render(board);
-            QCOMPARE(board.cardBackImage(id).cacheKey(), cached);
-        }
-        QTRY_VERIFY(board.cardBackImage(id).isNull());
+        CardBackSettings single(directory.filePath(QStringLiteral("private")));
+        MainWindow window(single, 42);
+        auto &board = *window.gameBoard();
+        auto &backs = *window.cardBackCollection();
+        QCOMPARE(backs.importImages({source}).imported, 1);
+        QVERIFY(backs.setMode(CardBackMode::RandomCollection));
+        QSignalSpy randomized(&board, &GameBoard::cardBacksRandomized);
+        board.newGame();
+        QCOMPARE(randomized.count(), 1);
         const auto initial = board.gameState();
-        const auto layout = board.boardLayout();
-        QTest::mouseClick(&board, Qt::LeftButton, Qt::NoModifier,
-                          exposedPoint(layout, topElement(layout, PileType::Stock)));
+        const auto ids = board.gameCardBacks().ids;
+        const auto key = board.gameCardBacks().images[0].cacheKey();
+        clickStock(board);
         QVERIFY(board.canUndo());
+        QCOMPARE(board.gameCardBacks().ids, ids);
         board.undo();
         QVERIFY(board.gameState() == initial);
+        QCOMPARE(board.gameCardBacks().ids, ids);
+        window.findChild<QAction *>(QStringLiteral("customCardBacksAction"))->trigger();
+        window.findChild<CardBackDialog *>()->close();
+        for (const auto size : {QSize(760, 600), QSize(1440, 1000)}) {
+            board.resize(size);
+            render(board, 2);
+            QCOMPARE(board.gameCardBacks().ids, ids);
+        }
+        const auto managed = backs.managedPath(backs.items()[0].id);
+        QVERIFY(QFile::remove(managed));
+        QCoreApplication::processEvents();
+        // Even external deletion cannot invalidate the active game's shared decoded pixels.
+        for (int repeat = 0; repeat < 10; ++repeat) {
+            render(board);
+            QCOMPARE(board.gameCardBacks().images[0].cacheKey(), key);
+        }
+        QVERIFY(backs.clear());
+        QCOMPARE(board.gameCardBacks().images[0].cacheKey(), key);
+        QCOMPARE(board.gameCardBacks().ids, ids);
+        QCOMPARE(randomized.count(), 1);
+        board.newGame();
+        QCOMPARE(randomized.count(), 2);
+        for (const auto &image : board.gameCardBacks().images) {
+            QVERIFY(image.isNull());
+        }
+        QVERIFY(!board.canUndo());
     }
 
-    void universalBackRemainsFallbackAndUndoDoesNotUndoAssignments()
+    void startupBuildsMappingAndRandomizationDoesNotChangeEngineState()
     {
         QTemporaryDir directory;
-        CardBackSettings defaults(directory.path());
-        MainWindow window(defaults, 42);
-        auto &board = *window.gameBoard();
         const auto source = directory.filePath(QStringLiteral("source.png"));
         writeBytes(source, encodeImage(syntheticImage()));
-        QVERIFY(defaults.installImage(source));
-        const auto id = board.gameState().stock.back().id();
-        QCOMPARE(board.cardBackImage(id), defaults.image());
-        const auto layout = board.boardLayout();
-        QTest::mouseClick(&board, Qt::LeftButton, Qt::NoModifier,
-                          exposedPoint(layout, topElement(layout, PileType::Stock)));
-        const auto drawn = board.gameState();
-        QVERIFY(window.individualCardBacks()->assign(id, source));
-        QVERIFY(board.gameState() == drawn);
-        board.undo();
-        QVERIFY(window.individualCardBacks()->hasAssignment(id));
+        const auto data = directory.filePath(QStringLiteral("private"));
+        {
+            CardBackCollection backs(data);
+            QCOMPARE(backs.importImages({source}).imported, 1);
+            QVERIFY(backs.setMode(CardBackMode::RandomCollection));
+        }
+        CardBackSettings single(data);
+        MainWindow window(single, 42);
+        GameBoard control(42);
+        auto &board = *window.gameBoard();
+        QVERIFY(board.gameState() == control.gameState());
+        QVERIFY(!board.cardBackImage(board.gameState().stock.back().id()).isNull());
+        const auto state = board.gameState();
+        QSignalSpy changed(&board, &GameBoard::stateChanged);
+        QVERIFY(window.cardBackCollection()->setMode(CardBackMode::Default));
+        QVERIFY(window.cardBackCollection()->setMode(CardBackMode::RandomCollection));
+        QVERIFY(board.gameState() == state);
+        QCOMPARE(changed.count(), 0);
+    }
+
+    void removingActiveManagedImageKeepsPixelsUntilMenuStartsNextGame()
+    {
+        QTemporaryDir directory;
+        const auto source = directory.filePath(QStringLiteral("source.png"));
+        writeBytes(source, encodeImage(syntheticImage()));
+        CardBackSettings single(directory.filePath(QStringLiteral("private")));
+        MainWindow window(single, 42);
+        auto &board = *window.gameBoard();
+        auto &backs = *window.cardBackCollection();
+        QCOMPARE(backs.importImages({source}).imported, 1);
+        QVERIFY(backs.setMode(CardBackMode::RandomCollection));
         board.newGame();
-        QVERIFY(window.individualCardBacks()->hasAssignment(id));
-        QVERIFY(window.individualCardBacks()->reset(id));
-        QCOMPARE(board.cardBackImage(id), defaults.image());
-        QVERIFY(defaults.useDefault());
-        QVERIFY(board.cardBackImage(id).isNull());
+        const auto id = backs.items()[0].id;
+        const auto path = backs.managedPath(id);
+        const auto key = board.gameCardBacks().images[0].cacheKey();
+        const auto state = board.gameState();
+        QVERIFY(backs.removeImages({id}));
+        QVERIFY(!QFileInfo::exists(path));
+        QCOMPARE(board.gameCardBacks().images[0].cacheKey(), key);
+        QVERIFY(board.gameState() == state);
+        QSignalSpy randomized(&board, &GameBoard::cardBacksRandomized);
+        window.findChild<QAction *>(QStringLiteral("newGameAction"))->trigger();
+        QCOMPARE(randomized.count(), 1);
+        QVERIFY(board.gameCardBacks().images[0].isNull());
+        QVERIFY(board.cardBackImage(board.gameState().stock.back().id()).isNull());
     }
 };
 

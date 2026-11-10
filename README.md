@@ -13,11 +13,11 @@ with Linux, macOS and Windows portability intended long term.
 - Keyboard board navigation with arrows, Enter/Space selection and activation,
   visible logical focus and basic Qt accessibility context.
 - Native New Game, Undo and Quit actions, plus small win/status feedback.
-- One user-selected personal photo card back, processed and stored locally.
-  The private copy survives restarts; Use Default Card Back removes that copy
-  without deleting the original or changing the current game.
-- Independent custom images for all 52 cards, managed by suit through
-  Game > Card Back > Custom Card Backs, with previews and scoped resets.
+- Default, Single Image and Random Image Collection card-back modes, stored
+  locally. Use Default keeps imported images without changing gameplay.
+- Multi-image import and a thumbnail collection through Game > Card Back >
+  Custom Card Backs. Backs are randomized once per game, not permanently tied
+  to ranks or suits; legacy images are safely copied into the collection.
 - A UI-independent C++17 Klondike engine: dealing, legal moves, draw 1/draw 3,
   recycling, win detection, complete-state undo and invariant validation.
 - A C++ / Qt 6 Widgets / CMake foundation with native engine, geometry and GUI

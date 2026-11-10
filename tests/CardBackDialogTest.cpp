@@ -1,10 +1,9 @@
 #include "ImageTestSupport.h"
 #include "ui/CardBackDialog.h"
-#include "ui/CardBackIdentity.h"
-#include "ui/IndividualCardBacks.h"
 #include "ui/MainWindow.h"
 
 #include <QAction>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QFileSystemModel>
 #include <QLabel>
@@ -12,13 +11,11 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QSet>
-#include <QTabWidget>
+#include <QStackedWidget>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTimer>
 
-using namespace cardsy;
 using namespace cardsy::ui;
 using namespace cardsy::ui::test;
 
@@ -47,151 +44,151 @@ private slots:
         QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
     }
 
-    void menuOpensOneResponsiveManagerWithExactly52Entries()
+    void menuOpensOneResponsiveCollectionManager()
     {
         QTemporaryDir directory;
-        CardBackSettings defaults(directory.path());
-        MainWindow window(defaults, 42);
+        CardBackSettings single(directory.path());
+        MainWindow window(single, 42);
         auto *action = window.findChild<QAction *>(QStringLiteral("customCardBacksAction"));
-        QVERIFY(action);
         action->trigger();
         action->trigger();
         const auto dialogs = window.findChildren<CardBackDialog *>();
         QCOMPARE(dialogs.size(), 1);
         auto *dialog = dialogs.front();
         QVERIFY(QTest::qWaitForWindowExposed(dialog));
-        auto *tabs = dialog->findChild<QTabWidget *>();
-        QCOMPARE(tabs->count(), 4);
-        QSet<unsigned> ids;
-        for (int suit = 0; suit < 4; ++suit) {
-            auto *list = qobject_cast<QListWidget *>(tabs->widget(suit));
-            QVERIFY(list);
-            QCOMPARE(list->count(), 13);
-            for (int rank = 0; rank < 13; ++rank) {
-                const auto *item = list->item(rank);
-                const auto id = item->data(Qt::UserRole).toUInt();
-                ids.insert(id);
-                QVERIFY(item->text().contains(cardBackLabel(static_cast<CardId>(id))));
-                QVERIFY(item->text().contains(QStringLiteral("Default")));
-                QVERIFY(!item->icon().isNull());
-            }
-        }
-        QCOMPARE(ids.size(), 52);
+        auto *mode = dialog->findChild<QComboBox *>(QStringLiteral("cardBackMode"));
+        QCOMPARE(mode->count(), 3);
+        mode->setCurrentIndex(2);
+        QCOMPARE(window.cardBackCollection()->mode(), CardBackMode::RandomCollection);
+        QCOMPARE(dialog->findChild<QStackedWidget *>()->currentIndex(), 2);
+        auto *list = dialog->findChild<QListWidget *>();
+        QCOMPARE(list->count(), 0);
+        QCOMPARE(list->selectionMode(), QAbstractItemView::ExtendedSelection);
+        QVERIFY(dialog->findChild<QLabel *>(QStringLiteral("collectionImageCount"))
+                    ->text().contains(QStringLiteral("No images")));
         dialog->resize(520, 520);
         QCoreApplication::processEvents();
         QVERIFY(dialog->width() <= 760);
         QVERIFY(dialog->height() <= 650);
-        QVERIFY(dialog->rect().contains(dialog->findChild<QPushButton *>(
-            QStringLiteral("chooseIndividualImage"))->geometry().center()));
+        auto *add = dialog->findChild<QPushButton *>(QStringLiteral("addCollectionImages"));
+        const auto position = add->mapTo(dialog, add->rect().center());
+        QVERIFY(dialog->rect().contains(position));
+        QVERIFY(add->isVisible());
+        mode->setCurrentIndex(1);
+        QVERIFY(dialog->findChild<QPushButton *>(QStringLiteral("chooseSingleImage"))->isVisible());
         dialog->close();
     }
 
-    void cancelPickerAndConfirmationsKeepAssignmentsThenResetsWork()
+    void chooserSupportsMultipleFilesCancelSummaryAndRemoval()
     {
         QTemporaryDir directory;
-        const auto source = directory.filePath(QStringLiteral("source.png"));
-        writeBytes(source, encodeImage(syntheticImage()));
-        CardBackSettings defaults(directory.path());
-        IndividualCardBacks backs(directory.path());
-        QVERIFY(backs.assign(static_cast<CardId>(0), source));
-        QVERIFY(backs.assign(static_cast<CardId>(1), source));
-        QVERIFY(backs.assign(static_cast<CardId>(13), source));
-        CardBackDialog dialog(backs, defaults);
+        QStringList paths;
+        for (int index = 0; index < 2; ++index) {
+            const auto path = directory.filePath(QStringLiteral("source%1.png").arg(index));
+            QImage image({10, 14}, QImage::Format_RGB32);
+            image.fill(index == 0 ? Qt::magenta : Qt::cyan);
+            writeBytes(path, encodeImage(image));
+            paths << path;
+        }
+        const auto bad = directory.filePath(QStringLiteral("bad.png"));
+        writeBytes(bad, "invalid");
+        CardBackSettings single(directory.filePath(QStringLiteral("private")));
+        CardBackCollection backs(QFileInfo(single.managedPath()).path());
+        QVERIFY(backs.setMode(CardBackMode::RandomCollection));
+        CardBackDialog dialog(backs, single);
         dialog.show();
-        QVERIFY(QTest::qWaitForWindowExposed(&dialog));
-        auto *choose = dialog.findChild<QPushButton *>(QStringLiteral("chooseIndividualImage"));
-        QCOMPARE(choose->text(), QStringLiteral("Replace Image..."));
-        const auto bytes = readBytes(backs.managedPath(static_cast<CardId>(0)));
+        auto *add = dialog.findChild<QPushButton *>(QStringLiteral("addCollectionImages"));
         bool sawPicker = false;
+        bool multi = false;
         QTimer timer;
         connect(&timer, &QTimer::timeout, &dialog, [&] {
             if (auto *picker = qobject_cast<QFileDialog *>(QApplication::activeModalWidget())) {
                 sawPicker = true;
+                multi = picker->fileMode() == QFileDialog::ExistingFiles;
                 picker->reject();
             }
         });
         timer.start(10);
-        choose->click();
+        add->click();
         timer.stop();
         QVERIFY(sawPicker);
-        QCOMPARE(readBytes(backs.managedPath(static_cast<CardId>(0))), bytes);
-        auto *resetSuit = dialog.findChild<QPushButton *>(QStringLiteral("resetSuitImages"));
-        auto *resetAll = dialog.findChild<QPushButton *>(QStringLiteral("resetAllImages"));
-        QVERIFY(confirm(resetSuit, QMessageBox::Cancel));
-        QVERIFY(backs.hasAssignment(static_cast<CardId>(0)));
-        QVERIFY(confirm(resetAll, QMessageBox::Cancel));
-        QVERIFY(backs.hasAssignment(static_cast<CardId>(13)));
-        dialog.findChild<QPushButton *>(QStringLiteral("resetIndividualImage"))->click();
-        QVERIFY(!backs.hasAssignment(static_cast<CardId>(0)));
-        QVERIFY(backs.hasAssignment(static_cast<CardId>(1)));
-        QCOMPARE(choose->text(), QStringLiteral("Choose Image..."));
-        QVERIFY(confirm(resetSuit, QMessageBox::Yes));
-        QVERIFY(!backs.hasAssignment(static_cast<CardId>(1)));
-        QVERIFY(backs.hasAssignment(static_cast<CardId>(13)));
-        QVERIFY(confirm(resetAll, QMessageBox::Yes));
-        QVERIFY(!backs.hasAssignment(static_cast<CardId>(13)));
-        QVERIFY(QFileInfo::exists(source));
+        QVERIFY(multi);
+        QVERIFY(backs.items().isEmpty());
+        QCOMPARE(backs.mode(), CardBackMode::RandomCollection);
+        bool selected = false;
+        QTimer acceptTimer;
+        connect(&acceptTimer, &QTimer::timeout, &dialog, [&] {
+            if (auto *picker = qobject_cast<QFileDialog *>(QApplication::activeModalWidget())) {
+                picker->setDirectory(directory.path());
+                auto *model = picker->findChild<QFileSystemModel *>();
+                auto *edit = picker->findChild<QLineEdit *>(QStringLiteral("fileNameEdit"));
+                if (model && edit && model->index(paths[1]).isValid()) {
+                    selected = true;
+                    acceptTimer.stop();
+                    edit->setText(QStringLiteral("\"%1\" \"%2\" \"%3\"")
+                                      .arg(paths[0], paths[1], bad));
+                    QMetaObject::invokeMethod(picker, "accept", Qt::QueuedConnection);
+                }
+            }
+        });
+        QTimer timeout;
+        timeout.setSingleShot(true);
+        connect(&timeout, &QTimer::timeout, &dialog, [&] {
+            if (auto *picker = qobject_cast<QFileDialog *>(QApplication::activeModalWidget())) {
+                picker->reject();
+            }
+        });
+        timeout.start(5000);
+        acceptTimer.start(10);
+        add->click();
+        acceptTimer.stop();
+        timeout.stop();
+        QVERIFY(selected);
+        QCOMPARE(backs.items().size(), 2);
+        QVERIFY(dialog.findChild<QLabel *>(QStringLiteral("cardBackFeedback"))
+                    ->text().contains(QStringLiteral("2 images imported. 1 files skipped")));
+        auto *list = dialog.findChild<QListWidget *>();
+        QCOMPARE(list->count(), 2);
+        list->item(0)->setSelected(true);
+        dialog.findChild<QPushButton *>(QStringLiteral("removeCollectionImages"))->click();
+        QCOMPARE(backs.items().size(), 1);
+        auto *clear = dialog.findChild<QPushButton *>(QStringLiteral("clearCollectionImages"));
+        QVERIFY(confirm(clear, QMessageBox::Cancel));
+        QCOMPARE(backs.items().size(), 1);
+        QVERIFY(confirm(clear, QMessageBox::Yes));
+        QVERIFY(backs.items().isEmpty());
+        QVERIFY(QFileInfo::exists(paths[0]));
     }
 
-    void chooserAppliesImageAndReportsInvalidReplacement()
+    void imageCountMessages_data()
     {
+        QTest::addColumn<int>("count");
+        QTest::addColumn<QString>("expected");
+        QTest::newRow("empty") << 0 << QStringLiteral("No images");
+        QTest::newRow("one") << 1 << QStringLiteral("all cards");
+        QTest::newRow("repeat") << 12 << QStringLiteral("repeat");
+        QTest::newRow("full") << 52 << QStringLiteral("once per game");
+        QTest::newRow("subset") << 80 << QStringLiteral("choose 52");
+    }
+
+    void imageCountMessages()
+    {
+        QFETCH(int, count);
+        QFETCH(QString, expected);
         QTemporaryDir directory;
-        const auto source = directory.filePath(QStringLiteral("source.png"));
-        writeBytes(source, encodeImage(syntheticImage()));
-        CardBackSettings defaults(directory.path());
-        IndividualCardBacks backs(directory.path());
-        CardBackDialog dialog(backs, defaults);
-        auto *choose = dialog.findChild<QPushButton *>(QStringLiteral("chooseIndividualImage"));
-        auto *tabs = dialog.findChild<QTabWidget *>();
-        tabs->setCurrentIndex(3);
-        auto *list = qobject_cast<QListWidget *>(tabs->currentWidget());
-        list->setCurrentRow(12);
-        const auto id = Card{Suit::Spades, Rank::King}.id();
-        for (int attempt = 0; attempt < 2; ++attempt) {
-            bool selected = false;
-            bool timedOut = false;
-            QTimer timeout;
-            timeout.setSingleShot(true);
-            connect(&timeout, &QTimer::timeout, &dialog, [&] {
-                timedOut = true;
-                if (auto *picker = qobject_cast<QFileDialog *>(QApplication::activeModalWidget())) {
-                    picker->reject();
-                }
-            });
-            QTimer timer;
-            connect(&timer, &QTimer::timeout, &dialog, [&] {
-                if (auto *picker = qobject_cast<QFileDialog *>(QApplication::activeModalWidget())) {
-                    picker->setDirectory(directory.path());
-                    auto *model = picker->findChild<QFileSystemModel *>();
-                    auto *edit = picker->findChild<QLineEdit *>(QStringLiteral("fileNameEdit"));
-                    if (model && edit && model->index(source).isValid()) {
-                        selected = true;
-                        timer.stop();
-                        edit->setText(source);
-                        QMetaObject::invokeMethod(picker, "accept", Qt::QueuedConnection);
-                    }
-                }
-            });
-            timeout.start(5000);
-            timer.start(10);
-            choose->click();
-            timer.stop();
-            timeout.stop();
-            QVERIFY(selected);
-            QVERIFY(!timedOut);
-            QVERIFY(backs.hasAssignment(id));
-            QVERIFY(!backs.hasAssignment(static_cast<CardId>(0)));
-            QCOMPARE(backs.image(id).pixelColor(300, 420), QColor(Qt::green));
-            if (attempt == 0) {
-                QVERIFY(list->currentItem()->text().contains(QStringLiteral("Custom")));
-                writeBytes(source, "invalid replacement");
-            } else {
-                QVERIFY(dialog.findChild<QLabel *>(QStringLiteral("cardBackFeedback"))
-                            ->text().contains(QStringLiteral("PNG or JPEG")));
-            }
+        CardBackSettings single(directory.filePath(QStringLiteral("private")));
+        CardBackCollection backs(QFileInfo(single.managedPath()).path());
+        QStringList paths;
+        for (int index = 0; index < count; ++index) {
+            QImage image({10, 14}, QImage::Format_RGB32);
+            image.fill(QColor::fromRgb(index + 1, 120, 200));
+            const auto path = directory.filePath(QStringLiteral("source%1.png").arg(index));
+            writeBytes(path, encodeImage(image));
+            paths << path;
         }
-        IndividualCardBacks restored(directory.path());
-        QCOMPARE(restored.image(id), backs.image(id));
+        QCOMPARE(backs.importImages(paths).imported, count);
+        CardBackDialog dialog(backs, single);
+        QVERIFY(dialog.findChild<QLabel *>(QStringLiteral("collectionImageCount"))->text().contains(expected));
     }
 };
 

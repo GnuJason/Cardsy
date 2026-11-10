@@ -39,7 +39,10 @@ managed image is:
 ```
 
 `XDG_DATA_HOME` and other platform-native path rules remain honored. QSettings is
-not used: the valid managed PNG itself remains the sole personalization setting.
+not used. The universal image remains at this path; the selected mode and ordered
+collection now live in `card-back-collection.json`, with collection images under
+`back-collection/`. See [personal card backs](personal-card-backs.md) for the
+storage schema and migration from the old per-card PNGs.
 
 On the first use of an absent canonical data directory, Cardsy checks only the
 former Cardsy-managed development file at `Cardsy/Cardsy/card-back.png` beneath
@@ -48,8 +51,9 @@ copy atomically with owner-only permissions, then removes only the old managed
 file. It never follows a final legacy symlink or touches the original photo.
 
 An existing canonical directory takes priority, even when empty. This means
-Use Default cannot resurrect an old copy if cleanup previously failed.
-Reset creates that directory if necessary and removes only the canonical PNG.
+Removing the single image cannot resurrect an old copy if cleanup previously
+failed. Explicit Remove Image removes only the canonical PNG. Selecting Default
+now changes the stored mode without deleting any images.
 
 Failed migration leaves the old copy untouched, uses the default and reports a
 nonmodal warning. If automatic retry is no longer applicable after a partial

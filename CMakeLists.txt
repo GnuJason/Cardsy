@@ -55,8 +55,8 @@ add_library(cardsy-ui STATIC
     src/ui/CardBackIdentity.h
     src/ui/CardBackPainting.cpp
     src/ui/CardBackPainting.h
-    src/ui/IndividualCardBacks.cpp
-    src/ui/IndividualCardBacks.h
+    src/ui/CardBackCollection.cpp
+    src/ui/CardBackCollection.h
     src/ui/CardBackDialog.cpp
     src/ui/CardBackDialog.h
     src/ui/BoardLayout.cpp

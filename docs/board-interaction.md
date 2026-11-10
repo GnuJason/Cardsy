@@ -20,8 +20,11 @@
   from another tableau column.
 - Game > New Game starts a fresh deal and clears undo/selection.
 - Game > Undo restores the previous engine state and clears selection.
-- Game > Card Back offers Choose Photo... and Use Default Card Back without
-  changing the current game. See [personal card backs](personal-card-backs.md).
+- Game > Card Back offers Choose Photo..., Use Default Card Back and Custom
+  Card Backs... without changing gameplay state. The manager selects Default,
+  Single Image or Random Image Collection. Collection assignments are fixed for
+  a game; edits apply to the next New Game.
+  See [personal card backs](personal-card-backs.md).
 - Game > Quit closes the application normally.
 
 New Game, Undo and Quit use the platform's standard Qt shortcuts (normally

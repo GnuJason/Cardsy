@@ -99,7 +99,8 @@ ordering. Do not claim bit-for-bit reproducibility for these development builds.
 ## Undated future release-notes outline
 
 - Native Klondike with click, drag, keyboard operation, Undo and New Game.
-- One local persistent card back; original image preservation and explicit limits.
+- Local single-image and randomized collection backs; multi-file import,
+  fixed per-game assignments, original image preservation and explicit limits.
 - Offline operation and system Qt requirements.
 - Stable application ID, icon and desktop integration.
 - GPL-3.0-or-later software and independent CC0 artwork/metadata.

@@ -2,9 +2,11 @@
 
 #include "BoardLayout.h"
 #include "BoardFocus.h"
+#include "CardBackCollection.h"
 #include "engine/Game.h"
 
 #include <QImage>
+#include <QPointer>
 #include <QString>
 #include <QWidget>
 
@@ -51,8 +53,9 @@ public:
     BoardLayout boardLayout() const;
     [[nodiscard]] MoveResult loadState(const GameState &state);
     void setCardBackImage(const QImage &image);
-    const QImage &cardBackImage() const { return cardBackImage_; }
-    void setIndividualCardBack(CardId id, const QImage &image);
+    const QImage &cardBackImage() const;
+    void setCardBackCollection(CardBackCollection *collection);
+    const GameCardBacks &gameCardBacks() const { return gameCardBacks_; }
     const QImage &cardBackImage(CardId id) const;
 
 public slots:
@@ -67,6 +70,7 @@ signals:
     void feedbackChanged(const QString &message);
     void boardFocusChanged();
     void focusVisibilityRequested(const QRectF &rectangle);
+    void cardBacksRandomized();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -97,9 +101,11 @@ private:
     QString accessibleValue_;
     QString feedback_;
     QImage cardBackImage_;
-    std::array<QImage, 52> individualCardBacks_;
+    QPointer<CardBackCollection> collection_;
+    GameCardBacks gameCardBacks_;
 
     void initialize();
+    void randomizeCardBacks();
     void updateMinimumHeight();
     void setFeedback(const QString &message);
     void setBoardFocus(BoardFocus focus, bool ensureVisible);
