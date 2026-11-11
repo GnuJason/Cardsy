@@ -13,6 +13,7 @@
 #include <QPainter>
 #include <QResizeEvent>
 #include <QScopedValueRollback>
+#include <QStyle>
 #include <QtMath>
 
 #include <algorithm>
@@ -146,6 +147,7 @@ void GameBoard::initialize()
     setMouseTracking(true);
     setMinimumWidth(MinimumBoardWidth);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    connect(&victory_, &VictorySequence::frameChanged, this, QOverload<>::of(&GameBoard::update));
     updateMinimumHeight();
     feedback_ = tr("Select a face-up card, then choose a destination.");
     refreshAccessibility();
@@ -271,16 +273,61 @@ void GameBoard::setBoardFocus(BoardFocus focus, bool ensureVisible)
 
 void GameBoard::activateFocusedItem()
 {
+    if (victory_.active()) {
+        return;
+    }
     cancelDrag();
     QScopedValueRollback<bool> activation(keyboardActivation_, true);
     setBoardFocus(keyboardFocus_, true);
     click(focusedElement());
 }
 
-void GameBoard::setCardBackImage(const QImage &image)
+void GameBoard::setCardBackImage(const QImage &image, const QString &managedPath)
 {
     cardBackImage_ = image;
+    cardBackPath_ = managedPath;
     update();
+}
+
+QRectF GameBoard::victoryArea() const
+{
+    const auto margin = std::min({qreal{16}, width() / 4.0, height() / 4.0});
+    return QRectF(rect()).adjusted(margin, margin, -margin, -margin);
+}
+
+void GameBoard::startVictory()
+{
+    victoryTriggered_ = true;
+    std::vector<VictoryCard> cards;
+    const auto layout = boardLayout();
+    for (std::size_t pile = 0; pile < game_.state().foundations.size(); ++pile) {
+        const auto element = std::find_if(layout.elements.begin(), layout.elements.end(),
+                                         [pile](const BoardElement &item) {
+            return item.pile == PileType::Foundation && item.pileIndex == pile;
+        });
+        if (element == layout.elements.end()) {
+            qWarning("Cardsy cannot locate the completed cards for the victory animation.");
+            return;
+        }
+        for (auto card = game_.state().foundations[pile].begin();
+             card != game_.state().foundations[pile].end(); ++card) {
+            cards.push_back({*card, element->rectangle, element->rectangle, {}, 0, 0, 1, false});
+        }
+    }
+    QImage image;
+    if (collection_ && collection_->mode() == CardBackMode::RandomCollection) {
+        image = collection_->victoryImage(*QRandomGenerator::global());
+    } else if ((!collection_ || collection_->mode() == CardBackMode::SingleImage)
+               && !cardBackImage_.isNull()) {
+        if (cardBackPath_.isEmpty()) {
+            image = cardBackImage_;
+        } else if (!CardBackSettings::readImage(cardBackPath_, image, true)) {
+            qWarning("Cardsy cannot read the configured victory photo; using the card cascade.");
+        }
+    }
+    const bool reducedMotion = !style()->styleHint(QStyle::SH_Widget_Animate, nullptr, this);
+    victory_.start(std::move(cards), std::move(image), victoryArea(), reducedMotion,
+                   [this] { return game_.state().status == GameStatus::Won; });
 }
 
 void GameBoard::setCardBackCollection(CardBackCollection *collection)
@@ -350,6 +397,9 @@ void GameBoard::finish(MoveResult result, std::optional<BoardFocus> focus)
     setFeedback(game_.state().status == GameStatus::Won
                     ? tr("You won! Start a new game, or undo to keep playing.")
                     : tr("Select a face-up card, then choose a destination."));
+    if (game_.state().status == GameStatus::Won && !victoryTriggered_) {
+        startVictory();
+    }
     update();
     emit stateChanged();
 }
@@ -358,6 +408,10 @@ MoveResult GameBoard::loadState(const GameState &state)
 {
     cancelDrag();
     const auto result = game_.loadState(state);
+    if (result) {
+        victory_.cancel();
+        victoryTriggered_ = false;
+    }
     finish(result);
     return result;
 }
@@ -366,6 +420,7 @@ void GameBoard::undo()
 {
     cancelDrag();
     if (game_.canUndo()) {
+        victory_.cancel();
         finish(game_.undo());
         requestFocusVisibility();
     }
@@ -376,6 +431,8 @@ void GameBoard::newGame()
     cancelDrag();
     const auto result = game_.newGame(game_.state().config);
     if (result) {
+        victory_.cancel();
+        victoryTriggered_ = false;
         randomizeCardBacks();
     }
     finish(result, BoardFocus{});
@@ -476,6 +533,9 @@ void GameBoard::moveTo(const BoardElement &element)
 
 void GameBoard::click(const std::optional<BoardElement> &element)
 {
+    if (victory_.active()) {
+        return;
+    }
     if (!element) {
         clearSelection();
     } else if (element->pile == PileType::Stock) {
@@ -508,6 +568,10 @@ void GameBoard::cancelDrag()
 
 void GameBoard::updateHoverCursor(QPointF position)
 {
+    if (victory_.active()) {
+        unsetCursor();
+        return;
+    }
     const auto element = boardLayout().hitTest(position);
     if (element && sourceFor(*element)) {
         setCursor(Qt::OpenHandCursor);
@@ -547,6 +611,10 @@ void GameBoard::updateDragPosition(QPointF position)
 
 void GameBoard::mousePressEvent(QMouseEvent *event)
 {
+    if (victory_.active()) {
+        event->accept();
+        return;
+    }
     if (event->button() != Qt::LeftButton) {
         QWidget::mousePressEvent(event);
         return;
@@ -651,6 +719,7 @@ void GameBoard::resizeEvent(QResizeEvent *event)
     cancelDrag();
     QWidget::resizeEvent(event);
     updateMinimumHeight();
+    victory_.resize(victoryArea());
     if (hasFocus()) {
         requestFocusVisibility();
     }
@@ -706,6 +775,28 @@ void GameBoard::paintEvent(QPaintEvent *)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.fillRect(rect(), QColor(25, 85, 55));
+    if (victory_.active()) {
+        const auto &cards = victory_.cards();
+        for (std::size_t index = 0; index < cards.size(); ++index) {
+            const auto &card = cards[index];
+            if (card.horizontalScale < 0.001) {
+                continue;
+            }
+            painter.save();
+            painter.translate(card.rectangle.center());
+            painter.rotate(card.rotation);
+            painter.scale(card.horizontalScale, 1);
+            const QRectF face(QPointF(-card.rectangle.width() / 2, -card.rectangle.height() / 2),
+                              card.rectangle.size());
+            if (card.revealed) {
+                paintMosaicTile(painter, face, victory_.image(), victory_.mosaic().sources[index]);
+            } else {
+                drawCard(painter, face, card.card, cardBackImage(card.card.id()));
+            }
+            painter.restore();
+        }
+        return;
+    }
     const auto layout = boardLayout();
     const auto focused = hasFocus() ? focusedElement() : std::nullopt;
     const auto focusRectangle = hasFocus() ? focusedRectangle() : std::nullopt;

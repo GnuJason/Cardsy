@@ -457,6 +457,32 @@ void CardBackCollection::migrate()
     }
 }
 
+QImage CardBackCollection::victoryImage(QRandomGenerator &random) const
+{
+    if (mode_ != CardBackMode::RandomCollection) {
+        return {};
+    }
+    if (!safeStorage()) {
+        qWarning("Cardsy cannot read the victory image collection; using the card cascade.");
+        return {};
+    }
+    QList<QString> candidates;
+    for (const auto &item : items_) {
+        candidates << item.id;
+    }
+    if (candidates.size() > 1) {
+        shuffle(candidates, random);
+    }
+    for (const auto &id : candidates) {
+        QImage image;
+        if (CardBackSettings::readImage(managedPath(id), image, true) && imageId(image) == id) {
+            return image;
+        }
+        qWarning("Cardsy skipped an unavailable victory image.");
+    }
+    return {};
+}
+
 GameCardBacks CardBackCollection::beginGame(QRandomGenerator &random) const
 {
     GameCardBacks result;

@@ -39,7 +39,7 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
 {
     board_ = board;
     cardBackSettings_ = settings;
-    board_->setCardBackImage(settings->image());
+    board_->setCardBackImage(settings->image(), settings->managedPath());
     cardBackCollection_ = new cardsy::ui::CardBackCollection(
         settings->managedPath().isEmpty() ? QString{} : QFileInfo(settings->managedPath()).path(), this);
     board_->setCardBackCollection(cardBackCollection_);
@@ -104,7 +104,7 @@ void MainWindow::initialize(cardsy::ui::GameBoard *board, cardsy::ui::CardBackSe
         cardBackDialog_->activateWindow();
     });
     connect(settings, &cardsy::ui::CardBackSettings::changed, this, [this] {
-        board_->setCardBackImage(cardBackSettings_->image());
+        board_->setCardBackImage(cardBackSettings_->image(), cardBackSettings_->managedPath());
         const auto result = cardBackCollection_->setMode(cardBackSettings_->isCustom()
             ? cardsy::ui::CardBackMode::SingleImage : cardsy::ui::CardBackMode::Default);
         showStatusMessage(!result ? result.message : cardBackSettings_->isCustom()

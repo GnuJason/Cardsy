@@ -3,6 +3,7 @@
 #include "BoardLayout.h"
 #include "BoardFocus.h"
 #include "CardBackCollection.h"
+#include "VictorySequence.h"
 #include "engine/Game.h"
 
 #include <QImage>
@@ -52,11 +53,12 @@ public:
     QString feedback() const { return feedback_; }
     BoardLayout boardLayout() const;
     [[nodiscard]] MoveResult loadState(const GameState &state);
-    void setCardBackImage(const QImage &image);
+    void setCardBackImage(const QImage &image, const QString &managedPath = {});
     const QImage &cardBackImage() const;
     void setCardBackCollection(CardBackCollection *collection);
     const GameCardBacks &gameCardBacks() const { return gameCardBacks_; }
     const QImage &cardBackImage(CardId id) const;
+    const VictorySequence &victorySequence() const { return victory_; }
 
 public slots:
     void undo();
@@ -103,8 +105,13 @@ private:
     QImage cardBackImage_;
     QPointer<CardBackCollection> collection_;
     GameCardBacks gameCardBacks_;
+    QString cardBackPath_;
+    VictorySequence victory_{this};
+    bool victoryTriggered_ = false;
 
     void initialize();
+    void startVictory();
+    QRectF victoryArea() const;
     void randomizeCardBacks();
     void updateMinimumHeight();
     void setFeedback(const QString &message);

@@ -23,6 +23,16 @@ names/symbols and ranks do not depend on red/black color alone. System font
 families and Qt logical coordinates remain in use; minimum-size and 2x rendering
 are tested. There is no bundled font or new high-contrast theme.
 
+## Victory motion
+
+The victory sequence preserves the status-bar win message and never takes
+keyboard focus. Gameplay activation is temporarily disabled while cards
+celebrate; New Game, Undo, Quit and the normal Qt menu/Tab paths remain available.
+If the platform style disables Qt's `SH_Widget_Animate` hint, the final picture
+is revealed immediately without the cascade or flips. Cardsy has no separate
+motion preference. Desktop reduced-motion propagation through the installed
+Qt platform style remains platform-dependent and is not certified here.
+
 ## What Qt accessibility exposes
 
 A plain custom-painted QWidget does not automatically expose painted cards as

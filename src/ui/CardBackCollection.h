@@ -53,6 +53,7 @@ public:
     [[nodiscard]] CardBackResult removeImages(const QStringList &ids);
     [[nodiscard]] CardBackResult clear();
     GameCardBacks beginGame(QRandomGenerator &random) const;
+    QImage victoryImage(QRandomGenerator &random) const;
 
 signals:
     void changed();

@@ -78,6 +78,23 @@ Fallback order is strictly mode-specific:
 Custom backs never change faces, hidden-card state, rules, card order, scoring,
 selection or undo history.
 
+## Victory picture
+
+After an engine-confirmed win, the cards cascade and then assemble into one
+enlarged picture, with a different image region on each card. Single Image uses
+that configured photo; Random Image Collection chooses exactly one currently
+valid configured picture for the whole celebration. Default mode, an empty
+collection or all-unavailable files produces a cascade only. Selection happens
+once per celebration, independently of the current game's card-back mapping.
+The final arrangement stays until New Game; Undo remains available as before.
+See [victory lifecycle and rendering](board-interaction.md#victory-cascade-and-picture-mosaic).
+
+The stored, orientation-normalized 600-by-840 card-back picture is the source,
+not the original external file. Any crop already applied during import remains;
+the original image is never modified. The complete mosaic uses a further
+aspect-preserving centered aspect-fill crop when necessary to fit its grid.
+Enlargement of small or normalized pictures can look soft.
+
 ## Image policy and duplicate detection
 
 Only content decoded as PNG or JPEG by the installed Qt reader is accepted.

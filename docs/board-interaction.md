@@ -32,6 +32,66 @@ Ctrl+N, Ctrl+Z and Ctrl+Q on Linux). Undo is disabled when unavailable. The GUI
 uses the engine's default draw configuration; no draw-mode settings are provided.
 Engine `Won` status produces a small status-bar message rather than a dialog.
 
+## Victory cascade and picture mosaic
+
+Only a successful engine mutation or validated state replacement with `Won`
+status can start a celebration. A per-game latch prevents duplicate starts,
+including winning again after Undo. New Game resets that latch; replacing a
+valid game state starts a new lifecycle. No victory rules, scores or history
+are calculated by the animation.
+
+`GameBoard` snapshots the actual completed foundation cards and their current
+board rectangles. `VictorySequence` owns a bounded temporary set of card poses,
+one image, one elapsed clock and one 16 ms Qt timer. Normal QPainter card faces
+launch at staggered times with varied bounded bounce trajectories and slight
+rotation. After 3.2 seconds, a picture celebration assembles for 1.5 seconds,
+then reveals tiles in a 1.3-second row-major horizontal-scale flip wave.
+
+The explicit states are Inactive, Cascade, Assembling, Flipping and
+MosaicComplete, or CascadeComplete without a usable image. Both final states
+stop the timer and remain visible until New Game (or the existing Undo/state
+replacement actions). The status-bar win message stays visible outside the
+board. Gameplay activation is disabled during the celebration; native menus,
+New Game, Undo, photo settings, Quit and ordinary Tab navigation remain usable.
+
+The active custom-back mode is inspected once at the win. Default has no
+picture; Single Image uses its managed photo; Random Image Collection shuffles
+the configured candidates and loads the first valid image. Unavailable or
+changed collection files are skipped with a concise Qt warning. One candidate
+needs no random choice. Subsequent settings changes do not replace the chosen
+victory picture. Image decoding, safety limits, orientation normalization and
+managed-file validation reuse the existing card-back loader.
+
+The pure mosaic layout chooses a factor grid using every participating card,
+balancing available area, card proportions and image crop retention. For a
+standard deck this considers 13-by-4 and 4-by-13, among other factor pairs.
+It fits inside board-local margins, separate from the window's menus/status.
+One aspect-fill, centered source crop is divided using shared fractional grid
+edges; each tile draws only its own source rectangle from the shared image.
+Minimal rounded borders define cards without large gaps. No tile files or
+per-card photo decodes are created. Resizing recalculates cheap geometry and
+source rectangles, not image pixels; assembly targets follow the new layout.
+
+New Game, successful state replacement and Undo stop/disconnect animation
+processing and release temporary cards, crop arrays and the image reference.
+A generation counter invalidates older callbacks. Timer callbacks have
+QObject-bound lifetimes and also verify the current game is still won and
+Qt is not shutting down; application shutdown cancels the controller.
+Destruction releases the controller with the board. The engine is never
+mutated by animation updates.
+
+If Qt's platform style disables `SH_Widget_Animate`, the free cascade and flips
+are skipped and the static mosaic (or cascade-only arrangement) appears
+immediately. There is no new animation setting or dependency. Qt 6.2 does not
+provide a universal reduced-motion preference API; platform-style propagation
+of a desktop preference depends on the installed Qt integration.
+
+Focused Qt tests cover win/latch/reset behavior, every cancellation stage,
+Undo/replacement/destruction, deterministic picture selection and missing
+files, normalized input shapes/orientation, grid coverage and rounding,
+pixel-level reconstruction of one picture, reduced motion and final timer
+quiescence. These are native QWidget tests, not browser tests.
+
 ## Keyboard navigation
 
 The board is one normal Qt focusable widget with logical items inside it.

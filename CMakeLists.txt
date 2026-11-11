@@ -63,6 +63,8 @@ add_library(cardsy-ui STATIC
     src/ui/BoardLayout.h
     src/ui/GameBoard.cpp
     src/ui/GameBoard.h
+    src/ui/VictorySequence.cpp
+    src/ui/VictorySequence.h
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
 )
@@ -110,7 +112,8 @@ if(BUILD_TESTING)
 
     foreach(test_name IN ITEMS BoardLayoutTest GameBoardTest CardBackSettingsTest PersonalizationTest
             IndividualCardBacksTest IndividualBackRenderingTest CardBackDialogTest
-            DragInteractionTest KeyboardNavigationTest KeyboardGameplayTest BoardAccessibilityTest)
+            DragInteractionTest KeyboardNavigationTest KeyboardGameplayTest BoardAccessibilityTest
+            MosaicLayoutTest VictoryImageTest VictorySequenceTest)
         add_executable(${test_name} tests/${test_name}.cpp)
         target_link_libraries(${test_name} PRIVATE cardsy-ui Qt6::Test)
         add_test(NAME ${test_name} COMMAND ${test_name})
@@ -119,6 +122,7 @@ if(BUILD_TESTING)
             TIMEOUT 30
         )
     endforeach()
+    set_tests_properties(VictorySequenceTest PROPERTIES TIMEOUT 60)
 
     foreach(test_name IN ITEMS ApplicationIdentityTest DataMigrationTest)
         add_executable(${test_name} tests/${test_name}.cpp)
