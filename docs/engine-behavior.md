@@ -125,7 +125,8 @@ Classification covers behavioral groups rather than matching test counts.
 - `UndoTest`: every move kind, rejected operations and history lifetime.
 - `GameStateInvariantTest`: corrupt-state diagnostics and seeded transition/undo
   sequences (12 seeds, up to 100 successful moves per seed).
-- `WinTest`: controlled full victory, invalid arrangements and win/undo transitions.
+- `WinTest`: controlled full victory, a complete seeded deal, invalid arrangements
+  and win/undo transitions.
 
 Tests use full 52-card states, not partial boards mistaken for valid games.
 The GUI smoke test remains separate. Source licensing is defined in
