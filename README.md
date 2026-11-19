@@ -1,7 +1,9 @@
 # Cardsy
 
-Cardsy is a native desktop card-game application targeting openSUSE/Linux first,
-with Linux, macOS and Windows portability intended long term.
+Cardsy is a native Qt 6 Klondike solitaire game with a focus on personalization.
+Import your own photos or images as custom card backs, using a single image or
+a randomized image collection. Cardsy targets openSUSE/Linux first, with Linux,
+macOS and Windows portability intended long term.
 
 **Development toward Cardsy 1.0.0; not a public 1.0.0 release.**
 
