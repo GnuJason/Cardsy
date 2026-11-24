@@ -123,6 +123,7 @@ if(BUILD_TESTING)
         )
     endforeach()
     set_tests_properties(VictorySequenceTest PROPERTIES TIMEOUT 60)
+    set_tests_properties(IndividualCardBacksTest PROPERTIES TIMEOUT 120)
 
     foreach(test_name IN ITEMS ApplicationIdentityTest DataMigrationTest)
         add_executable(${test_name} tests/${test_name}.cpp)
